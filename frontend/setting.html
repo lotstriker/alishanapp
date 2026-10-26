@@ -4,60 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ALISHAN - Advanced Settings Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <!-- icons: local SVG set (icons.js), no CDN -->
+    <script src="icons.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <link rel="stylesheet" href="setting.css">
+    <link rel="stylesheet" href="nav.css">
+    <link rel="stylesheet" href="mobile.css">
 </head>
 <body class="theme-light-default">
-    <div class="app-container">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-left">
-                <div class="breadcrumb">
-                    <a href="index.html">Dashboard</a>
-                    <span class="separator">/</span>
-                    <span>Settings</span>
+    <header class="site-topbar">
+        <div class="site-topbar-inner">
+            <a href="index.html" class="logo"><i class="fas fa-tshirt"></i> ALISHAN</a>
+            <div class="site-topbar-right">
+                <nav class="site-nav-links">
+                    <ul>
+                        <li><a href="index.html"><i class="fas fa-home"></i> DASHBOARD</a></li>
+                        <li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
+                        <li><a href="reports.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
+                        <li><a href="setting.html" class="active"><i class="fas fa-cog"></i> SETTINGS</a></li>
+                    </ul>
+                </nav>
+                <div class="site-topbar-utility">
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="search-input" id="globalSearch" placeholder="Search settings...">
+                    </div>
+                    <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <div class="profile-section" title="Admin User — Administrator">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="header-actions">
-                <div class="search-container">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" class="search-input" id="globalSearch" placeholder="Search settings...">
-                </div>
-                
-                <button class="theme-toggle" id="themeToggle">
-                    <i class="fas fa-moon"></i>
+                <button class="site-menu-toggle" id="siteMenuToggle">
+                    <i class="fas fa-bars"></i>
                 </button>
-                
-                <div class="collaboration-status">
-                    <i class="fas fa-circle" style="font-size: 8px;"></i>
-                    <span>Online</span>
-                </div>
-                
-                <div class="profile-section">
-                    <div class="user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="user-info">
-                        <div class="user-name">Admin User</div>
-                        <div class="user-role">Administrator</div>
-                    </div>
-                </div>
             </div>
-        </header>
-
+        </div>
+        <ul class="site-mobile-nav" id="siteMobileNav">
+            <li><a href="index.html"><i class="fas fa-home"></i> DASHBOARD</a></li>
+            <li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
+            <li><a href="reports.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
+            <li><a href="setting.html" class="active"><i class="fas fa-cog"></i> SETTINGS</a></li>
+        </ul>
+    </header>
+    <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <div class="logo-icon">
-                        <i class="fas fa-tshirt"></i>
-                    </div>
-                    <span>ALISHAN</span>
-                </div>
-            </div>
-
             <nav class="nav-section">
                 <div class="nav-title">Main Settings</div>
                 <ul class="nav-links">
@@ -1249,7 +1245,18 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="db.js"></script>
     <script src="theme-manager.js"></script>
     <script src="script.js"></script>
+    <script src="nav.js"></script>
+
+    <nav class="tabbar" aria-label="Main">
+        <a href="index.html"><i class="fas fa-home"></i>Home</a>
+        <a href="inventory.html"><i class="fas fa-database"></i>Inventory</a>
+        <a href="index.html#add" class="tab-add" aria-label="New entry"><i class="fas fa-plus"></i></a>
+        <a href="reports.html"><i class="fas fa-chart-bar"></i>Reports</a>
+        <a href="setting.html" class="active"><i class="fas fa-cog"></i>Settings</a>
+    </nav>
+    <script src="ui.js"></script>
 </body>
 </html>

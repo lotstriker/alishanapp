@@ -4,102 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ALISHAN - Inventory Management</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
-    
+    <!-- icons: local SVG set (icons.js), no CDN -->
+    <script src="icons.js"></script>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="item-form.css">
+    <link rel="stylesheet" href="item-card.css">
+    <link rel="stylesheet" href="item-modal.css">
+    <link rel="stylesheet" href="aging.css">
+    <link rel="stylesheet" href="search.css">
+    <link rel="stylesheet" href="nav.css">
+    <link rel="stylesheet" href="mobile.css">
 </head>
 <body>
-    <header>
-        <div class="mobile-header">
-            <div class="logo">
-                <i class="fas fa-tshirt logo-icon"></i>
-                <h1>ALISHAN</h1>
+    <header class="site-topbar">
+        <div class="site-topbar-inner">
+            <a href="index.html" class="logo"><i class="fas fa-tshirt"></i> ALISHAN</a>
+            <div class="site-topbar-right">
+                <nav class="site-nav-links">
+                    <ul>
+                        <li><a href="index.html" class="active"><i class="fas fa-home"></i> DASHBOARD</a></li>
+                        <li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
+                        <li><a href="reports.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
+                        <li><a href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
+                    </ul>
+                </nav>
+                <button class="site-menu-toggle" id="siteMenuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
-            
-            <!-- Desktop Navigation - Always visible on desktop -->
-            <nav class="desktop-nav">
-                <ul>
-                    <li><a href="index.html" class="active"><i class="fas fa-home"></i> NEW</a></li>
-                    <li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
-                    <li><a href="report.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
-                    <li><a href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
-                </ul>
-            </nav>
-            
-            <!-- Mobile Navigation Toggle - Only for mobile -->
-            <button class="menu-toggle" id="menuToggle">
-                <i class="fas fa-bars"></i>
-            </button>
-            
-            <!-- Mobile Navigation Menu - Hidden by default -->
-            <nav class="mobile-nav" id="mobileNav">
-                <ul>
-                    <li><a href="index.html" class="active"><i class="fas fa-home"></i> NEW</a></li>
-                    <li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
-                    <li><a href="report.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
-                    <li><a href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
-                </ul>
-            </nav>
         </div>
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <i class="fas fa-tshirt logo-icon"></i>
-                    <h1>ALISHAN</h1>
-                </div>
-            </div>
-            
-            <nav>
-                <ul>
-                    <li><a href="index.html" class="active"><i class="fas fa-home"></i> HOME</a></li>
-                    <li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
-                    <li><a href="report.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
-                    <li><a href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
-                </ul>
-            </nav>
-        </div>
+        <ul class="site-mobile-nav" id="siteMobileNav">
+            <li><a href="index.html" class="active"><i class="fas fa-home"></i> DASHBOARD</a></li>
+            <li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
+            <li><a href="reports.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
+            <li><a href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
+        </ul>
     </header>
 
     <div class="main-content">
         <div class="container">
-            <!-- Search Container - ENHANCED VERSION -->
-            <div class="search-container">
-                <div class="search-bar-wrapper">
-                    <div class="search-bar">
-                        <input type="text" id="searchInput" placeholder="Search by quality name, lot number, cup size or color...">
-                        <button id="searchBtn" onclick="performSearch()">
-                            <i class="fas fa-search"></i> Search
-                        </button>
-                    </div>
-                    <!-- Suggestions dropdown will be added here dynamically -->
-                </div>
-                <button class="show-all-btn" id="showAllBtn" style="display: none;">
-                    <i class="fas fa-list"></i> Show All
-                </button>
-                
-                <!-- Search Analytics Button (Optional) -->
-                <button class="analytics-btn" onclick="showSearchAnalytics()" title="View Search Analytics">
-                    <i class="fas fa-chart-bar"></i>
-                </button>
-            </div>
-            
-            <!-- Analytics Modal -->
-            <div class="modal" id="analyticsModal" style="display: none;">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h2><i class="fas fa-chart-line"></i> Search Analytics</h2>
-                        <button class="close-btn" onclick="closeModal('analyticsModal')">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="analytics-container" id="analyticsContainer">
-                            <!-- Analytics content will be loaded here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-       
-            <div class="main-content">
-                <div class="dashboard">
+            <!-- Search (search.js): the same search box on every page -->
+            <div id="alishan-search"></div>
+
+            <div class="dashboard">
                     <div class="card">
                         <div class="card-header">
                             <h2><i class="fas fa-boxes"></i> Total Inventory</h2>
@@ -109,10 +56,11 @@
                             <h3 id="totalInventoryItems">0</h3>
                             <p>Total Items</p>
                         </div>
-                        <div class="card-chart">
-                            <div class="chart-bar" style="height: 60%;"></div>
-                            <div class="chart-bar" style="height: 80%;"></div>
-                            <div class="chart-bar" style="height: 45%;"></div>
+                        <div class="type-breakdown">
+                            <div class="type-row"><span class="type-name">Bra</span><strong id="totalBraItems">0</strong><small id="braMostAdded">-</small></div>
+                            <div class="type-row"><span class="type-name">Panty</span><strong id="totalPantyItems">0</strong><small id="pantyMostAdded">-</small></div>
+                            <div class="type-row"><span class="type-name">Set</span><strong id="totalSetItems">0</strong><small id="setMostAdded">-</small></div>
+                            <div class="type-row"><span class="type-name">Blouse</span><strong id="totalBlouseItems">0</strong><small id="blouseMostAdded">-</small></div>
                         </div>
                     </div>
 
@@ -121,14 +69,14 @@
                             <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
                         </div>
                         <div class="quick-actions">
-                            <button class="action-btn" onclick="scrollToForm()">
+                            <button class="quick-action-btn" onclick="scrollToForm()">
                                 <i class="fas fa-plus"></i> Add New Item
                             </button>
                             <!-- CHANGE YEH LINE -->
-                            <button class="action-btn" onclick="generateReport()">
+                            <button class="quick-action-btn" onclick="generateReport()">
                                     <i class="fas fa-file-excel"></i> Export Excel Report
                             </button>
-                            <button class="action-btn" onclick="checkStock()">
+                            <button class="quick-action-btn" onclick="checkStock()">
                                 <i class="fas fa-search"></i> Check Stock
                             </button>
                         </div>
@@ -155,7 +103,7 @@
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label for="productType">Product Type</label>
-                                        <select id="productType" required onchange="updateQualityOptions(this.value)">
+                                        <select id="productType" required onchange="ItemForm.renderQualitySelector('', window.qualityData, this.value)">
                                             <option value="">Select Type</option>
                                             <option value="bra">Bra</option>
                                             <option value="panty">Panty</option>
@@ -175,26 +123,16 @@
                                             <option value="F">F Cup</option>
                                         </select>
                                     </div>
-                                    <div class="form-group">
-                                        <label for="lotNumber">Lot Number</label>
-                                        <input 
-                                                type="text" 
-                                                id="lotNumber" 
-                                                placeholder="Enter lot number e.g., 123456-789012"
-                                                pattern="[0-9\-]+"
-                                                title="Only numbers and hyphens are allowed"
-                                            >
-                                        </div>
-                                    
+                                    <!-- Lot Number removed from Add — kept in Edit only, filled in later -->
                                     
                                     <!-- ENHANCED QUALITY SELECTOR WITH CATEGORIES & SEARCH -->
-                                        <div class="form-group">
+                                        <div class="form-group full-width">
                                             <label for="quality">Quality Name</label>
                                             
                                             <!-- Quality Search Box -->
                                             <div class="quality-search-container">
                                                 <input type="text" id="qualitySearch" placeholder="🔍 Search quality by name..." 
-                                                       oninput="filterQualityOptions()">
+                                                       oninput="ItemForm.filterQuality('')">
                                             </div>
                                             
                                             <!-- Enhanced Quality Selector -->
@@ -220,55 +158,46 @@
                                     
                                     
                                     
-                                    <!-- IMPROVED MANUAL DATE/TIME SECTION -->
+                                    <!-- ENTRY DATE (new entry = now, or an old entry with its real date) -->
                                     <div class="form-group full-width">
-                                        <div class="manual-datetime-section">
-                                            <div class="manual-toggle">
-                                                <label for="useManualDateTime" class="toggle-label">
+                                        <div class="entry-date-card">
+                                            <div class="entry-date-head">
+                                                <div class="entry-date-title"><i class="fas fa-calendar-alt"></i> Entry Date</div>
+                                                <label for="useManualDateTime" class="entry-switch">
                                                     <input type="checkbox" id="useManualDateTime" onchange="toggleManualDateTime()">
-                                                    <span class="toggle-slider"></span>
-                                                    <span class="toggle-text">Add Old Entry (Manual Date)</span>
+                                                    <span class="entry-switch-track"></span>
+                                                    <span>Old entry (set date)</span>
                                                 </label>
                                             </div>
-                                            
+                                            <p class="entry-date-hint" id="entryDateHint">New entry — saved with today's date and the current time.</p>
+
                                             <div id="manualDateTimeFields" class="manual-fields" style="display: none;">
-                                                <div class="datetime-help">
-                                                    <h4><i class="fas fa-info-circle"></i> Old Entry Information</h4>
-                                                    <p>Set the original date when this item was actually created/added. The system will track both the original date and when you added it to the system.</p>
+                                                <div class="entry-quick" id="entryQuick">
+                                                    <button type="button" data-days="1" onclick="setEntryDaysAgo(1)">Yesterday</button>
+                                                    <button type="button" data-days="3" onclick="setEntryDaysAgo(3)">3 days ago</button>
+                                                    <button type="button" data-days="7" onclick="setEntryDaysAgo(7)">1 week ago</button>
+                                                    <button type="button" data-days="14" onclick="setEntryDaysAgo(14)">2 weeks ago</button>
+                                                    <button type="button" data-days="30" onclick="setEntryDaysAgo(30)">1 month ago</button>
                                                 </div>
-                                                
-                                                <div class="form-grid">
+
+                                                <div class="entry-date-grid">
                                                     <div class="form-group">
-                                                        <label for="entryDate">Original Entry Date</label>
+                                                        <label for="entryDate">Date</label>
                                                         <input type="date" id="entryDate" class="manual-date-input">
                                                     </div>
-                                                    
                                                     <div class="form-group">
-                                                        <label for="entryTime">Original Entry Time</label>
-                                                        <input type="time" id="entryTime" class="manual-time-input" value="12:00">
+                                                        <label for="entryTime">Time</label>
+                                                        <input type="time" id="entryTime" class="manual-time-input">
                                                     </div>
                                                 </div>
+
+                                                <div class="entry-preview" id="entryPreview"></div>
                                             </div>
                                         </div>
                                     </div>
                                     <!-- END IMPROVED MANUAL DATE/TIME SECTION -->
                                     
-                                    <div class="form-group">
-                                        <label for="material">Material (meters)</label>
-                                        <input type="number" id="material" step="0.01" placeholder="Enter material in meters">
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label for="weight">Weight (kg)</label>
-                                        <input type="number" id="weight" step="0.01" placeholder="Enter weight in kg">
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label for="price">Price (per dozen)</label>
-                                        <input type="number" id="price" step="0.01" placeholder="Enter price per dozen">
-                                    </div>
-                                    
-                                    <div class="form-group">
+                                    <div class="form-group full-width">
                                         <label for="colors">Colors</label>
                                         <div class="color-selector-container">
                                             <div class="color-selector" id="colorSelector">
@@ -289,16 +218,42 @@
                                                     <!-- Colors will be loaded dynamically -->
                                                 </div>
                                                 <div class="color-actions">
-                                                    <button type="button" class="btn-select-all" onclick="selectAllColors()">
+                                                    <button type="button" class="btn-select-all" onclick="ItemForm.selectAllColors('')">
                                                         <i class="fas fa-check-double"></i> Select All
                                                     </button>
-                                                    <button type="button" class="btn-clear-all" onclick="clearAllColors()">
+                                                    <button type="button" class="btn-clear-all" onclick="ItemForm.clearAllColors('')">
                                                         <i class="fas fa-times"></i> Clear All
                                                     </button>
                                                 </div>
                                             </div>
                                         </div>
                                         <input type="hidden" id="colorsHidden" name="colors">
+                                    </div>
+                                </div>
+
+                                <!-- Collapsible: Material / Weight / Notes — collapsed by default,
+                                     opened only when actually needed. Price removed here; it will
+                                     come from qualities.json per-quality pricing instead. -->
+                                <div class="collapsible-section">
+                                    <button type="button" class="collapsible-toggle" onclick="toggleMoreDetails(this)">
+                                        <i class="fas fa-chevron-right"></i>
+                                        <span>More Details (Material, Weight, Notes)</span>
+                                    </button>
+                                    <div class="collapsible-content" id="moreDetailsContent">
+                                        <div class="form-grid">
+                                            <div class="form-group">
+                                                <label for="material">Material (meters)</label>
+                                                <input type="number" id="material" step="0.01" placeholder="Enter material in meters">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="weight">Weight (kg)</label>
+                                                <input type="number" id="weight" step="0.01" placeholder="Enter weight in kg">
+                                            </div>
+                                            <div class="form-group full-width">
+                                                <label for="notes">Notes</label>
+                                                <textarea id="notes" rows="2" placeholder="Additional notes"></textarea>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -318,156 +273,26 @@
                                     </label>
                                 </div>
                                 
-                                <h4>Size Quantities (in dozens)</h4>
+                                <h4>Size Quantities (dozens + pieces)</h4>
                                 
                                 <div id="sameSizesContainer">
-                                    <div class="size-grid">
-                                        <!-- Size 28 -->
-                                        <div class="size-input-group">
-                                            <label for="size28">Size 28</label>
-                                            <div class="size-input-row">
-                                                <input type="number" id="size28" class="size-dozen" min="0" step="1" placeholder="Dozens">
-                                                <input type="number" id="size28_pieces" class="size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Size 30 -->
-                                        <div class="size-input-group">
-                                            <label for="size30">Size 30</label>
-                                            <div class="size-input-row">
-                                                <input type="number" id="size30" class="size-dozen" min="0" step="1" placeholder="Dozens">
-                                                <input type="number" id="size30_pieces" class="size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Size 32 -->
-                                        <div class="size-input-group">
-                                            <label for="size32">Size 32</label>
-                                            <div class="size-input-row">
-                                                <input type="number" id="size32" class="size-dozen" min="0" step="1" placeholder="Dozens">
-                                                <input type="number" id="size32_pieces" class="size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Size 34 -->
-                                        <div class="size-input-group">
-                                            <label for="size34">Size 34</label>
-                                            <div class="size-input-row">
-                                                <input type="number" id="size34" class="size-dozen" min="0" step="1" placeholder="Dozens">
-                                                <input type="number" id="size34_pieces" class="size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Size 36 -->
-                                        <div class="size-input-group">
-                                            <label for="size36">Size 36</label>
-                                            <div class="size-input-row">
-                                                <input type="number" id="size36" class="size-dozen" min="0" step="1" placeholder="Dozens">
-                                                <input type="number" id="size36_pieces" class="size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Size 38 -->
-                                        <div class="size-input-group">
-                                            <label for="size38">Size 38</label>
-                                            <div class="size-input-row">
-                                                <input type="number" id="size38" class="size-dozen" min="0" step="1" placeholder="Dozens">
-                                                <input type="number" id="size38_pieces" class="size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Size 40 -->
-                                        <div class="size-input-group">
-                                            <label for="size40">Size 40</label>
-                                            <div class="size-input-row">
-                                                <input type="number" id="size40" class="size-dozen" min="0" step="1" placeholder="Dozens">
-                                                <input type="number" id="size40_pieces" class="size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Size 42 -->
-                                        <div class="size-input-group">
-                                            <label for="size42">Size 42</label>
-                                            <div class="size-input-row">
-                                                <input type="number" id="size42" class="size-dozen" min="0" step="1" placeholder="Dozens">
-                                                <input type="number" id="size42_pieces" class="size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Size 44 -->
-                                        <div class="size-input-group">
-                                            <label for="size44">Size 44</label>
-                                            <div class="size-input-row">
-                                                <input type="number" id="size44" class="size-dozen" min="0" step="1" placeholder="Dozens">
-                                                <input type="number" id="size44_pieces" class="size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Size 46 -->
-                                        <div class="size-input-group">
-                                            <label for="size46">Size 46</label>
-                                            <div class="size-input-row">
-                                                <input type="number" id="size46" class="size-dozen" min="0" step="1" placeholder="Dozens">
-                                                <input type="number" id="size46_pieces" class="size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                                 
                                 <div id="differentSizesContainer" class="color-size-container" style="display: none;">
-                                        <div class="color-selector-section">
-                                            <h4>Select Colors for Different Sizes</h4>
-                                            <div class="color-selector-container">
-                                                <div class="color-selector" id="differentSizesColorSelector">
-                                                    <div class="selected-colors" id="differentSizesSelectedColors">
-                                                        <span class="no-colors">No colors selected</span>
-                                                    </div>
-                                                    <button type="button" class="color-dropdown-toggle" id="differentSizesColorDropdownToggle">
-                                                        <i class="fas fa-chevron-down"></i>
-                                                    </button>
-                                                </div>
-                                                
-                                                <div class="color-dropdown" id="differentSizesColorDropdown">
-                                                    <div class="color-search">
-                                                        <input type="text" id="differentSizesColorSearch" placeholder="Search colors...">
-                                                        <i class="fas fa-search"></i>
-                                                    </div>
-                                                    <div class="color-options" id="differentSizesColorOptions">
-                                                        <!-- Colors will be loaded dynamically -->
-                                                    </div>
-                                                    <div class="color-actions">
-                                                        <button type="button" class="btn-select-all" onclick="selectAllDifferentSizesColors()">
-                                                            <i class="fas fa-check-double"></i> Select All
-                                                        </button>
-                                                        <button type="button" class="btn-clear-all" onclick="clearAllDifferentSizesColors()">
-                                                            <i class="fas fa-times"></i> Clear All
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <input type="hidden" id="differentSizesColorsHidden">
-                                        </div>
-                                        
+                                        <p class="different-sizes-hint" id="colorSizeHint">
+                                            <i class="fas fa-info-circle"></i>
+                                            Pick the colors in the <strong>Colors</strong> box above — a size card appears here for each color you pick.
+                                        </p>
+
                                         <div id="colorSizeItems">
                                             <!-- Color size items will be added dynamically based on selected colors -->
                                         </div>
                                         
-                                        <div class="different-sizes-actions">
-                                            <button type="button" class="btn btn-secondary" onclick="generateColorSizeItems()">
-                                                <i class="fas fa-magic"></i> Generate Size Inputs for Selected Colors
-                                            </button>
-                                        </div>
                                     </div>
                             </div>
 
-                            <!-- Additional Information Section -->
+                            <!-- Notes now lives in the "More Details" collapsible above -->
                             <div class="form-section-group">
-                                <h3><i class="fas fa-sticky-note"></i> Additional Information</h3>
-                                <div class="form-group">
-                                    <label for="notes">Notes</label>
-                                    <textarea id="notes" rows="3" placeholder="Additional notes"></textarea>
-                                </div>
-                                
                                 <div class="form-actions">
                                     <button type="submit" class="btn">Add Product Entry</button>
                                     <button type="reset" class="btn btn-secondary">Reset Form</button>
@@ -478,253 +303,19 @@
                 </div>
 
                 <div class="form-section">
-                    <h2><i class="fas fa-list"></i> Inventory Summary</h2>
+                    <div class="ic-list-tools" style="justify-content: space-between; margin-bottom: 0.4rem;">
+                        <h2 style="margin: 0;"><i class="fas fa-list"></i> Inventory Summary</h2>
+                        <button type="button" class="ic-collapse-btn" data-collapse-all onclick="ItemCard.collapseAll()" disabled>
+                            <i class="fas fa-compress-alt"></i> Collapse all<span class="ic-open-count"></span>
+                        </button>
+                    </div>
                     <div class="inventory-cards" id="inventoryCards">
                         <!-- Inventory cards will be added here dynamically -->
                     </div>
                 </div>
-            </div>
         </div>
     </div>
 
-    <div class="modal" id="editModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Edit Product Entry</h2>
-                <div id="uniqueCodeDisplay" class="unique-code-display"></div>
-                <button class="close-btn" onclick="closeEditModal()">&times;</button>
-            </div>
-            <form id="editForm">
-                <input type="hidden" id="editIndex">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="editProductType">Product Type</label>
-                        <select id="editProductType" required onchange="updateEditQualityOptions(this.value)">
-                            <option value="">Select Type</option>
-                            <option value="bra">Bra</option>
-                            <option value="panty">Panty</option>
-                            <option value="set">Set</option>
-                            <option value="blouse">Blouse</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editCupSize">Cup Size</label>
-                        <select id="editCupSize">
-                            <option value="">Select Cup Size</option>
-                            <option value="A">A Cup</option>
-                            <option value="B">B Cup</option>
-                            <option value="C">C Cup</option>
-                            <option value="D">D Cup</option>
-                            <option value="E">E Cup</option>
-                            <option value="F">F Cup</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editLotNumber">Lot Number</label>
-                        <input 
-                        type="text" 
-                        id="editLotNumber" 
-                        placeholder="Enter lot number e.g., 123456-789012"
-                        pattern="[0-9\-]+"
-                        title="Only numbers and hyphens are allowed">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editQuality">Quality Name</label>
-                        <select id="editQuality" required>
-                            <option value="">Select Quality</option>
-                            <option value="LAZO">LAZO</option>
-                            <option value="ORRY">ORRY</option>
-                            <option value="NAIRA">NAIRA</option>
-                            <option value="EXOTIC">EXOTIC</option>
-                            <option value="PARFECTO">PARFECTO</option>
-                            <option value="ADDITION">ADDITION</option>
-                            <option value="JAXXON">JAXXON</option>
-                            <option value="CHARLIE">CHARLIE</option>
-                            <option value="KANISHKA">KANISHKA</option>
-                            <option value="FLORA">FLORA</option>
-                            <option value="EAZY">EAZY</option>
-                            <option value="NANCY">NANCY</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editMaterial">Material (meters)</label>
-                        <input type="number" id="editMaterial" step="0.01" placeholder="Enter material in meters">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editWeight">Weight (kg)</label>
-                        <input type="number" id="editWeight" step="0.01" placeholder="Enter weight in kg">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editPrice">Price (per dozen)</label>
-                        <input type="number" id="editPrice" step="0.01" placeholder="Enter price per dozen">
-                    </div>
-                    
-                   <div class="form-group">
-                        <label for="editColors">Colors</label>
-                        <div class="color-selector-container">
-                            <div class="color-selector" id="editColorSelector">
-                                <div class="selected-colors" id="editSelectedColors">
-                                    <span class="no-colors">No colors selected</span>
-                                </div>
-                                <button type="button" class="color-dropdown-toggle" id="editColorDropdownToggle">
-                                    <i class="fas fa-chevron-down"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="color-dropdown" id="editColorDropdown">
-                                <div class="color-search">
-                                    <input type="text" id="editColorSearch" placeholder="Search colors...">
-                                    <i class="fas fa-search"></i>
-                                <div class="color-options" id="editColorOptions">
-                                    <!-- Colors will be loaded dynamically -->
-                                </div>
-                                <div class="color-actions">
-                                    <button type="button" class="btn-select-all" onclick="selectAllEditColors()">
-                                        <i class="fas fa-check-double"></i> Select All
-                                    </button>
-                                    <button type="button" class="btn-clear-all" onclick="clearAllEditColors()">
-                                        <i class="fas fa-times"></i> Clear All
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <input type="hidden" id="editColorsHidden" name="editColors">
-                    </div>
-                   
-                   
-                   
-                <div class="size-option">
-                    <label>
-                        <input type="radio" name="editSizeOption" value="same" checked onchange="toggleEditSizeOption()">
-                        Same sizes for all colors
-                    </label>
-                    <label>
-                        <input type="radio" name="editSizeOption" value="different" onchange="toggleEditSizeOption()">
-                        Different sizes for each color
-                    </label>
-                </div>
-                
-                <h3>Size Quantities (in dozens)</h3>
-                
-                <div id="editSameSizesContainer">
-                    <div class="size-grid">
-                        <!-- Edit Size 28 -->
-                        <div class="size-input-group">
-                            <label for="editSize28">Size 28</label>
-                            <div class="size-input-row">
-                                <input type="number" id="editSize28" class="edit-size-dozen" min="0" step="1" placeholder="Dozens">
-                                <input type="number" id="editSize28_pieces" class="edit-size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                            </div>
-                        </div>
-                        
-                        <!-- Edit Size 30 -->
-                        <div class="size-input-group">
-                            <label for="editSize30">Size 30</label>
-                            <div class="size-input-row">
-                                <input type="number" id="editSize30" class="edit-size-dozen" min="0" step="1" placeholder="Dozens">
-                                <input type="number" id="editSize30_pieces" class="edit-size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                            </div>
-                        </div>
-                        
-                        <!-- Edit Size 32 -->
-                        <div class="size-input-group">
-                            <label for="editSize32">Size 32</label>
-                            <div class="size-input-row">
-                                <input type="number" id="editSize32" class="edit-size-dozen" min="0" step="1" placeholder="Dozens">
-                                <input type="number" id="editSize32_pieces" class="edit-size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                            </div>
-                        </div>
-                        
-                        <!-- Edit Size 34 -->
-                        <div class="size-input-group">
-                            <label for="editSize34">Size 34</label>
-                            <div class="size-input-row">
-                                <input type="number" id="editSize34" class="edit-size-dozen" min="0" step="1" placeholder="Dozens">
-                                <input type="number" id="editSize34_pieces" class="edit-size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                            </div>
-                        </div>
-                        
-                        <!-- Edit Size 36 -->
-                        <div class="size-input-group">
-                            <label for="editSize36">Size 36</label>
-                            <div class="size-input-row">
-                                <input type="number" id="editSize36" class="edit-size-dozen" min="0" step="1" placeholder="Dozens">
-                                <input type="number" id="editSize36_pieces" class="edit-size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                            </div>
-                        </div>
-                        
-                        <!-- Edit Size 38 -->
-                        <div class="size-input-group">
-                            <label for="editSize38">Size 38</label>
-                            <div class="size-input-row">
-                                <input type="number" id="editSize38" class="edit-size-dozen" min="0" step="1" placeholder="Dozens">
-                                <input type="number" id="editSize38_pieces" class="edit-size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                            </div>
-                        </div>
-                        
-                        <!-- Edit Size 40 -->
-                        <div class="size-input-group">
-                            <label for="editSize40">Size 40</label>
-                            <div class="size-input-row">
-                                <input type="number" id="editSize40" class="edit-size-dozen" min="0" step="1" placeholder="Dozens">
-                                <input type="number" id="editSize40_pieces" class="edit-size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                            </div>
-                        </div>
-                        
-                        <!-- Edit Size 42 -->
-                        <div class="size-input-group">
-                            <label for="editSize42">Size 42</label>
-                            <div class="size-input-row">
-                                <input type="number" id="editSize42" class="edit-size-dozen" min="0" step="1" placeholder="Dozens">
-                                <input type="number" id="editSize42_pieces" class="edit-size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                            </div>
-                        </div>
-                        
-                        <!-- Edit Size 44 -->
-                        <div class="size-input-group">
-                            <label for="editSize44">Size 44</label>
-                            <div class="size-input-row">
-                                <input type="number" id="editSize44" class="edit-size-dozen" min="0" step="1" placeholder="Dozens">
-                                <input type="number" id="editSize44_pieces" class="edit-size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                            </div>
-                        </div>
-                        
-                        <!-- Edit Size 46 -->
-                        <div class="size-input-group">
-                            <label for="editSize46">Size 46</label>
-                            <div class="size-input-row">
-                                <input type="number" id="editSize46" class="edit-size-dozen" min="0" step="1" placeholder="Dozens">
-                                <input type="number" id="editSize46_pieces" class="edit-size-pieces" min="0" max="11" step="1" placeholder="Pcs">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="editDifferentSizesContainer" class="color-size-container" style="display: none;">
-                    <div id="editColorSizeItems">
-                        <!-- Color size items will be added dynamically -->
-                    </div>
-                    <button type="button" class="add-color-btn" onclick="addEditColorSizeItem()">
-                        <i class="fas fa-plus"></i> Add Color with Sizes
-                    </button>
-                </div>
-                
-                <div class="form-group" style="margin-top: 20px;">
-                    <label for="editNotes">Notes</label>
-                    <textarea id="editNotes" rows="3" placeholder="Additional notes"></textarea>
-                </div>
-                
-                <button type="submit" class="btn">Update Product Entry</button>
-                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
-            </form>
-        </div>
-    </div>
 
     <footer>
         <p>&copy; 2023 ALISHAN Garment Inventory Management System. All rights reserved.</p>
@@ -753,8 +344,25 @@
     <div class="notification-container" id="notificationContainer"></div>
     
 
-    <script src="script2.js"></script>
-    <!-- Excel Export ke liye (report.html se copy karien) -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="db.js"></script>
+    <script src="loader.js"></script>
+    <script src="calc.js"></script>
+    <script src="store.js"></script>
+    <script src="search.js"></script>
+    <script src="item-form.js"></script>
+    <script src="item-card.js"></script>
+    <script src="item-modal.js"></script>
+    <script src="dashboard.js"></script>
+    <!-- Excel Export ke liye (reports.html se copy karien) -->
+    <script src="nav.js"></script>
+
+    <nav class="tabbar" aria-label="Main">
+        <a href="index.html" class="active"><i class="fas fa-home"></i>Home</a>
+        <a href="inventory.html"><i class="fas fa-database"></i>Inventory</a>
+        <a href="index.html#add" class="tab-add" aria-label="New entry"><i class="fas fa-plus"></i></a>
+        <a href="reports.html"><i class="fas fa-chart-bar"></i>Reports</a>
+        <a href="setting.html"><i class="fas fa-cog"></i>Settings</a>
+    </nav>
+    <script src="ui.js"></script>
 </body>
 </html>

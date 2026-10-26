@@ -238,6 +238,7 @@
 body {
     font-family: var(--font-family);
     background-color: var(--bg-body);
+    --page-bg: var(--bg-body); /* what the active navbar tab merges into — follows current theme */
     color: var(--text-primary);
     line-height: 1.6;
     transition: var(--transition);
@@ -248,58 +249,15 @@ body {
 .app-container {
     display: grid;
     grid-template-columns: 280px 1fr;
-    grid-template-rows: 80px 1fr;
+    grid-template-rows: 1fr;
     grid-template-areas: 
-        "sidebar header"
         "sidebar main";
     min-height: 100vh;
 }
 
-/* === HEADER === */
-.header {
-    grid-area: header;
-    background: var(--bg-header);
-    border-bottom: 1px solid var(--border-primary);
-    padding: 0 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: var(--shadow-sm);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    transition: var(--transition);
-}
-
-.header-left {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-secondary);
-    font-size: var(--font-size-sm);
-}
-
-.breadcrumb a {
-    color: var(--text-secondary);
-    text-decoration: none;
-    transition: var(--transition);
-}
-
-.breadcrumb a:hover {
-    color: var(--primary);
-}
-
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
+/* Old settings-only header (breadcrumb/search/theme/profile) removed —
+   its useful actions now live in the shared site-topbar (.site-topbar-utility)
+   so there's one navbar, not two of different widths/heights. */
 
 /* === SIDEBAR === */
 .sidebar {
@@ -683,7 +641,9 @@ input:checked + .toggle-slider:before {
     font-size: var(--font-size-sm);
 }
 
-/* === SEARCH BAR === */
+/* === SEARCH BAR ===
+   Base styles used elsewhere in Settings (e.g. table search boxes).
+   Compact dark-bar look is applied via .site-topbar-utility overrides below. */
 .search-container {
     position: relative;
     max-width: 400px;
@@ -714,6 +674,35 @@ input:checked + .toggle-slider:before {
     color: var(--text-secondary);
 }
 
+/* Compact variant for the dark shared topbar */
+.site-topbar-utility .search-container {
+    max-width: 160px;
+}
+
+.site-topbar-utility .search-input {
+    padding: 0.4rem 0.75rem 0.4rem 2.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 0.78rem;
+}
+
+.site-topbar-utility .search-input::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.site-topbar-utility .search-input:focus {
+    box-shadow: 0 0 0 2px rgba(108, 140, 255, 0.4);
+    border-color: var(--nav-accent, #6c8cff);
+}
+
+.site-topbar-utility .search-icon {
+    left: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.78rem;
+}
+
 /* === PROFILE SECTION === */
 .profile-section {
     display: flex;
@@ -731,6 +720,13 @@ input:checked + .toggle-slider:before {
     justify-content: center;
     color: white;
     font-weight: 600;
+}
+
+.site-topbar-utility .user-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+    cursor: pointer;
 }
 
 .user-info {
@@ -763,6 +759,17 @@ input:checked + .toggle-slider:before {
 .theme-toggle:hover {
     background: var(--bg-hover);
     color: var(--text-primary);
+}
+
+.site-topbar-utility .theme-toggle {
+    color: rgba(255, 255, 255, 0.7);
+    padding: 0.35rem;
+    font-size: 0.85rem;
+}
+
+.site-topbar-utility .theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
 }
 
 /* === PROFILE CARDS === */
@@ -826,18 +833,6 @@ input:checked + .toggle-slider:before {
 .suggestion-text {
     opacity: 0.9;
     margin-bottom: 1rem;
-}
-
-/* === COLLABORATION === */
-.collaboration-status {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: var(--success);
-    color: white;
-    border-radius: 50px;
-    font-size: var(--font-size-sm);
 }
 
 /* === UNDO/REDO === */
@@ -1546,15 +1541,66 @@ input:checked + .toggle-slider:before {
 @media (max-width: 768px) {
     .app-container {
         grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr;
         grid-template-areas: 
             "header"
+            "sidebar"
             "main";
     }
     
+    /* Sidebar becomes a horizontal scrollable tab strip instead of
+       vanishing — settings sections must stay reachable on mobile. */
     .sidebar {
-        display: none;
+        grid-area: sidebar;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.5rem 0.5rem;
+        border-right: none;
+        border-bottom: 1px solid var(--border-primary);
+        height: auto;
+        position: sticky;
+        top: 48px; /* below the shared site-topbar */
+        z-index: 80;
     }
-    
+
+    .sidebar-header {
+        display: none; /* ALISHAN logo already shown in the site-topbar above */
+    }
+
+    .nav-section {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+
+    .nav-title {
+        display: none; /* section grouping labels don't fit a horizontal strip */
+    }
+
+    .nav-links {
+        display: flex;
+        flex-direction: row;
+        gap: 0.25rem;
+    }
+
+    .nav-link {
+        white-space: nowrap;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        padding: 0.6rem 0.9rem;
+        border-radius: 6px 6px 0 0;
+    }
+
+    .nav-link.active {
+        border-left-color: transparent;
+        border-bottom-color: var(--primary);
+    }
+
     .main-content {
         padding: 1rem;
     }
@@ -1567,8 +1613,8 @@ input:checked + .toggle-slider:before {
         grid-template-columns: 1fr;
     }
     
-    .header {
-        padding: 0 1rem;
+    .sidebar {
+        top: 48px; /* right below the shared site-topbar — settings' own header is gone */
     }
     
     .search-container {
@@ -1585,10 +1631,6 @@ input:checked + .toggle-slider:before {
 }
 
 @media (max-width: 480px) {
-    .header-actions {
-        gap: 0.5rem;
-    }
-    
     .search-container {
         max-width: 150px;
     }

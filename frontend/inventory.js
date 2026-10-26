@@ -1,1196 +1,208 @@
-// Data storage
-let inventoryItems = [];
-let filteredItems = [];
+/* ============================================================
+   inventory.js — the Inventory page (inventory.html). UI ONLY.
+
+   No copy of the inventory lives here and nothing is calculated or
+   saved here:
+     • list / filters / search / numbers  <- AlishanStore (store.js) / AlishanCalc (calc.js)
+     • edit / delete / stock              <- shared item card + modal -> store
+     • import / backup / restore          -> store
+   The page reads the filter boxes, asks the store for the matching
+   items, and draws them — again, every time the store changes.
+   ============================================================ */
+
+// ---------- UI state only ----------
 let currentPage = 1;
 let itemsPerPage = 50;
-let totalPages = 1;
 
-// Initialize the page
-async function initPage() {
-    loadInventoryData();
-    updateDashboard();
-    populateQualityFilter();
-    updatePaginationControls();
-    renderInventoryCards();
-    await loadQualities();
-    
-    // Set up event listeners
-    document.getElementById('editForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        updateItem(e);
-    });
-    
-    // Initialize backup system
-    initializeBackupSystem();
-    
-    console.log("Inventory page initialized with", inventoryItems.length, "items");
+// the words in the search box (search.js is optional: without it nothing is searched)
+const currentSearch = () => (typeof AlishanSearch !== 'undefined' ? AlishanSearch.getTerm() : '');
+
+// ================= READING THE FILTER BOXES =================
+
+function readFilters() {
+    return {
+        productType: document.getElementById('productTypeFilter')?.value || 'all',
+        quality: document.getElementById('qualityFilter')?.value || 'all',
+        stock: document.getElementById('stockFilter')?.value || 'all',
+        period: document.getElementById('dateFilter')?.value || 'all',
+        search: currentSearch()                  // the words in the search box (search.js)
+    };
 }
 
-// Load inventory data from localStorage
-function loadInventoryData() {
-    try {
-        const inventoryData = localStorage.getItem('inventoryItems');
-        inventoryItems = inventoryData ? JSON.parse(inventoryData) : [];
-        filteredItems = [...inventoryItems];
-    } catch (error) {
-        console.error('Error loading inventory data:', error);
-        showNotification('Error loading inventory data. Please check console for details.', 'error');
-    }
+// the items that match the filter boxes + search box (the store does the filtering)
+function currentList() {
+    return AlishanStore.query(readFilters());
 }
 
-// ✅ FIXED: Common calculation function for both dashboard and cards
-function calculateItemTotalAmount(item) {
-    if (!item || typeof item !== 'object') return 0;
-    
-    const sizes = [28, 30, 32, 34, 36, 38, 40, 42, 44, 46];
-    let totalDozensAllColors = 0;
-    
-    const hasColors = Array.isArray(item.colors) && item.colors.length > 0;
-    const isSimpleColorFormat = hasColors && typeof item.colors[0] === 'string';
-    const price = Number(item.price) || 0;
-    
-    if (isSimpleColorFormat) {
-        // Simple format calculation
-        let sizeTotal = 0;
-        sizes.forEach(size => {
-            sizeTotal += Number(item[`size${size}`]) || 0;
-        });
-        totalDozensAllColors = sizeTotal * item.colors.length;
-    } else if (hasColors) {
-        // Complex format calculation
-        item.colors.forEach(color => {
-            if (color && color.sizes) {
-                let colorTotal = 0;
-                sizes.forEach(size => {
-                    colorTotal += Number(color.sizes[`size${size}`]) || 0;
-                });
-                totalDozensAllColors += colorTotal;
-            }
-        });
-    }
-    
-    return totalDozensAllColors * price;
-}
+// ================= DRAWING THE PAGE =================
 
-// ✅ FIXED: Dashboard with correct total value calculation
 function updateDashboard() {
-    if (!Array.isArray(inventoryItems)) {
-        console.error('Inventory items is not an array');
-        return;
-    }
-    
-    // Count total items
-    const totalItems = inventoryItems.length;
-    
-    // ✅ USE COMMON FUNCTION for total value
-    const totalValue = inventoryItems.reduce((total, item) => {
-        return total + calculateItemTotalAmount(item);
-    }, 0);
-    
-    // Other calculations
-    const inStockItems = inventoryItems.filter(item => Boolean(item.inStock)).length;
-    
-    const now = new Date();
-    const agingItems = inventoryItems.filter(item => {
-        if (!item.dateTime) return false;
-        const addedDate = new Date(item.dateTime);
-        const daysInStock = Math.floor((now - addedDate) / (1000 * 60 * 60 * 24));
-        return daysInStock > 8;
-    }).length;
-    
-    // Update UI
-    const totalItemsElement = document.getElementById('totalItems');
-    const totalValueElement = document.getElementById('totalValue');
-    const inStockItemsElement = document.getElementById('inStockItems');
-    const agingItemsElement = document.getElementById('agingItems');
-    
-    if (totalItemsElement) totalItemsElement.textContent = totalItems;
-    if (totalValueElement) totalValueElement.textContent = '₹' + totalValue.toLocaleString('en-IN');
-    if (inStockItemsElement) inStockItemsElement.textContent = inStockItems;
-    if (agingItemsElement) agingItemsElement.textContent = agingItems;
-    
-    console.log("Dashboard Updated - Total Value:", totalValue, "Total Items:", totalItems);
+    const summary = AlishanStore.summary();
+    const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+
+    set('totalItems', summary.totalItems);
+    set('totalValue', AlishanCalc.fmtMoney(summary.totalValue));
+    set('inStockItems', summary.inStockItems);
+    set('agingItems', summary.agingItems);
+    // aging = IN-STOCK items older than 7 days; the coloured line shows the levels
+    set('agingLabel', `Aging Stock (>${AlishanCalc.CONFIG.AGING_AFTER_DAYS} Days, In Stock)`);
+    const breakdown = document.getElementById('agingBreakdown');
+    if (breakdown) breakdown.innerHTML = AlishanCalc.agingBreakdownHTML(summary);
 }
 
-// Populate quality filter dropdown
 function populateQualityFilter() {
     const qualityFilter = document.getElementById('qualityFilter');
     if (!qualityFilter) return;
-    
-    // Get unique qualities
-    const qualities = [...new Set(inventoryItems.map(item => item.quality).filter(Boolean))];
-    
-    // Clear existing options except the first one
-    while (qualityFilter.options.length > 1) {
-        qualityFilter.remove(1);
-    }
-    
-    // Add quality options
-    qualities.forEach(quality => {
+    const keep = qualityFilter.value;
+
+    while (qualityFilter.options.length > 1) qualityFilter.remove(1);
+    AlishanStore.qualityOptions().forEach(quality => {
         const option = document.createElement('option');
         option.value = quality;
         option.textContent = quality;
         qualityFilter.appendChild(option);
     });
+    if ([...qualityFilter.options].some(o => o.value === keep)) qualityFilter.value = keep;
 }
 
-// Apply filters to inventory data
-function applyFilters() {
-    const productTypeFilter = document.getElementById('productTypeFilter')?.value || 'all';
-    const qualityFilter = document.getElementById('qualityFilter')?.value || 'all';
-    const stockFilter = document.getElementById('stockFilter')?.value || 'all';
-    const dateFilter = document.getElementById('dateFilter')?.value || 'all';
-    
-    filteredItems = inventoryItems.filter(item => {
-        // Product type filter
-        if (productTypeFilter !== 'all' && item.productType?.toLowerCase() !== productTypeFilter) {
-            return false;
-        }
-        
-        // Quality filter
-        if (qualityFilter !== 'all' && item.quality !== qualityFilter) {
-            return false;
-        }
-        
-        // Stock status filter
-        if (stockFilter !== 'all') {
-            const isInStock = Boolean(item.inStock);
-            if (stockFilter === 'inStock' && !isInStock) return false;
-            if (stockFilter === 'outOfStock' && isInStock) return false;
-        }
-        
-        // Date filter
-        if (dateFilter !== 'all' && item.dateTime) {
-            const itemDate = new Date(item.dateTime);
-            const today = new Date();
-            
-            if (dateFilter === 'today') {
-                if (itemDate.toDateString() !== today.toDateString()) return false;
-            } else if (dateFilter === 'week') {
-                const oneWeekAgo = new Date();
-                oneWeekAgo.setDate(today.getDate() - 7);
-                if (itemDate < oneWeekAgo) return false;
-            } else if (dateFilter === 'month') {
-                const oneMonthAgo = new Date();
-                oneMonthAgo.setMonth(today.getMonth() - 1);
-                if (itemDate < oneMonthAgo) return false;
-            }
-        }
-        
-        return true;
-    });
-    
-    currentPage = 1;
-    renderInventoryCards();
-    showNotification('Filters applied successfully.', 'success');
-}
-
-// Clear all filters
-function clearFilters() {
-    const productTypeFilter = document.getElementById('productTypeFilter');
-    const qualityFilter = document.getElementById('qualityFilter');
-    const stockFilter = document.getElementById('stockFilter');
-    const dateFilter = document.getElementById('dateFilter');
-    
-    if (productTypeFilter) productTypeFilter.value = 'all';
-    if (qualityFilter) qualityFilter.value = 'all';
-    if (stockFilter) stockFilter.value = 'all';
-    if (dateFilter) dateFilter.value = 'all';
-    
-    filteredItems = [...inventoryItems];
-    currentPage = 1;
-    renderInventoryCards();
-    showNotification('Filters cleared successfully.', 'success');
-}
-
-// Handle search input
-function handleSearch(event) {
-    if (event.key === 'Enter') {
-        performSearch();
-    }
-}
-
-// Perform search
-function performSearch() {
-    const searchInput = document.getElementById('searchInput');
-    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    
-    if (!searchTerm) {
-        filteredItems = [...inventoryItems];
-    } else {
-        filteredItems = inventoryItems.filter(item => {
-            const matchesQuality = item.quality?.toLowerCase().includes(searchTerm);
-            const matchesLotNumber = item.lotNumber?.toLowerCase().includes(searchTerm);
-            const matchesNotes = item.notes?.toLowerCase().includes(searchTerm);
-            
-            return matchesQuality || matchesLotNumber || matchesNotes;
-        });
-    }
-    
-    currentPage = 1;
-    renderInventoryCards();
-    showNotification(`Found ${filteredItems.length} items matching your search.`, 'info');
-}
-
-// Render inventory cards
 function renderInventoryCards() {
     const inventoryCards = document.getElementById('inventoryCards');
     if (!inventoryCards) return;
-    
+
+    const paged = AlishanStore.paginate(currentList(), currentPage, itemsPerPage);
+    currentPage = paged.page;
     inventoryCards.innerHTML = '';
-    
-    if (filteredItems.length === 0) {
+
+    if (paged.total === 0) {
         inventoryCards.innerHTML = `
             <div class="empty-state">
-                <div class="empty-icon">
-                    <i class="fas fa-clipboard-list"></i>
-                </div>
+                <div class="empty-icon"><i class="fas fa-clipboard-list"></i></div>
                 <h3>No inventory items found</h3>
                 <p>Try changing your filters or search criteria</p>
-            </div>
-        `;
-        updatePaginationControls();
-        return;
-    }
-    
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    const pageItems = filteredItems.slice(start, end);
-    
-    const fragment = document.createDocumentFragment();
-    
-    // Sort by date (newest first)
-    const sortedItems = [...pageItems].sort((a, b) => {
-        const dateA = new Date(a.dateTime || 0);
-        const dateB = new Date(b.dateTime || 0);
-        return dateB - dateA;
-    });
-    
-    sortedItems.forEach((item) => {
-        const originalIndex = inventoryItems.findIndex(i => i.id === item.id);
-        const card = createInventoryCard(item, originalIndex);
-        if (card) {
-            fragment.appendChild(card);
-        }
-    });
-    
-    inventoryCards.appendChild(fragment);
-    updatePaginationControls();
-}
-
-// Function to create inventory card
-function createInventoryCard(item, index) {
-    if (!item || typeof item !== 'object') return null;
-    
-    const card = document.createElement('div');
-    card.className = 'inventory-card';
-    
-    // Format date
-    const date = new Date(item.dateTime);
-    const formattedDate = date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
-    const formattedTime = date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-    
-    // Safe check for colors
-    const hasColors = Array.isArray(item.colors) && item.colors.length > 0;
-    const isSimpleColorFormat = hasColors && typeof item.colors[0] === 'string';
-    
-    // ✅ USE COMMON FUNCTION for total amount
-    const totalAmount = calculateItemTotalAmount(item);
-    
-    // Create color tags
-    let colorTags = '';
-    if (hasColors) {
-        if (isSimpleColorFormat) {
-            colorTags = item.colors.map(color => {
-                const colorClass = `color-${color.toLowerCase()}`;
-                return `<span class="color-tag ${colorClass}">${color}</span>`;
-            }).join('');
-        } else {
-            colorTags = item.colors.map(color => {
-                const colorClass = `color-${color.name?.toLowerCase() || 'default'}`;
-                return `<span class="color-tag ${colorClass}">${color.name}</span>`;
-            }).join('');
-        }
-    }
-    
-    // Calculate total dozens for display
-    // ✅ FIXED: Calculate total dozens for display
-const sizes = [28, 30, 32, 34, 36, 38, 40, 42, 44, 46];
-let totalDozensAllColors = 0;
-let sizeWiseCalculation = []; // For displaying calculation steps
-
-if (isSimpleColorFormat) {
-    // ✅ FIXED: Same format - correct calculation
-    let sizeTotalWithoutColors = 0;
-    
-    sizes.forEach(size => {
-        const sizeValue = Number(item[`size${size}`]) || 0;
-        sizeTotalWithoutColors += sizeValue;
-        totalDozensAllColors += sizeValue * item.colors.length;
-        
-        // Store for display
-        sizeWiseCalculation.push({
-            size: size,
-            value: sizeValue,
-            total: sizeValue * item.colors.length
-        });
-    });
-    
-} else if (hasColors) {
-    // Different format - already correct
-    item.colors.forEach(color => {
-        if (color && color.sizes) {
-            let colorTotal = 0;
-            sizes.forEach(size => {
-                colorTotal += Number(color.sizes[`size${size}`]) || 0;
-            });
-            totalDozensAllColors += colorTotal;
-        }
-    });
-}
-    
-    // Create card content based on format type
-    let cardContent = '';
-    
-    if (isSimpleColorFormat) {
-        // Simple format layout
-        cardContent = `
-            <div class="calculation-flow">
-                <div class="flow-box">
-                    <h4><i class="fas fa-ruler"></i> SIZE QUANTITIES (DOZENS)</h4>
-                    <div class="size-chart">
-                        ${sizes.map(size => `
-                            <div class="size-item">
-                                <div class="size-label">${size}</div>
-                                <div class="size-value">${item[`size${size}`] || 0}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div class="calculation-step">
-                        <span class="step-label">TOTAL DOZENS:</span>
-                        <span class="step-value">${item.totalDozens || 0}</span>
-                    </div>
-                </div>
-                
-                <div class="divider">
-                    <div class="divider-line"></div>
-                    <i class="fas fa-times divider-icon"></i>
-                    <div class="divider-line"></div>
-                </div>
-                
-                <div class="flow-box">
-                    <h4><i class="fas fa-palette"></i> COLORS</h4>
-                    <div class="color-tags">
-                        ${colorTags || 'No colors specified'}
-                    </div>
-                    <div class="calculation-step">
-                        <span class="step-label">NUMBER OF COLORS:</span>
-                        <span class="step-value">${hasColors ? item.colors.length : 0}</span>
-                    </div>
-                </div>
-                
-                <div class="divider">
-                    <div class="divider-line"></div>
-                    <i class="fas fa-equals divider-icon"></i>
-                    <div class="divider-line"></div>
-                </div>
-                
-                <div class="flow-box">
-                    <h4><i class="fas fa-calculator"></i> TOTAL CALCULATION</h4>
-                    <div class="calculation-steps">
-                        <div class="calculation-step">
-                            <span class="step-label">TOTAL DOZENS (ALL COLORS):</span>
-                            <span class="step-value">${totalDozensAllColors}</span>
-                        </div>
-                        <div class="calculation-step">
-                            <span class="step-label">PRICE PER DOZEN:</span>
-                            <span class="step-value">₹${item.price || 0}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else if (hasColors) {
-        // Complex format layout
-        const colorSizeTables = item.colors.map((color, colorIndex) => {
-            if (!color) return '';
-            
-            let colorTotal = 0;
-            const sizeItems = sizes.map(size => {
-                const sizeValue = color.sizes ? (Number(color.sizes[`size${size}`]) || 0) : 0;
-                colorTotal += sizeValue;
-                return `
-                    <div class="size-item">
-                        <div class="size-label">${size}</div>
-                        <div class="size-value">${sizeValue}</div>
-                    </div>
-                `;
-            }).join('');
-            
-            const colorClass = `color-${color.name?.toLowerCase() || 'default'}`;
-            return `
-                <div class="color-size-table">
-                    <div class="color-header ${colorClass}">
-                        <i class="fas fa-circle" style="color: inherit;"></i>
-                        ${color.name || 'Unnamed Color'} - TOTAL: ${colorTotal} DOZENS
-                    </div>
-                    <div class="size-chart">
-                        ${sizeItems}
-                    </div>
-                </div>
-            `;
-        }).join('');
-        
-        cardContent = `
-            <div class="calculation-flow">
-                <div class="flow-box">
-                    <h4><i class="fas fa-palette"></i> COLORS</h4>
-                    <div class="color-tags">
-                        ${colorTags}
-                    </div>
-                    <div class="calculation-step">
-                        <span class="step-label">NUMBER OF COLORS:</span>
-                        <span class="step-value">${item.colors.length}</span>
-                    </div>
-                </div>
-                
-                <div class="flow-box">
-                    <h4><i class="fas fa-ruler-combined"></i> SIZE QUANTITIES BY COLOR (DOZENS)</h4>
-                    <div class="color-size-tables">
-                        ${colorSizeTables}
-                    </div>
-                    <div class="calculation-step">
-                        <span class="step-label">TOTAL DOZENS (ALL COLORS):</span>
-                        <span class="step-value">${totalDozensAllColors}</span>
-                    </div>
-                </div>
-                
-                <div class="divider">   
-                    <div class="divider-line"></div>
-                    <i class="fas fa-times divider-icon"></i>
-                    <div class="divider-line"></div>
-                </div>
-                
-                <div class="flow-box">
-                    <h4><i class="fas fa-calculator"></i> TOTAL CALCULATION</h4>
-                    <div class="calculation-steps">
-                        <div class="calculation-step">
-                            <span class="step-label">PRICE PER DOZEN:</span>
-                            <span class="step-value">₹${item.price || 0}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+            </div>`;
     } else {
-        // No colors specified
-        cardContent = `
-            <div class="calculation-flow">
-                <div class="flow-box">
-                    <h4><i class="fas fa-palette"></i> COLORS</h4>
-                    <p>No colors specified for this item.</p>
-                </div>
-            </div>
-        `;
+        const fragment = document.createDocumentFragment();
+        paged.items.forEach(item => fragment.appendChild(ItemCard.create(item)));
+        inventoryCards.appendChild(fragment);
     }
-    
-    card.innerHTML = `
-        <div class="card-header">
-            <div>
-                <h3>${item.quality || 'Unknown Quality'} (Lot: ${item.lotNumber || 'N/A'})</h3>
-                <div class="datetime">
-                    ${formattedDate}, ${formattedTime}
-                    ${item.code ? `<span class="unique-code">(Unique Code: ${item.code})</span>` : ''}
-                </div>
-            </div>
-            <div>
-                <span class="card-badge badge-primary">${item.productType || 'Unknown'}</span>
-                ${item.cupSize && item.cupSize !== 'N/A' ?
-                `<span class="card-badge" style="background-color: #4cc9f0; color: white;">${item.cupSize} CUP</span>` : ''}
-            </div>
-        </div>
-    
-        <div class="card-content">
-            ${cardContent}
-            
-            <div class="details-container">
-                <div class="detail-box">
-                    <h4><i class="fas fa-info-circle"></i> PRODUCT DETAILS</h4>
-                    <div class="detail-item">
-                        <span class="detail-label">MATERIAL:</span>
-                        <span class="detail-value">${item.material || 0} M</span>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <span class="detail-label">CUP SIZE:</span>
-                        <span class="detail-value">${item.cupSize || 'N/A'}</span>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <span class="detail-label">WEIGHT:</span>
-                        <span class="detail-value">${item.weight || 0} KG</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">STATUS:</span>
-                        <span class="detail-value">${item.inStock ? 'IN STOCK' : 'OUT OF STOCK'}</span>
-                    </div>
-                </div>
-                
-                <div class="detail-box">
-                    <h4><i class="fas fa-sticky-note"></i> ADDITIONAL INFO</h4>
-                    <div class="detail-item">
-                        <span class="detail-label">LOT NUMBER:</span>
-                        <span class="detail-value">${item.lotNumber || 'N/A'}</span>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <span class="detail-label">ENTRY DATE:</span>
-                        <span class="detail-value">
-                            <i class="fas fa-calendar"></i> ${new Date(item.addedDateTime || item.dateTime).toLocaleDateString()}
-                        </span>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <span class="detail-label">NOTES:</span>
-                        <span class="detail-value">${item.notes || 'N/A'}</span>
-                    </div>
-                </div>
-            </div>
-            
-        </div>
-        
-        <div class="card-footer">
-            <div class="card-actions">
-                <button class="action-btn btn-edit" onclick="openEditModal(${index})">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="action-btn btn-delete" onclick="deleteItem(${index})">
-                    <i class="fas fa-trash"></i>
-                </button>
-                <button class="action-btn btn-stock ${!item.inStock ? 'stock-out' : ''}" onclick="toggleStock(${index})">
-                    <i class="fas ${item.inStock ? 'fa-check' : 'fa-times'}"></i>
-                </button>
-            </div>
-            
-            <div class="total-price">
-                <span class="total-label">TOTAL AMOUNT</span>
-                <span class="total-amount">₹${totalAmount.toLocaleString('en-IN')}</span>
-            </div>
-        </div>
-    `;
-    
-    return card;
+    updatePaginationControls(paged);
 }
 
-// Function to open edit modal
-function openEditModal(index) {
-    if (index < 0 || index >= inventoryItems.length) {
-        showNotification('Invalid item index', 'error');
-        return;
-    }
-    
-    const item = inventoryItems[index];
-    const editModal = document.getElementById('editModal');
-    
-    if (!editModal) return;
-    
-    // Unique code display update karen
-    const codeDisplay = document.getElementById('uniqueCodeDisplay');
-    if (codeDisplay && item.code) {
-        codeDisplay.textContent = `Unique Code: ${item.code} (Cannot be changed)`;
-        codeDisplay.style.display = 'block';
-    }
-    
-    // Remove any existing event listeners first
-    const editSizeOptionRadios = document.querySelectorAll('input[name="editSizeOption"]');
-    editSizeOptionRadios.forEach(radio => {
-        radio.replaceWith(radio.cloneNode(true));
-    });
+function updatePaginationControls(paged) {
+    const paginationControls = document.getElementById('paginationControls');
+    const pageInfo = document.getElementById('pageInfo');
+    if (!paginationControls || !pageInfo) return;
 
-    // Populate form with item data
-    document.getElementById('editIndex').value = index;
-    document.getElementById('editProductType').value = item.productType?.toLowerCase() || '';
-    updateEditQualityOptions(item.productType?.toLowerCase() || '');
-    document.getElementById('editCupSize').value = item.cupSize || '';
-    document.getElementById('editLotNumber').value = item.lotNumber || '';
-    document.getElementById('editQuality').value = item.quality || '';
-    document.getElementById('editMaterial').value = item.material || '';
-    document.getElementById('editWeight').value = item.weight || '';
-    document.getElementById('editPrice').value = item.price || '';
-    document.getElementById('editNotes').value = item.notes || '';
-    
-    // Size option based on item type
-    if (item.sizeOption === 'same') {
-        const sameSizesOption = document.querySelector('input[name="editSizeOption"][value="same"]');
-        if (sameSizesOption) {
-            sameSizesOption.checked = true;
-        }
-        
-        // Set colors (for simple format)
-        if (Array.isArray(item.colors) && item.colors.length > 0 && typeof item.colors[0] === 'string') {
-            document.getElementById('editColors').value = item.colors.join(' ');
-        }
-        
-        // Set size values
-        const sizes = [28, 30, 32, 34, 36, 38, 40, 42, 44, 46];
-        sizes.forEach(size => {
-            const element = document.getElementById(`editSize${size}`);
-            if (element) {
-                element.value = item[`size${size}`] || 0;
-            }
-        });
-        
-        // Show same sizes container, hide different
-        const sameContainer = document.getElementById('editSameSizesContainer');
-        const diffContainer = document.getElementById('editDifferentSizesContainer');
-        if (sameContainer) sameContainer.style.display = 'block';
-        if (diffContainer) diffContainer.style.display = 'none';
-        
+    if (paged.total <= itemsPerPage) {
+        paginationControls.style.display = 'none';
     } else {
-        const differentSizesOption = document.querySelector('input[name="editSizeOption"][value="different"]');
-        if (differentSizesOption) {
-            differentSizesOption.checked = true;
-        }
-        
-        // Set colors input
-        if (Array.isArray(item.colors) && item.colors.length > 0 && typeof item.colors[0] === 'object') {
-            document.getElementById('editColors').value = item.colors.map(c => c.name).join(' ');
-        }
-        
-        // Populate color-size items
-        const editColorSizeItems = document.getElementById('editColorSizeItems');
-        if (editColorSizeItems) {
-            editColorSizeItems.innerHTML = '';
-            
-            if (Array.isArray(item.colors) && item.colors.length > 0) {
-                item.colors.forEach((colorObj, colorIndex) => {
-                    if (!colorObj) return;
-                    
-                    const colorSizeItem = document.createElement('div');
-                    colorSizeItem.className = 'color-size-item';
-                    colorSizeItem.innerHTML = `
-                        <div class="color-size-header">
-                            <h4>Color #${colorIndex + 1}</h4>
-                            <button type="button" class="remove-color-btn" onclick="removeEditColorSizeItem(this)">Remove</button>
-                        </div>
-                        <div class="form-group">
-                            <label>Color Name</label>
-                            <input type="text" class="edit-color-name" value="${colorObj.name || ''}" placeholder="Enter color name">
-                        </div>
-                        <div class="size-grid">
-                            ${[28, 30, 32, 34, 36, 38, 40, 42, 44, 46].map(size => `
-                                <div class="size-input-group">
-                                    <label>Size ${size}</label>
-                                    <input type="number" class="edit-color-size-${size}" value="${colorObj.sizes ? (colorObj.sizes[`size${size}`] || 0) : 0}" min="0" step="1" placeholder="Dozens">
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
-                    editColorSizeItems.appendChild(colorSizeItem);
-                });
-            }
-        }
-        
-        // Show different sizes container, hide same
-        const sameContainer = document.getElementById('editSameSizesContainer');
-        const diffContainer = document.getElementById('editDifferentSizesContainer');
-        if (sameContainer) sameContainer.style.display = 'none';
-        if (diffContainer) diffContainer.style.display = 'block';
-    }
-    
-    // Add event listener for size option change
-    const newEditSizeOptionRadios = document.querySelectorAll('input[name="editSizeOption"]');
-    newEditSizeOptionRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            if (this.value === 'different' && item.sizeOption === 'same') {
-                // Convert from same to different sizes
-                convertSameToDifferentSizes(item);
-            }
-            toggleEditSizeOption();
-        });
-    });
-    
-    // Initialize the modal state
-    toggleEditSizeOption();
-    
-    // Show modal
-    editModal.style.display = 'flex';
-}
-
-// Convert same sizes format to different sizes format
-function convertSameToDifferentSizes(item) {
-    const editColorSizeItems = document.getElementById('editColorSizeItems');
-    if (!editColorSizeItems) return;
-    
-    editColorSizeItems.innerHTML = '';
-    
-    if (Array.isArray(item.colors) && item.colors.length > 0) {
-        item.colors.forEach((colorName, colorIndex) => {
-            const colorSizeItem = document.createElement('div');
-            colorSizeItem.className = 'color-size-item';
-            
-            // Create size inputs with values from the same sizes format
-            let sizeInputsHTML = '';
-            const sizes = [28, 30, 32, 34, 36, 38, 40, 42, 44, 46];
-            
-            sizes.forEach(size => {
-                const sizeValue = item[`size${size}`] || 0;
-                sizeInputsHTML += `
-                    <div class="size-input-group">
-                        <label>Size ${size}</label>
-                        <input type="number" class="edit-color-size-${size}" value="${sizeValue}" min="0" step="1" placeholder="Dozens">
-                    </div>
-                `;
-            });
-            
-            colorSizeItem.innerHTML = `
-                <div class="color-size-header">
-                    <h4>Color #${colorIndex + 1}</h4>
-                    <button type="button" class="remove-color-btn" onclick="removeEditColorSizeItem(this)">Remove</button>
-                </div>
-                <div class="form-group">
-                    <label>Color Name</label>
-                    <input type="text" class="edit-color-name" value="${typeof colorName === 'string' ? colorName : (colorName.name || '')}" placeholder="Enter color name">
-                </div>
-                <div class="size-grid">
-                    ${sizeInputsHTML}
-                </div>
-            `;
-            
-            editColorSizeItems.appendChild(colorSizeItem);
-        });
-    }
-    
-    // Show different sizes container, hide same
-    const sameContainer = document.getElementById('editSameSizesContainer');
-    const diffContainer = document.getElementById('editDifferentSizesContainer');
-    if (sameContainer) sameContainer.style.display = 'none';
-    if (diffContainer) diffContainer.style.display = 'block';
-}
-
-// Function to toggle edit size option
-function toggleEditSizeOption() {
-    const sameSizesOption = document.querySelector('input[name="editSizeOption"][value="same"]');
-    const sameSizesContainer = document.getElementById('editSameSizesContainer');
-    const differentSizesContainer = document.getElementById('editDifferentSizesContainer');
-    
-    if (sameSizesOption && sameSizesContainer && differentSizesContainer) {
-        if (sameSizesOption.checked) {
-            sameSizesContainer.style.display = 'block';
-            differentSizesContainer.style.display = 'none';
-        } else {
-            sameSizesContainer.style.display = 'none';
-            differentSizesContainer.style.display = 'block';
-        }
+        paginationControls.style.display = 'flex';
+        pageInfo.textContent = `Page ${paged.page} of ${paged.totalPages}`;
     }
 }
-
-// Add color size item for edit modal
-function addEditColorSizeItem() {
-    const editColorSizeItems = document.getElementById('editColorSizeItems');
-    if (!editColorSizeItems) return;
-    
-    const colorCount = editColorSizeItems.children.length + 1;
-    
-    const colorSizeItem = document.createElement('div');
-    colorSizeItem.className = 'color-size-item';
-    colorSizeItem.innerHTML = `
-        <div class="color-size-header">
-            <h4>Color #${colorCount}</h4>
-            <button type="button" class="remove-color-btn" onclick="removeEditColorSizeItem(this)">Remove</button>
-        </div>
-        <div class="form-group">
-            <label>Color Name</label>
-            <input type="text" class="edit-color-name" placeholder="Enter color name">
-        </div>
-        <div class="size-grid">
-            ${[28, 30, 32, 34, 36, 38, 40, 42, 44, 46].map(size => `
-                <div class="size-input-group">
-                    <label>Size ${size}</label>
-                    <input type="number" class="edit-color-size-${size}" min="0" step="1" placeholder="Dozens">
-                </div>
-            `).join('')}
-        </div>
-    `;
-    
-    editColorSizeItems.appendChild(colorSizeItem);
-}
-
-// Remove color size item from edit modal
-function removeEditColorSizeItem(button) {
-    // Confirm before removing
-    if (!confirm('Are you sure you want to remove this color?')) {
-        return;
-    }
-    
-    const colorSizeItem = button.closest('.color-size-item');
-    if (!colorSizeItem) return;
-    
-    colorSizeItem.remove();
-    
-    // Update the numbers for remaining color items
-    const editColorSizeItems = document.getElementById('editColorSizeItems');
-    if (!editColorSizeItems) return;
-    
-    const items = editColorSizeItems.getElementsByClassName('color-size-item');
-    
-    // Check if any items left
-    if (items.length === 0) {
-        // Switch back to same sizes option if no colors left
-        const sameSizesOption = document.querySelector('input[name="editSizeOption"][value="same"]');
-        if (sameSizesOption) {
-            sameSizesOption.checked = true;
-            toggleEditSizeOption();
-        }
-        return;
-    }
-    
-    // Update numbering for remaining items
-    for (let i = 0; i < items.length; i++) {
-        const header = items[i].querySelector('h4');
-        if (header) {
-            header.textContent = `Color #${i + 1}`;
-        }
-    }
-    
-    // Show notification
-    showNotification('Color removed successfully', 'success');
-}
-
-// Function to close edit modal
-function closeEditModal() {
-    const editModal = document.getElementById('editModal');
-    if (editModal) {
-        editModal.style.display = 'none';
-    }
-}
-
-// Function to update item
-function updateItem(e) {
-    e.preventDefault();
-    
-    const index = parseInt(document.getElementById('editIndex').value);
-    if (isNaN(index) || index < 0 || index >= inventoryItems.length) {
-        showNotification('Invalid item index', 'error');
-        return;
-    }
-    
-    const item = inventoryItems[index];
-    
-    
-    
-    // ✅ ORIGINAL VALUES PRESERVE KAREIN
-const originalDateTime = item.dateTime;
-const originalAddedDateTime = item.addedDateTime;
-const originalIsManual = item.isManualEntry;
-    
-    
-    
-    
-    
-    
-    
-    
-    // Get form values
-    const productType = document.getElementById('editProductType')?.value || '';
-    const cupSize = document.getElementById('editCupSize')?.value || '';
-    const lotNumber = document.getElementById('editLotNumber')?.value || '';
-    const quality = document.getElementById('editQuality')?.value || '';
-    const material = parseFloat(document.getElementById('editMaterial')?.value) || 0;
-    const weight = parseFloat(document.getElementById('editWeight')?.value) || 0;
-    const price = parseFloat(document.getElementById('editPrice')?.value) || 0;
-    const notes = document.getElementById('editNotes')?.value || '';
-    
-    // Validate required fields
-    if (!productType) {
-        showNotification('Product Type is required', 'error');
-        return;
-    }
-    
-    if (!quality) {
-        showNotification('Quality Name is required', 'error');
-        return;
-    }
-    
-    if (price <= 0) {
-        showNotification('Valid Price is required', 'error');
-        return;
-    }
-    
-    // Get size option
-    const sizeOption = document.querySelector('input[name="editSizeOption"]:checked');
-    if (!sizeOption) {
-        showNotification('Please select a size option', 'error');
-        return;
-    }
-    
-    let colors = [];
-    let sizeData = {};
-    let totalDozens = 0;
-    
-    if (sizeOption.value === 'same') {
-        // Same sizes for all colors - EDIT MODAL
-        const colorsInput = document.getElementById('editColors');
-        if (!colorsInput) {
-            showNotification('Colors input not found', 'error');
-            return;
-        }
-        
-        // Process colors
-        colors = colorsInput.value.split(' ')
-            .map(color => color.trim())
-            .filter(color => color !== '');
-        
-        // Get size values
-        const sizes = [28, 30, 32, 34, 36, 38, 40, 42, 44, 46];
-        
-        sizes.forEach(size => {
-            const element = document.getElementById(`editSize${size}`);
-            if (element) {
-                const sizeValue = parseInt(element.value) || 0;
-                sizeData[`size${size}`] = sizeValue;
-                totalDozens += sizeValue;
-            }
-        });
-        
-        totalDozens = totalDozens * colors.length;
-    } else {
-        // Different sizes for each color - EDIT MODAL
-        const editColorSizeItems = document.getElementById('editColorSizeItems');
-        if (!editColorSizeItems) {
-            showNotification('Color size items container not found', 'error');
-            return;
-        }
-        
-        const colorObjects = [];
-        
-        // Process each color size item - EDIT MODAL
-        for (let i = 0; i < editColorSizeItems.children.length; i++) {
-            const colorItem = editColorSizeItems.children[i];
-            const colorNameInput = colorItem.querySelector('.edit-color-name');
-            if (!colorNameInput) continue;
-            
-            const colorName = colorNameInput.value.trim();
-            
-            if (colorName) {
-                const colorSizes = {};
-                let colorTotal = 0;
-                
-                // Get sizes for this color - EDIT MODAL
-                [28, 30, 32, 34, 36, 38, 40, 42, 44, 46].forEach(size => {
-                    const sizeInput = colorItem.querySelector(`.edit-color-size-${size}`);
-                    if (sizeInput) {
-                        const sizeValue = parseInt(sizeInput.value) || 0;
-                        colorSizes[`size${size}`] = sizeValue;
-                        colorTotal += sizeValue;
-                    }
-                });
-                
-                colorObjects.push({
-                    name: colorName.toUpperCase(),
-                    sizes: colorSizes
-                });
-                
-                totalDozens += colorTotal;
-            }
-        }
-        
-        colors = colorObjects;
-    }
-    
-    // Calculate totals
-    const totalPieces = totalDozens * 12;
-    const totalAmount = totalDozens * price;
-    
-    // Update item properties
-    item.productType = productType.toUpperCase();
-    item.cupSize = cupSize;
-    item.lotNumber = lotNumber;
-    item.quality = quality.toUpperCase();
-    item.material = material;
-    item.weight = weight;
-    item.price = price;
-    item.colors = colors;
-    item.notes = notes;
-    item.totalDozens = totalDozens;
-    item.totalPieces = totalPieces;
-    item.totalAmount = totalAmount;
-    item.sizeOption = sizeOption.value;
-    
-    
-    
-    
-    // ✅ ORIGINAL DATES PRESERVE KAREIN (IMPORTANT!)
-item.dateTime = originalDateTime;
-item.addedDateTime = originalAddedDateTime;
-item.isManualEntry = originalIsManual;
-
-
-    // ✅ Last modified timestamp add karein (optional)
-item.lastModified = new Date().toISOString();
-    
-    
-    
-    
-    
-    
-    // Add size data for simple format
-    if (sizeOption.value === 'same') {
-        Object.assign(item, sizeData);
-    } else {
-        // Remove size data if switching from same to different
-        const sizes = [28, 30, 32, 34, 36, 38, 40, 42, 44, 46];
-        sizes.forEach(size => {
-            delete item[`size${size}`];
-        });
-    }
-    
-    // Update date/time
-    //item.dateTime = new Date().toISOString();
-    
-    // Save to localStorage
-    localStorage.setItem('inventoryItems', JSON.stringify(inventoryItems));
-    
-    // Update display
+function nextPage() { currentPage++; renderInventoryCards(); }
+function prevPage() { currentPage = Math.max(1, currentPage - 1); renderInventoryCards(); }
+function changeItemsPerPage(value) {
+    itemsPerPage = parseInt(value) || 50;
+    currentPage = 1;
     renderInventoryCards();
-    updateDashboard(); // ✅ FIXED: Dashboard update after edit
-    
-    // Close modal
-    closeEditModal();
-    
-    // Show success message
-    showNotification('Product entry updated successfully!', 'success');
 }
 
-// Function to delete item
-function deleteItem(index) {
-    if (index < 0 || index >= inventoryItems.length) {
-        showNotification('Invalid item index', 'error');
-        return;
-    }
-    
-    if (confirm('Are you sure you want to delete this item?')) {
-        inventoryItems.splice(index, 1);
-        localStorage.setItem('inventoryItems', JSON.stringify(inventoryItems));
-        loadInventoryData();
-        applyFilters();
-        updateDashboard(); // ✅ FIXED: Dashboard update after delete
-        
-        showNotification('Item deleted successfully', 'success');
-    }
-}
-
-// Function to toggle stock status
-function toggleStock(index) {
-    if (index < 0 || index >= inventoryItems.length) {
-        showNotification('Invalid item index', 'error');
-        return;
-    }
-    
-    inventoryItems[index].inStock = !inventoryItems[index].inStock;
-    localStorage.setItem('inventoryItems', JSON.stringify(inventoryItems));
+// Redraws everything from the store (keeps the filters and the page you are on)
+function refreshUI() {
+    updateDashboard();
+    populateQualityFilter();
     renderInventoryCards();
-    updateDashboard(); // ✅ FIXED: Dashboard update after stock toggle
-    
-    showNotification(`Item marked as ${inventoryItems[index].inStock ? 'In Stock' : 'Out of Stock'}`, 'success');
 }
 
-// Show export modal
+// ================= FILTERS + SEARCH (the store does the work) =================
+
+function applyFilters(options = {}) {
+    if (!options.keepPage) currentPage = 1;
+    renderInventoryCards();
+    if (!options.silent) showNotification('Filters applied successfully.', 'success');
+}
+
+function clearFilters() {
+    ['productTypeFilter', 'qualityFilter', 'stockFilter', 'dateFilter'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = 'all';
+    });
+    currentPage = 1;
+    if (typeof AlishanSearch !== 'undefined') AlishanSearch.setTerm('');   // clears the search box too (-> onSearch -> redraw)
+    else renderInventoryCards();
+    showNotification('Filters cleared successfully.', 'success');
+}
+
+// called by search.js whenever a search is run (or cleared)
+function onSearch(term) {
+    currentPage = 1;
+    renderInventoryCards();
+    if (term) showNotification(`Found ${currentList().length} items matching your search.`, 'info');
+}
+
+// ================= EXPORT (rows come from the store) =================
+
 function showExportModal() {
-    const exportModal = document.getElementById('exportModal');
-    if (exportModal) {
-        exportModal.style.display = 'flex';
-    }
+    const m = document.getElementById('exportModal');
+    if (m) m.style.display = 'flex';
 }
-
-// Close export modal
 function closeExportModal() {
-    const exportModal = document.getElementById('exportModal');
-    if (exportModal) {
-        exportModal.style.display = 'none';
-    }
+    const m = document.getElementById('exportModal');
+    if (m) m.style.display = 'none';
 }
 
-// Export inventory data
-function exportInventory(format) {
+async function exportInventory(format) {
     const exportAll = document.getElementById('exportAll')?.checked || false;
-    const dataToExport = exportAll ? inventoryItems : filteredItems;
-    
-    if (dataToExport.length === 0) {
+    const list = exportAll ? AlishanStore.getItems() : currentList();
+
+    if (list.length === 0) {
         showNotification('No data to export!', 'warning');
         return;
     }
-    
-    // Prepare data for export
-    const exportData = dataToExport.map(item => {
-        const colors = Array.isArray(item.colors) ? 
-            (typeof item.colors[0] === 'string' ? 
-                item.colors.join(', ') : 
-                item.colors.map(c => c.name).join(', ')) : 
-            'N/A';
-        
-        const totalAmount = calculateItemTotalAmount(item); // ✅ USE COMMON FUNCTION
-        
-        return {
-            'Date Added': item.dateTime ? new Date(item.dateTime).toLocaleDateString() : 'N/A',
-            'Time': item.dateTime ? new Date(item.dateTime).toLocaleTimeString() : 'N/A',
-            'Product Type': item.productType || 'N/A',
-            'Quality': item.quality || 'N/A',
-            'Lot Number': item.lotNumber || 'N/A',
-            'Colors': colors,
-            'Quantity (Dozens)': item.totalDozens || 0,
-            'Total Pieces': item.totalPieces || 0,
-            'Price/Dozen': item.price || 0,
-            'Total Amount': '₹' + totalAmount.toLocaleString('en-IN'),
-            'Material (m)': item.material || 0,
-            'Weight (kg)': item.weight || 0,
-            'Status': item.inStock ? 'In Stock' : 'Out of Stock',
-            'Size Format': item.sizeOption === 'same' ? 'Same Sizes' : 'Different Sizes',
-            'Notes': item.notes || 'N/A'
-        };
-    });
-    
-    // Create worksheet
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    
-    // Create workbook
+
+    const rows = AlishanStore.exportRows('inventory', list);
+    try {
+        await AlishanLoader.xlsx();       // the Excel library is fetched only now, when needed
+    } catch (error) {
+        showNotification(error.message, 'error');
+        return;
+    }
+    const ws = AlishanLoader.fitColumns(XLSX.utils.json_to_sheet(rows));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
-    
-    // Generate file name
+
     const date = new Date();
-    const dateStr = `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
-    const timeStr = `${date.getHours()}-${date.getMinutes()}`;
-    const fileName = `ALISHAN_Inventory_${dateStr}_${timeStr}.${format}`;
-    
-    // Export the file
+    const fileName = `ALISHAN_Inventory_${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}_${date.getHours()}-${date.getMinutes()}.${format === 'csv' ? 'csv' : 'xlsx'}`;   // the Excel button sends 'excel': the file must end in .xlsx
+
     try {
         if (format === 'csv') {
-            const csv = XLSX.utils.sheet_to_csv(ws);
-            downloadFile(csv, fileName, 'text/csv');
+            downloadFile(XLSX.utils.sheet_to_csv(ws), fileName, 'text/csv');
         } else {
-            XLSX.writeFile(wb, fileName);
+            AlishanLoader.saveWorkbook(wb, fileName);
         }
-        
         showNotification('Inventory data exported successfully!', 'success');
         closeExportModal();
     } catch (error) {
-        console.error('Export error:', error);
-        showNotification('Error exporting data. Please try again.', 'error');
+        console.error('Export error: ' + (error && error.message ? error.message : String(error)), error);
+        if (format !== 'csv') {
+            // the Excel file could not be made: the same rows are saved as CSV instead (opens in Excel too)
+            try {
+                downloadFile(XLSX.utils.sheet_to_csv(ws), fileName.replace(/\.xlsx$/, '.csv'), 'text/csv');
+                showNotification('Excel file could not be made (' + (error && error.message ? error.message : 'unknown reason') + '). Saved as CSV instead.', 'warning');
+                closeExportModal();
+                return;
+            } catch (csvError) {
+                console.error('CSV fallback failed:', csvError);
+            }
+        }
+        showNotification('Error exporting data: ' + (error && error.message ? error.message : 'unknown reason'), 'error');
     }
 }
 
-// Download file helper function
 function downloadFile(data, fileName, type) {
     try {
-        const blob = new Blob([data], { type: type });
+        const blob = new Blob([data], { type });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -1198,8 +210,6 @@ function downloadFile(data, fileName, type) {
         a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
-        
-        // Clean up
         setTimeout(() => {
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
@@ -1210,29 +220,25 @@ function downloadFile(data, fileName, type) {
     }
 }
 
-// Show notification function
 function showNotification(message, type = 'info', duration = 5000) {
     const container = document.getElementById('notificationContainer');
     if (!container) return;
-    
+
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.innerHTML = `
         <div class="notification-icon">
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : 
-                          type === 'error' ? 'fa-exclamation-circle' : 
-                          type === 'warning' ? 'fa-exclamation-triangle' : 
+            <i class="fas ${type === 'success' ? 'fa-check-circle' :
+                          type === 'error' ? 'fa-exclamation-circle' :
+                          type === 'warning' ? 'fa-exclamation-triangle' :
                           'fa-info-circle'}"></i>
         </div>
-        <div class="notification-content">${message}</div>
-        <button class="notification-close" onclick="this.parentElement.remove()">
-            <i class="fas fa-times"></i>
-        </button>
+        <div class="notification-content"></div>
+        <button class="notification-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
     `;
-    
+    notification.querySelector('.notification-content').textContent = message;
     container.appendChild(notification);
-    
-    // Auto remove after duration
+
     setTimeout(() => {
         if (notification.parentElement) {
             notification.style.animation = 'slideOut 0.3s ease';
@@ -1241,725 +247,332 @@ function showNotification(message, type = 'info', duration = 5000) {
     }, duration);
 }
 
-// Product type change event handler
-function setupProductTypeChangeListener() {
-    const productTypeDropdown = document.getElementById('productType');
-    if (productTypeDropdown) {
-        productTypeDropdown.addEventListener('change', function() {
-            updateQualityOptions(this.value);
-        });
-    }
-}
-
-// Edit modal ke liye bhi
-function setupEditProductTypeChangeListener() {
-    const editProductTypeDropdown = document.getElementById('editProductType');
-    if (editProductTypeDropdown) {
-        editProductTypeDropdown.addEventListener('change', function() {
-            updateEditQualityOptions(this.value);
-        });
-    }
-}
-
-// Quality options update function
-function updateQualityOptions(productType) {
-    const qualityDropdown = document.getElementById('quality');
-    if (!qualityDropdown || !window.qualityData) return;
-    
-    // Clear existing options (first option ko chodkar)
-    while (qualityDropdown.options.length > 1) {
-        qualityDropdown.remove(1);
-    }
-    
-    // Get qualities for selected product type
-    const qualities = window.qualityData[productType] || [];
-    
-    // Add new options
-    qualities.forEach(quality => {
-        const option = new Option(quality, quality);
-        qualityDropdown.add(option);
-    });
-}
-
-// Edit modal ke liye quality options update function
-function updateEditQualityOptions(productType) {
-    const editQualityDropdown = document.getElementById('editQuality');
-    if (!editQualityDropdown || !window.qualityData) return;
-    
-    // Clear existing options (first option ko chodkar)
-    while (editQualityDropdown.options.length > 1) {
-        editQualityDropdown.remove(1);
-    }
-    
-    // Get qualities for selected product type
-    const qualities = window.qualityData[productType] || [];
-    
-    // Add new options
-    qualities.forEach(quality => {
-        const option = new Option(quality, quality);
-        editQualityDropdown.add(option);
-    });
-}
-
-// Load qualities function ko update karein
-async function loadQualities() {
-    try {
-        const response = await fetch('qualities.json');
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        window.qualityData = await response.json(); // Global variable mein store karein
-        
-        // Setup event listeners
-        setupProductTypeChangeListener();
-        setupEditProductTypeChangeListener();
-        
-    } catch (error) {
-        console.error('Could not load qualities:', error);
-        // Fallback data
-        window.qualityData = {
-            "bra": ["LAZO", "ORRY", "NAIRA", "EXOTIC", "PARFECTO", "ADDITION", "JAXXON", "CHARLIE", "KANISHKA", "FLORA", "EAZY", "NANCY"],
-            "panty": ["LAZO", "ORRY", "NAIRA", "EXOTIC", "ADDITION", "FLORA", "EAZY"],
-            "set": ["EXOTIC", "PARFECTO", "ADDITION", "JAXXON", "CHARLIE", "KANISHKA", "ROYAL"],
-            "blouse": ["EXOTIC", "PARFECTO", "ADDITION", "JAXXON", "CHARLIE", "KANISHKA", "ROYAL"]
-        };
-        
-        // Setup event listeners
-        setupProductTypeChangeListener();
-        setupEditProductTypeChangeListener();
-    }
-}
-
-// ================= PAGINATION FUNCTIONS =================
-function updatePaginationControls() {
-    const paginationControls = document.getElementById('paginationControls');
-    const pageInfo = document.getElementById('pageInfo');
-    
-    if (!paginationControls || !pageInfo) {
-        console.log("Pagination elements not found in inventory.html");
+// ================= BULK IMPORT (AI JSON, reviewed entry by entry) =================
+function openBulkImport() {
+    if (typeof BulkImport === 'undefined') {
+        showNotification('Bulk import (bulk-import.js) did not load. Copy the whole folder and press Ctrl+Shift+R.', 'error');
         return;
     }
-    
-    totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-    
-    if (filteredItems.length <= itemsPerPage) {
-        paginationControls.style.display = 'none';
-    } else {
-        paginationControls.style.display = 'flex';
-        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-    }
+    BulkImport.open();
 }
 
-function nextPage() {
-    if (currentPage < totalPages) {
-        currentPage++;
-        renderInventoryCards();
-        updatePaginationControls();
-    }
-}
-
-function prevPage() {
-    if (currentPage > 1) {
-        currentPage--;
-        renderInventoryCards();
-        updatePaginationControls();
-    }
-}
-
-function changeItemsPerPage(value) {
-    itemsPerPage = parseInt(value) || 50;
-    currentPage = 1;
-    renderInventoryCards();
-    updatePaginationControls();
-}
-
-// ================= BACKUP SYSTEM FUNCTIONS =================
-function initializeBackupSystem() {
-    // Check if auto backup is enabled
-    const autoBackupEnabled = localStorage.getItem('autoBackupEnabled') !== 'false';
-    
-    if (autoBackupEnabled) {
-        const frequency = parseInt(localStorage.getItem('backupFrequency') || '24');
-        if (frequency > 0) {
-            setInterval(createAutoBackup, frequency * 60 * 60 * 1000);
-        }
-    }
-    
-    // Create initial backup if none exists
-    const lastBackup = localStorage.getItem('lastBackupDate');
-    if (!lastBackup) {
-        createAutoBackup();
-    }
-}
-
-function createAutoBackup() {
-    const inventoryData = localStorage.getItem('inventoryItems');
-    if (!inventoryData) return;
-    
-    const backupData = {
-        metadata: {
-            type: "AUTO_BACKUP",
-            created: new Date().toISOString(),
-            totalItems: JSON.parse(inventoryData).length,
-            version: "1.0"
-        },
-        inventory: JSON.parse(inventoryData)
-    };
-    
-    // Save backup to localStorage for quick restore
-    localStorage.setItem('lastBackup', JSON.stringify(backupData));
-    localStorage.setItem('lastBackupDate', new Date().toISOString());
-    
-    showNotification('Auto backup created successfully', 'success');
-}
+// ================= BACKUP / IMPORT (the store does the work) =================
 
 function exportCompleteBackup() {
-    const inventoryData = localStorage.getItem('inventoryItems');
-    if (!inventoryData) {
+    if (!AlishanStore.hasItems()) {
         showNotification('No data to backup!', 'warning');
         return;
     }
-    
-    const backupData = {
-        metadata: {
-            type: "COMPLETE_BACKUP",
-            exportedAt: new Date().toISOString(),
-            totalItems: JSON.parse(inventoryData).length,
-            system: "ALISHAN_INVENTORY"
-        },
-        inventory: JSON.parse(inventoryData)
-    };
-    
-    const fileName = `ALISHAN_Complete_Backup_${new Date().getTime()}.json`;
-    downloadFile(JSON.stringify(backupData, null, 2), fileName, 'application/json');
+    const backup = AlishanStore.backupFile('COMPLETE_BACKUP');
+    downloadFile(JSON.stringify(backup, null, 2), `ALISHAN_Complete_Backup_${Date.now()}.json`, 'application/json');
     showNotification('Complete backup exported successfully!', 'success');
     closeExportModal();
 }
 
 function showImportModal() {
-    const importModal = document.getElementById('importModal');
-    if (importModal) {
-        importModal.style.display = 'flex';
-    }
+    const m = document.getElementById('importModal');
+    if (m) m.style.display = 'flex';
 }
-
 function closeImportModal() {
-    const importModal = document.getElementById('importModal');
-    if (importModal) {
-        importModal.style.display = 'none';
-    }
+    const m = document.getElementById('importModal');
+    if (m) m.style.display = 'none';
 }
 
 function handleImport() {
-    const fileInput = document.getElementById('importFile');
-    const file = fileInput?.files[0];
-    
+    const file = document.getElementById('importFile')?.files[0];
     if (!file) {
         showNotification('Please select a file to import', 'error');
         return;
     }
-    
     const importOption = document.querySelector('input[name="importOption"]:checked')?.value || 'replace';
-    importBackupData(file, importOption);
-}
 
-function importBackupData(file, importOption) {
     const reader = new FileReader();
-    
-    reader.onload = function(e) {
+    reader.onload = async function (e) {
+        let backup;
         try {
-            const backupData = JSON.parse(e.target.result);
-            
-            // Validate backup file
-            if (!backupData.inventory || !Array.isArray(backupData.inventory)) {
-                throw new Error('Invalid backup file format');
-            }
-            
-            let newInventory = [];
-            
-            if (importOption === 'replace') {
-                // Replace all current data
-                newInventory = backupData.inventory;
-            } else {
-                // Merge with existing data
-                const currentData = JSON.parse(localStorage.getItem('inventoryItems') || '[]');
-                const currentIds = new Set(currentData.map(item => item.id));
-                
-                // Add only new items from backup
-                const newItems = backupData.inventory.filter(item => !currentIds.has(item.id));
-                newInventory = [...currentData, ...newItems];
-            }
-            
-            // Save to localStorage
-            localStorage.setItem('inventoryItems', JSON.stringify(newInventory));
-            
-            // Update display
-            loadInventoryData();
-            renderInventoryCards();
-            updateDashboard(); // ✅ FIXED: Dashboard update after import
-            
-            showNotification(`Successfully imported ${backupData.inventory.length} items!`, 'success');
-            closeImportModal();
-            
-        } catch (error) {
-            console.error('Import error:', error);
+            backup = JSON.parse(e.target.result);
+        } catch (err) {
             showNotification('Error importing file. Please check file format.', 'error');
+            return;
         }
+
+        const info = AlishanStore.inspectBackup(backup);
+        if (!info.ok) {
+            showNotification(info.error, 'error');
+            return;
+        }
+        const question = importOption === 'replace'
+            ? `This will REPLACE all ${info.current} current items with ${info.valid} items from the file.` +
+              (info.skipped ? `\n(${info.skipped} damaged item(s) in the file will be skipped.)` : '') +
+              `\n\nA safety backup of your current data is saved first. Continue?`
+            : `Add the new items from this file (${info.valid} in file) to your ${info.current} current items?`;
+        if (!confirm(question)) return;
+
+        const result = await AlishanStore.importBackup(backup, importOption);
+        showNotification(result.ok ? result.message : result.error, result.ok ? 'success' : 'error');
+        if (result.ok) closeImportModal();
     };
-    
     reader.readAsText(file);
 }
 
-function showBackupSettingsModal() {
-    const backupSettingsModal = document.getElementById('backupSettingsModal');
-    if (backupSettingsModal) {
-        backupSettingsModal.style.display = 'flex';
-    }
+async function showBackupSettingsModal() {
+    const modal = document.getElementById('backupSettingsModal');
+    if (!modal) return;
+    const settings = await AlishanStore.getBackupSettings();
+    document.getElementById('autoBackupEnabled').checked = settings.enabled;
+    document.getElementById('backupFrequency').value = String(settings.frequency);
+    modal.style.display = 'flex';
 }
-
 function closeBackupSettingsModal() {
-    const backupSettingsModal = document.getElementById('backupSettingsModal');
-    if (backupSettingsModal) {
-        backupSettingsModal.style.display = 'none';
-    }
+    const m = document.getElementById('backupSettingsModal');
+    if (m) m.style.display = 'none';
 }
-
-function createBackupNow() {
+async function saveBackupSettings() {
+    const result = await AlishanStore.saveBackupSettings({
+        enabled: document.getElementById('autoBackupEnabled').checked,
+        frequency: document.getElementById('backupFrequency').value
+    });
+    showNotification(result.message, 'success');
+    closeBackupSettingsModal();
+}
+async function createBackupNow() {
+    const result = await AlishanStore.createBackup();
+    if (!result.ok) {
+        showNotification(result.error, 'warning');
+        return;
+    }
+    showNotification(result.message, 'success');
     exportCompleteBackup();
     closeBackupSettingsModal();
 }
 
-// ================= ADVANCED EXPORT SYSTEM =================
+async function showBackupHistory() {
+    const modal = document.getElementById('backupHistoryModal');
+    const list = document.getElementById('backupHistoryList');
+    if (!modal || !list) return;
 
-// Show advanced export modal
+    const history = await AlishanStore.listBackups();
+    list.innerHTML = '';
+    if (history.length === 0) list.innerHTML = '<p>No backups yet.</p>';
+
+    history.map((b, i) => ({ b, i })).reverse().forEach(({ b, i }) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0;border-bottom:1px solid var(--light-gray);flex-wrap:wrap;';
+        const label = document.createElement('div');
+        label.style.cssText = 'flex:1;min-width:180px;';
+        const when = new Date(b.metadata.created || Date.now());
+        label.textContent = `${when.toLocaleDateString('en-IN')} ${when.toLocaleTimeString('en-IN')} — ${b.metadata.totalItems} items` +
+            (b.metadata.type === 'PRE_IMPORT_BACKUP' ? ' (before import)' : '');
+        const dl = document.createElement('button');
+        dl.className = 'btn btn-sm btn-info';
+        dl.textContent = 'Download';
+        dl.onclick = () => downloadFile(JSON.stringify(b, null, 2), `ALISHAN_Backup_${when.getTime()}.json`, 'application/json');
+        const rs = document.createElement('button');
+        rs.className = 'btn btn-sm btn-warning';
+        rs.textContent = 'Restore';
+        rs.onclick = () => restoreBackupFromHistory(i);
+        row.append(label, dl, rs);
+        list.appendChild(row);
+    });
+    modal.style.display = 'flex';
+}
+function closeBackupHistoryModal() {
+    const m = document.getElementById('backupHistoryModal');
+    if (m) m.style.display = 'none';
+}
+async function restoreBackupFromHistory(index) {
+    const history = await AlishanStore.listBackups();
+    const b = history[index];
+    if (!b) return;
+    if (!confirm(`Restore ${b.metadata.totalItems} items from this backup? Your current data is backed up first.`)) return;
+    const result = await AlishanStore.restoreBackup(index);
+    showNotification(result.ok ? 'Backup restored' : result.error, result.ok ? 'success' : 'error');
+    if (result.ok) closeBackupHistoryModal();
+}
+
+// ================= ADVANCED EXPORT (JSON) =================
+// The page only reads the boxes and builds a query; the store finds the items.
+
 function showAdvancedExportModal() {
-    const advancedExportModal = document.getElementById('advancedExportModal');
-    if (advancedExportModal) {
-        advancedExportModal.style.display = 'flex';
+    const m = document.getElementById('advancedExportModal');
+    if (m) {
+        m.style.display = 'flex';
         populateExportQualities();
-        populateCustomQualities();
         updateExportSummary();
-        closeExportModal(); // Close basic export modal
+        closeExportModal();
     }
 }
-
-// Close advanced export modal
 function closeAdvancedExportModal() {
-    const advancedExportModal = document.getElementById('advancedExportModal');
-    if (advancedExportModal) {
-        advancedExportModal.style.display = 'none';
-    }
+    const m = document.getElementById('advancedExportModal');
+    if (m) m.style.display = 'none';
 }
 
-// Toggle export options based on selection
 function toggleExportOptions() {
     const exportType = document.getElementById('exportType')?.value || 'complete';
-    
-    // Sab options hide karo
-    const allOptions = document.querySelectorAll('.export-sub-options');
-    allOptions.forEach(option => option.style.display = 'none');
-    
-    // Selected option show karo
-    const selectedOption = document.getElementById(exportType + 'Options');
-    if (selectedOption) {
-        selectedOption.style.display = 'block';
-    }
-    
+    document.querySelectorAll('.export-sub-options').forEach(option => { option.style.display = 'none'; });
+    const selected = document.getElementById(exportType + 'Options');
+    if (selected) selected.style.display = 'block';
     updateExportSummary();
 }
 
-// Populate quality dropdowns
+function fillQualityOptions(selectId) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    select.innerHTML = '<option value="">All Qualities</option>';
+    AlishanStore.qualityOptions().forEach(quality => {
+        const option = document.createElement('option');
+        option.value = quality;
+        option.textContent = quality;
+        select.appendChild(option);
+    });
+}
 function populateExportQualities() {
-    const qualitySelect = document.getElementById('exportQuality');
-    if (!qualitySelect) return;
-    
-    const qualities = [...new Set(inventoryItems.map(item => item.quality).filter(Boolean))].sort();
-    
-    qualitySelect.innerHTML = '<option value="">All Qualities</option>';
-    qualities.forEach(quality => {
-        const option = document.createElement('option');
-        option.value = quality;
-        option.textContent = quality;
-        qualitySelect.appendChild(option);
-    });
+    fillQualityOptions('exportQuality');
+    fillQualityOptions('customQuality');
 }
 
-function populateCustomQualities() {
-    const customQualitySelect = document.getElementById('customQuality');
-    if (!customQualitySelect) return;
-    
-    const qualities = [...new Set(inventoryItems.map(item => item.quality).filter(Boolean))].sort();
-    
-    customQualitySelect.innerHTML = '<option value="">All Qualities</option>';
-    qualities.forEach(quality => {
-        const option = document.createElement('option');
-        option.value = quality;
-        option.textContent = quality;
-        customQualitySelect.appendChild(option);
-    });
+// what the advanced-export boxes ask for, as a store query
+function exportQuery() {
+    const val = (id) => document.getElementById(id)?.value || '';
+    switch (val('exportType') || 'complete') {
+        case 'dateRange': return (val('exportFromDate') && val('exportToDate')) ? { dateFrom: val('exportFromDate'), dateTo: val('exportToDate') } : {};
+        case 'quality': return { quality: val('exportQuality') || 'all' };
+        case 'productType': return { productType: val('exportProductType') || 'all' };
+        case 'lotNumber': return { lotNumber: val('exportLotNumber').trim() };
+        case 'uniqueCode': return { code: val('exportUniqueCode').trim() };
+        case 'customFilter': return {
+            productType: val('customProductType') || 'all',
+            quality: val('customQuality') || 'all',
+            stock: val('customStockStatus') || 'all'
+        };
+        default: return {};
+    }
 }
 
-// Update export summary preview
-async function updateExportSummary() {
+function updateExportSummary() {
     const exportType = document.getElementById('exportType')?.value || 'complete';
     const summaryElement = document.getElementById('summaryText');
     const detailsElement = document.getElementById('summaryDetails');
     const summaryContainer = document.getElementById('exportSummary');
-    
     if (!summaryElement || !detailsElement || !summaryContainer) return;
-    
-    let filteredData = [];
-    let summaryText = '';
-    let detailsHTML = '';
-    
-    switch(exportType) {
-        case 'complete':
-            filteredData = inventoryItems;
-            summaryText = `📦 Complete Inventory Data`;
-            detailsHTML = `Total Items: <strong>${filteredData.length}</strong><br>All records will be exported`;
-            break;
-            
-        case 'dateRange':
-            filteredData = await filterByDateRange();
-            const fromDate = document.getElementById('exportFromDate')?.value || '';
-            const toDate = document.getElementById('exportToDate')?.value || '';
-            summaryText = `📅 Date Range Export`;
-            detailsHTML = `From: <strong>${fromDate || 'Not set'}</strong><br>To: <strong>${toDate || 'Not set'}</strong><br>Matching Items: <strong>${filteredData.length}</strong>`;
-            break;
-            
-        case 'quality':
-            filteredData = await filterByQuality();
-            const quality = document.getElementById('exportQuality')?.value || '';
-            summaryText = `🎯 Quality Based Export`;
-            detailsHTML = `Quality: <strong>${quality || 'All'}</strong><br>Matching Items: <strong>${filteredData.length}</strong>`;
-            break;
-            
-        case 'productType':
-            filteredData = await filterByProductType();
-            const productType = document.getElementById('exportProductType')?.value || '';
-            summaryText = `👕 Product Type Export`;
-            detailsHTML = `Product Type: <strong>${productType || 'All'}</strong><br>Matching Items: <strong>${filteredData.length}</strong>`;
-            break;
-            
-        case 'lotNumber':
-            filteredData = await filterByLotNumber();
-            const lotNumber = document.getElementById('exportLotNumber')?.value || '';
-            summaryText = `🏷️ Lot Number Export`;
-            detailsHTML = `Lot Number: <strong>${lotNumber || 'Not specified'}</strong><br>Matching Items: <strong>${filteredData.length}</strong>`;
-            break;
-            
-        case 'uniqueCode':
-            filteredData = await filterByUniqueCode();
-            const uniqueCode = document.getElementById('exportUniqueCode')?.value || '';
-            summaryText = `🔖 Unique Code Export`;
-            detailsHTML = `Unique Code: <strong>${uniqueCode || 'Not specified'}</strong><br>Matching Items: <strong>${filteredData.length}</strong>`;
-            break;
-            
-        case 'customFilter':
-            filteredData = await filterByCustom();
-            summaryText = `🔧 Custom Filter Export`;
-            detailsHTML = `Multiple criteria applied<br>Matching Items: <strong>${filteredData.length}</strong>`;
-            break;
-    }
-    
-    summaryElement.innerHTML = summaryText;
-    detailsElement.innerHTML = detailsHTML;
+
+    const val = (id) => document.getElementById(id)?.value || '';
+    const count = AlishanStore.query(exportQuery()).length;
+    const matching = `Matching Items: <strong>${count}</strong>`;
+    const titles = {
+        complete: ['📦 Complete Inventory Data', `Total Items: <strong>${count}</strong><br>All records will be exported`],
+        dateRange: ['📅 Date Range Export', `From: <strong>${val('exportFromDate') || 'Not set'}</strong><br>To: <strong>${val('exportToDate') || 'Not set'}</strong><br>${matching}`],
+        quality: ['🎯 Quality Based Export', `Quality: <strong>${val('exportQuality') || 'All'}</strong><br>${matching}`],
+        productType: ['👕 Product Type Export', `Product Type: <strong>${val('exportProductType') || 'All'}</strong><br>${matching}`],
+        lotNumber: ['🏷️ Lot Number Export', `Lot Number: <strong>${val('exportLotNumber') || 'Not specified'}</strong><br>${matching}`],
+        uniqueCode: ['🔖 Unique Code Export', `Unique Code: <strong>${val('exportUniqueCode') || 'Not specified'}</strong><br>${matching}`],
+        customFilter: ['🔧 Custom Filter Export', `Multiple criteria applied<br>${matching}`]
+    };
+    const [title, details] = titles[exportType] || titles.complete;
+    summaryElement.innerHTML = title;
+    detailsElement.innerHTML = details;
     summaryContainer.style.display = 'block';
 }
 
-// ================= FILTER FUNCTIONS FOR EXPORT =================
-
-async function filterByDateRange() {
-    const fromDate = document.getElementById('exportFromDate')?.value;
-    const toDate = document.getElementById('exportToDate')?.value;
-    
-    if (!fromDate || !toDate) return inventoryItems;
-    
-    const from = new Date(fromDate);
-    const to = new Date(toDate);
-    to.setHours(23, 59, 59, 999); // End of day
-    
-    return inventoryItems.filter(item => {
-        if (!item.dateTime) return false;
-        const itemDate = new Date(item.dateTime);
-        return itemDate >= from && itemDate <= to;
-    });
+function exportFileName(exportType, data) {
+    const date = new Date();
+    const stamp = `${date.toISOString().split('T')[0]}_${date.getHours()}-${date.getMinutes()}`;
+    const val = (id) => document.getElementById(id)?.value || '';
+    const parts = {
+        dateRange: ['DATE_RANGE', `${val('exportFromDate')}_to_${val('exportToDate')}`],
+        quality: ['QUALITY', val('exportQuality')],
+        productType: ['PRODUCT_TYPE', val('exportProductType')],
+        lotNumber: ['LOT_NUMBER', val('exportLotNumber')],
+        uniqueCode: ['UNIQUE_CODE', val('exportUniqueCode')],
+        customFilter: ['CUSTOM_FILTER', `items_${data.length}`]
+    };
+    const [type, criteria] = parts[exportType] || ['COMPLETE_DATA', `all_${data.length}_items`];
+    return `ALISHAN_${type}_${criteria}_${stamp}.json`;
 }
-
-async function filterByQuality() {
-    const quality = document.getElementById('exportQuality')?.value;
-    if (!quality) return inventoryItems;
-    
-    return inventoryItems.filter(item => item.quality === quality);
-}
-
-async function filterByProductType() {
-    const productType = document.getElementById('exportProductType')?.value;
-    if (!productType || productType === 'all') return inventoryItems;
-    
-    return inventoryItems.filter(item => 
-        item.productType?.toLowerCase() === productType.toLowerCase()
-    );
-}
-
-async function filterByLotNumber() {
-    const lotNumber = document.getElementById('exportLotNumber')?.value?.trim();
-    if (!lotNumber) return inventoryItems;
-    
-    return inventoryItems.filter(item => 
-        item.lotNumber && item.lotNumber.toLowerCase().includes(lotNumber.toLowerCase())
-    );
-}
-
-async function filterByUniqueCode() {
-    const uniqueCode = document.getElementById('exportUniqueCode')?.value?.trim();
-    if (!uniqueCode) return inventoryItems;
-    
-    return inventoryItems.filter(item => 
-        item.code && item.code.toLowerCase().includes(uniqueCode.toLowerCase())
-    );
-}
-
-async function filterByCustom() {
-    const productType = document.getElementById('customProductType')?.value;
-    const quality = document.getElementById('customQuality')?.value;
-    const stockStatus = document.getElementById('customStockStatus')?.value || 'all';
-    
-    return inventoryItems.filter(item => {
-        // Product type filter
-        if (productType && item.productType?.toLowerCase() !== productType) {
-            return false;
-        }
-        
-        // Quality filter
-        if (quality && item.quality !== quality) {
-            return false;
-        }
-        
-        // Stock status filter
-        if (stockStatus !== 'all') {
-            const isInStock = Boolean(item.inStock);
-            if (stockStatus === 'inStock' && !isInStock) return false;
-            if (stockStatus === 'outOfStock' && isInStock) return false;
-        }
-        
-        return true;
-    });
-}
-
-// ================= MAIN EXPORT EXECUTION =================
 
 async function executeAdvancedExport() {
     const exportType = document.getElementById('exportType')?.value || 'complete';
-    let filteredData = [];
-    
     showNotification('🔄 Processing export...', 'info');
-    
-    // Data filter karo based on selection
-    switch(exportType) {
-        case 'complete':
-            filteredData = inventoryItems;
-            break;
-        case 'dateRange':
-            filteredData = await filterByDateRange();
-            break;
-        case 'quality':
-            filteredData = await filterByQuality();
-            break;
-        case 'productType':
-            filteredData = await filterByProductType();
-            break;
-        case 'lotNumber':
-            filteredData = await filterByLotNumber();
-            break;
-        case 'uniqueCode':
-            filteredData = await filterByUniqueCode();
-            break;
-        case 'customFilter':
-            filteredData = await filterByCustom();
-            break;
-    }
-    
-    if (filteredData.length === 0) {
+
+    const data = AlishanStore.query(exportQuery());
+    if (data.length === 0) {
         showNotification('❌ No data found for selected criteria!', 'warning');
         return;
     }
-    
-    // File name generate karo
-    const customFileName = document.getElementById('exportFileName')?.value?.trim();
-    let fileName = customFileName || generateExportFileName(exportType, filteredData);
-    
-    // Export karo
+
+    const fileName = document.getElementById('exportFileName')?.value?.trim() || exportFileName(exportType, data);
     try {
-        await exportFilteredData(filteredData, fileName);
-        showNotification(`✅ Exported ${filteredData.length} items successfully!`, 'success');
+        if (data.length > 10000) {
+            await exportLargeDataInChunks(data, fileName);
+        } else {
+            const out = {
+                metadata: {
+                    exportType: 'ADVANCED_EXPORT',
+                    exportedAt: new Date().toISOString(),
+                    totalItems: data.length,
+                    criteria: { type: exportType, ...exportQuery() },
+                    system: 'ALISHAN_INVENTORY',
+                    version: '2.0'
+                },
+                inventory: data
+            };
+            downloadFile(JSON.stringify(out, null, 2), fileName, 'application/json');
+        }
+        showNotification(`✅ Exported ${data.length} items successfully!`, 'success');
         closeAdvancedExportModal();
     } catch (error) {
-        console.error('Export error:', error);
-        showNotification('❌ Export failed: ' + error.message, 'error');
+        console.error('Export error: ' + (error && error.message ? error.message : String(error)), error);
+        showNotification('❌ Export failed: ' + (error && error.message ? error.message : 'unknown reason'), 'error');
     }
 }
 
-function generateExportFileName(exportType, data) {
-    const date = new Date();
-    const dateStr = date.toISOString().split('T')[0];
-    const timeStr = date.getHours() + '-' + date.getMinutes();
-    
-    let typeStr = '';
-    let criteriaStr = '';
-    
-    switch(exportType) {
-        case 'dateRange':
-            const fromDate = document.getElementById('exportFromDate')?.value || '';
-            const toDate = document.getElementById('exportToDate')?.value || '';
-            typeStr = `DATE_RANGE`;
-            criteriaStr = `${fromDate}_to_${toDate}`;
-            break;
-        case 'quality':
-            const quality = document.getElementById('exportQuality')?.value || '';
-            typeStr = `QUALITY`;
-            criteriaStr = quality;
-            break;
-        case 'productType':
-            const productType = document.getElementById('exportProductType')?.value || '';
-            typeStr = `PRODUCT_TYPE`;
-            criteriaStr = productType;
-            break;
-        case 'lotNumber':
-            const lotNumber = document.getElementById('exportLotNumber')?.value || '';
-            typeStr = `LOT_NUMBER`;
-            criteriaStr = lotNumber;
-            break;
-        case 'uniqueCode':
-            const uniqueCode = document.getElementById('exportUniqueCode')?.value || '';
-            typeStr = `UNIQUE_CODE`;
-            criteriaStr = uniqueCode;
-            break;
-        case 'customFilter':
-            typeStr = `CUSTOM_FILTER`;
-            criteriaStr = `items_${data.length}`;
-            break;
-        default:
-            typeStr = 'COMPLETE_DATA';
-            criteriaStr = `all_${data.length}_items`;
-    }
-    
-    return `ALISHAN_${typeStr}_${criteriaStr}_${dateStr}_${timeStr}.json`;
-}
-
-async function exportFilteredData(data, fileName) {
-    const exportData = {
-        metadata: {
-            exportType: "ADVANCED_EXPORT",
-            exportedAt: new Date().toISOString(),
-            totalItems: data.length,
-            criteria: getExportCriteria(),
-            fileSize: calculateFileSize(data),
-            system: "ALISHAN_INVENTORY",
-            version: "2.0"
-        },
-        inventory: data
-    };
-    
-    // Large data check - agar data bahut bada hai toh chunk mein export karein
-    if (data.length > 10000) {
-        await exportLargeDataInChunks(data, fileName);
-    } else {
-        downloadFile(JSON.stringify(exportData, null, 2), fileName, 'application/json');
-    }
-}
-
-function getExportCriteria() {
-    const exportType = document.getElementById('exportType')?.value || 'complete';
-    let criteria = { type: exportType };
-    
-    switch(exportType) {
-        case 'dateRange':
-            criteria.fromDate = document.getElementById('exportFromDate')?.value;
-            criteria.toDate = document.getElementById('exportToDate')?.value;
-            break;
-        case 'quality':
-            criteria.quality = document.getElementById('exportQuality')?.value;
-            break;
-        case 'productType':
-            criteria.productType = document.getElementById('exportProductType')?.value;
-            break;
-        case 'lotNumber':
-            criteria.lotNumber = document.getElementById('exportLotNumber')?.value;
-            break;
-        case 'uniqueCode':
-            criteria.uniqueCode = document.getElementById('exportUniqueCode')?.value;
-            break;
-        case 'customFilter':
-            criteria.productType = document.getElementById('customProductType')?.value;
-            criteria.quality = document.getElementById('customQuality')?.value;
-            criteria.stockStatus = document.getElementById('customStockStatus')?.value;
-            break;
-    }
-    
-    return criteria;
-}
-
-function calculateFileSize(data) {
-    const jsonString = JSON.stringify(data);
-    const sizeInBytes = new Blob([jsonString]).size;
-    const sizeInKB = (sizeInBytes / 1024).toFixed(2);
-    const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
-    
-    return {
-        bytes: sizeInBytes,
-        kb: sizeInKB,
-        mb: sizeInMB
-    };
-}
-
-// Large data export (10,000+ items)
+// Large data export (10,000+ items): several files
 async function exportLargeDataInChunks(data, baseFileName) {
-    const chunkSize = 5000; // 5,000 items per chunk
+    const chunkSize = 5000;
     const totalChunks = Math.ceil(data.length / chunkSize);
-    
-    const backupInfo = {
-        metadata: {
-            type: "LARGE_EXPORT",
-            totalChunks: totalChunks,
-            totalItems: data.length,
-            exportDate: new Date().toISOString(),
-            chunkSize: chunkSize,
-            originalFile: baseFileName
-        }
-    };
-    
-    // Backup info file export karo
-    downloadFile(JSON.stringify(backupInfo, null, 2), 
-                `BACKUP_INFO_${baseFileName}`, 
-                'application/json');
-    
-    // Har chunk ko alag file mein export karo
+
+    downloadFile(JSON.stringify({
+        metadata: { type: 'LARGE_EXPORT', totalChunks, totalItems: data.length, exportDate: new Date().toISOString(), chunkSize, originalFile: baseFileName }
+    }, null, 2), `BACKUP_INFO_${baseFileName}`, 'application/json');
+
     for (let i = 0; i < totalChunks; i++) {
-        const start = i * chunkSize;
-        const end = start + chunkSize;
-        const chunkData = data.slice(start, end);
-        
-        const chunkExport = {
-            metadata: {
-                chunkNumber: i + 1,
-                totalChunks: totalChunks,
-                itemsInChunk: chunkData.length,
-                chunkStart: start,
-                chunkEnd: end
-            },
+        const chunkData = data.slice(i * chunkSize, (i + 1) * chunkSize);
+        downloadFile(JSON.stringify({
+            metadata: { chunkNumber: i + 1, totalChunks, itemsInChunk: chunkData.length },
             inventory: chunkData
-        };
-        
-        const chunkFileName = `CHUNK_${i + 1}_OF_${totalChunks}_${baseFileName}`;
-        downloadFile(JSON.stringify(chunkExport, null, 2), chunkFileName, 'application/json');
-        
-        // Browser ko thoda time do
-        await new Promise(resolve => setTimeout(resolve, 500));
+        }, null, 2), `CHUNK_${i + 1}_OF_${totalChunks}_${baseFileName}`, 'application/json');
+        await new Promise(resolve => setTimeout(resolve, 500));   // give the browser a moment
     }
-    
     showNotification(`📦 Large export completed! ${totalChunks} files generated.`, 'success');
 }
 
-// Initialize the page when loaded
+// ================= START UP =================
+
+async function initPage() {
+    // makes sure every file is there (re-requests a file that did not load); search + loader are optional
+    if (typeof AlishanRequire === 'function' && !(await AlishanRequire({
+        AlishanDB: 'db.js', AlishanCalc: 'calc.js', AlishanStore: 'store.js',
+        ItemForm: 'item-form.js', ItemCard: 'item-card.js', ItemModal: 'item-modal.js'
+    }, { AlishanSearch: 'search.js', AlishanLoader: 'loader.js', BulkImport: 'bulk-import.js' }))) return;
+    const info = await AlishanStore.init();            // loads qualities, colours, inventory, payments
+    if (info.referenceError) showNotification(info.referenceError, 'error');
+    if (info.damaged) showNotification(`${info.damaged} damaged item(s) were set aside and backed up.`, 'warning');
+
+    ItemModal.inject();                                 // the shared Edit modal
+    await ItemForm.loadColors();
+    ItemForm.initColorSelectors(['edit']);
+
+    const editType = document.getElementById('editProductType');
+    if (editType) {
+        editType.addEventListener('change', function () {
+            ItemForm.renderQualitySelector('edit', null, this.value);
+        });
+    }
+
+    if (typeof AlishanSearch !== 'undefined') AlishanSearch.init({ onSearch });   // the shared search box (search.js)
+    refreshUI();
+    // redraw whenever the store changes (this page, another page, another tab)
+    AlishanStore.subscribe(refreshUI);
+}
+
 document.addEventListener('DOMContentLoaded', initPage);

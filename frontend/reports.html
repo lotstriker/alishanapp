@@ -1,0 +1,2527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALISHAN - Advanced Reports & Analytics</title>
+    <!-- icons: local SVG set (icons.js), no CDN -->
+    <script src="icons.js"></script>
+    <link rel="stylesheet" href="nav.css">
+    <link rel="stylesheet" href="aging.css">
+    <link rel="stylesheet" href="search.css">
+    <link rel="stylesheet" href="mobile.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --info: #4895ef;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --white: #ffffff;
+            --body-bg: #f5f7fb;
+            --page-bg: var(--body-bg); /* what the active navbar tab merges into */
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--body-bg);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 12px;
+        }
+
+        /* Site nav (topbar) now lives in nav.css — single shared source */
+
+        h2 {
+            color: var(--dark);
+            margin: 9px 0;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+
+        /* ================= SEARCH & FILTER STYLES ================= */
+        .search-container {
+            position: relative;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            margin: 9px 0;
+            width: 100%;
+        }
+
+        .search-bar-wrapper {
+            position: relative;
+            flex: 1;
+        }
+
+        .search-bar {
+            display: flex;
+            width: 100%;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 6px 20px;
+            border: 1px solid var(--light-gray);
+            border-radius: 8px 0 0 8px;
+            font-size: 1rem;
+            background: var(--white);
+            color: var(--dark);
+            box-shadow: var(--card-shadow);
+        }
+
+        .search-bar input:focus {
+            outline: 2px solid var(--primary);
+        }
+
+        .search-bar button {
+            padding: 0 20px;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            transform: translateY(0);
+            box-shadow: var(--card-shadow);
+        }
+
+        .search-bar button:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .show-all-btn {
+            padding: 6px 20px;
+            background: var(--gray);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            transform: translateY(0);
+            box-shadow: var(--card-shadow);
+            display: none;
+        }
+
+        .show-all-btn:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            margin-top: 6px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .suggestion-category {
+            padding: 6px 15px;
+            background-color: var(--light);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--primary);
+            border-bottom: 1px solid var(--light-gray);
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .suggestion-item {
+            padding: 6px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 1px solid var(--light-gray);
+            transition: var(--transition);
+            font-size: 14px;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:hover {
+            background-color: rgba(67, 97, 238, 0.1);
+        }
+
+        .suggestion-item.selected {
+            background-color: rgba(67, 97, 238, 0.2);
+        }
+
+        .suggestion-item i {
+            color: var(--gray);
+            width: 16px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .history-item {
+            color: var(--gray);
+        }
+
+        .suggestion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 15px;
+            background-color: var(--light);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--primary);
+            border-bottom: 1px solid var(--light-gray);
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .clear-history-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 11px;
+            padding: 6px 8px;
+            border-radius: 3px;
+        }
+
+        .clear-history-btn:hover {
+            background-color: rgba(247, 37, 133, 0.1);
+        }
+
+        .match-highlight {
+            background-color: rgba(255, 217, 102, 0.3);
+            font-weight: 600;
+            padding: 0 2px;
+            border-radius: 3px;
+        }
+
+        .fuzzy-match {
+            opacity: 0.8;
+        }
+
+        .analytics-btn {
+            padding: 6px;
+            background: var(--info);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .analytics-btn:hover {
+            background: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* ================= PAGINATION STYLES ================= */
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 7px;
+            margin: 9px 0;
+            padding: 7px;
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .page-info {
+            font-weight: 600;
+            color: var(--primary);
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .page-select {
+            padding: 6px 12px;
+            border: 1px solid var(--light-gray);
+            border-radius: 5px;
+            background: var(--white);
+            cursor: pointer;
+        }
+
+        /* ================= DASHBOARD CARDS ================= */
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 9px;
+            margin-bottom: 14px;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 9px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .card-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(67, 97, 238, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            color: var(--primary);
+        }
+
+        .card-content h3 {
+            font-size: 18px;
+            margin-bottom: 2px;
+            color: var(--dark);
+        }
+
+        .card-content p {
+            color: var(--gray);
+            font-size: 11px;
+        }
+
+        /* ================= FILTERS ================= */
+        .filters {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 9px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--dark);
+        }
+
+        .filter-group select, .filter-group input {
+            padding: 6px;
+            border: 1px solid var(--light-gray);
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        .btn {
+            padding: 6px 20px;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: var(--secondary);
+        }
+
+        .btn-secondary {
+            background: var(--gray);
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #d11466;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+
+        /* ================= SECTIONS ================= */
+        .section {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 9px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 14px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 9px;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ================= TABLES ================= */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 7px 0;
+        }
+
+        th, td {
+            padding: 6px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        th {
+            background-color: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+
+        .badge {
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-warning {
+            background-color: rgba(248, 150, 30, 0.1);
+            color: #f8961e;
+        }
+
+        .badge-success {
+            background-color: rgba(76, 201, 240, 0.1);
+            color: #4cc9f0;
+        }
+
+        .badge-danger {
+            background-color: rgba(247, 37, 133, 0.1);
+            color: #f72585;
+        }
+
+        /* ================= CHARTS ================= */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 9px 0;
+        }
+
+        /* ================= MODALS ================= */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: var(--white);
+            padding: 14px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 9px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        .form-group {
+            margin-bottom: 7px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid var(--light-gray);
+            border-radius: 5px;
+        }
+
+        /* ================= HISTORY ================= */
+        .amount-history {
+            margin-top: 14px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 7px;
+            border-bottom: 1px solid var(--light-gray);
+            align-items: center;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-info {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .history-quality {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .history-date {
+            font-size: 14px;
+            color: var(--gray);
+        }
+
+        .history-notes {
+            margin-top: 6px;
+            font-size: 14px;
+            color: var(--dark);
+        }
+
+        .history-amount {
+            font-weight: 600;
+            color: var(--primary);
+            margin-left: 7px;
+        }
+
+        .entry-details {
+            background-color: rgba(67, 97, 238, 0.05);
+            padding: 6px;
+            border-radius: 5px;
+            margin-top: 6px;
+        }
+
+        .entry-detail {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        /* ================= TABS ================= */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--light-gray);
+            margin-bottom: 9px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .tab {
+            padding: 6px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 7px 0;
+        }
+
+        /* ================= EXPORT BUTTONS ================= */
+        .export-buttons {
+            display: flex;
+            gap: 6px;
+            margin-top: 7px;
+            flex-wrap: wrap;
+        }
+        
+        .export-btn {
+            padding: 6px 15px;
+            background: var(--success);
+            color: var(--white);
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .export-btn.csv {
+            background: var(--info);
+        }
+        
+        .export-btn.excel {
+            background: #217346;
+        }
+        
+        /* ================= MODAL FOR EXPORT OPTIONS ================= */
+        .export-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .export-modal-content {
+            background: var(--white);
+            padding: 11px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        .export-options {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin: 9px 0;
+        }
+        
+        .export-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .export-option input {
+            width: auto;
+        }
+
+        /* ================= NOTIFICATION STYLES ================= */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .notification {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px;
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            max-width: 350px;
+            animation: slideIn 0.3s ease;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .notification.success {
+            border-left-color: var(--success);
+        }
+        
+        .notification.error {
+            border-left-color: var(--danger);
+        }
+        
+        .notification.warning {
+            border-left-color: var(--warning);
+        }
+        
+        .notification.info {
+            border-left-color: var(--info);
+        }
+        
+        .notification-icon {
+            font-size: 1.25rem;
+        }
+        
+        .notification.success .notification-icon {
+            color: var(--success);
+        }
+        
+        .notification.error .notification-icon {
+            color: var(--danger);
+        }
+        
+        .notification.warning .notification-icon {
+            color: var(--warning);
+        }
+        
+        .notification.info .notification-icon {
+            color: var(--info);
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-close {
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* ================= PENDING CARDS LAYOUT ================= */
+        .pending-cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 9px;
+            margin-top: 9px;
+        }
+        
+        .pending-card {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 9px;
+            box-shadow: var(--card-shadow);
+            border-left: 4px solid var(--warning);
+        }
+        
+        .pending-card.received {
+            border-left-color: var(--success);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 7px;
+        }
+        
+        .card-title {
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 1.1rem;
+        }
+        
+        .card-lot {
+            font-size: 0.9rem;
+            color: var(--gray);
+            background: var(--light);
+            padding: 6px 8px;
+            border-radius: 4px;
+        }
+        
+        .card-details {
+            margin-bottom: 7px;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .detail-label {
+            color: var(--gray);
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .amount-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .badge-pending {
+            background-color: rgba(248, 150, 30, 0.1);
+            color: #f8961e;
+        }
+        
+        .badge-received {
+            background-color: rgba(76, 201, 240, 0.1);
+            color: #4cc9f0;
+        }
+        
+        .progress-container {
+            margin: 7px 0;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background-color: var(--light-gray);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: var(--success);
+            border-radius: 4px;
+        }
+        
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-top: 6px;
+        }
+        
+        .card-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 7px;
+        }
+
+        /* ================= WEEKLY CARDS LAYOUT ================= */
+        .weekly-cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+            margin-top: 9px;
+        }
+        
+        .week-section {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 9px;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .week-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 9px;
+            padding-bottom: 7px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+        
+        .week-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .week-total {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .week-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 7px;
+        }
+        
+        .week-card {
+            background: var(--light);
+            border-radius: 8px;
+            padding: 7px;
+            border-left: 3px solid var(--info);
+        }
+        
+        .week-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+        }
+        
+        .week-card-title {
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .week-card-date {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+        
+        .week-card-details {
+            font-size: 0.9rem;
+        }
+        
+        .week-card-amount {
+            font-weight: 600;
+            color: var(--primary);
+            margin-top: 6px;
+        }
+
+        /* ================= ADVANCED SEARCH SECTION ================= */
+        .advanced-search {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 9px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 9px;
+        }
+        
+        .search-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            margin-bottom: 7px;
+        }
+        
+        .search-toggle h3 {
+            color: var(--primary);
+            margin: 0;
+        }
+        
+        .search-content {
+            display: none;
+        }
+        
+        .search-content.active {
+            display: block;
+        }
+        
+        .search-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 7px;
+            margin-bottom: 7px;
+        }
+        
+        .search-results {
+            margin-top: 9px;
+        }
+        
+        .result-filters {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 7px;
+            flex-wrap: wrap;
+        }
+        
+        .result-filter-btn {
+            padding: 6px 15px;
+            background: var(--light);
+            border: 1px solid var(--light-gray);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .result-filter-btn.active {
+            background: var(--primary);
+            color: var(--white);
+            border-color: var(--primary);
+        }
+
+        /* ================= UNIQUE CODE STYLES ================= */
+        .unique-code {
+            color: #28a745 !important;
+            font-weight: bold;
+            background-color: rgba(40, 167, 69, 0.1);
+            padding: 6px 8px;
+            border-radius: 4px;
+            margin-left: 6px;
+            border: 1px solid #28a745;
+            font-family: monospace;
+        }
+
+        .datetime {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+            font-size: 0.9rem;
+        }
+
+        /* Modal mein code display ke liye */
+        .unique-code-display {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 6px 12px;
+            border-radius: 4px;
+            border-left: 4px solid #4caf50;
+            margin-top: 6px;
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        /* ================= AGING REPORT STYLES ================= */
+        .aging-cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 9px;
+            margin-top: 9px;
+        }
+
+        .aging-category {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 9px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .aging-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 7px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+
+        .aging-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* colours come from calc.js (AGING_LEVELS) via CSS variables */
+        .aging-fresh    { border-left: 5px solid var(--aging-fresh); }
+        .aging-aging    { border-left: 5px solid var(--aging-aging); }
+        .aging-warning  { border-left: 5px solid var(--aging-warning); }
+        .aging-critical { border-left: 5px solid var(--aging-critical); box-shadow: 0 0 0 1px var(--aging-critical); }
+        .aging-fresh .aging-title    { color: var(--aging-fresh); }
+        .aging-aging .aging-title    { color: #b38f00; }
+        .aging-warning .aging-title  { color: var(--aging-warning); }
+        .aging-critical .aging-title { color: var(--aging-critical); }
+        .aging-aging .aging-header    { background: var(--aging-aging-soft); }
+        .aging-warning .aging-header  { background: var(--aging-warning-soft); }
+        .aging-critical .aging-header { background: var(--aging-critical-soft); }
+        .aging-fresh .aging-header    { background: var(--aging-fresh-soft); }
+        .aging-item-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+        /* same button as the item cards' stock button (ItemModal.toggleStock) */
+        .aging-stock-btn {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 10px; font-size: 0.75rem; font-weight: 600; cursor: pointer;
+            color: var(--success); background: transparent;
+            border: 1px solid currentColor; border-radius: 999px;
+        }
+        .aging-stock-btn:hover { background: rgba(76, 201, 240, 0.12); }
+        .aging-count { font-size: 0.8rem; font-weight: 600; opacity: 0.8; margin-left: 0.4rem; }
+
+        .aging-total {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .aging-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .aging-item:last-child {
+            border-bottom: none;
+        }
+
+        .aging-item-info {
+            flex: 1;
+        }
+
+        .aging-item-name {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .aging-item-details {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .aging-item-value {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* ================= LOADING ANIMATION ================= */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: var(--white);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ================= RESPONSIVE STYLES ================= */
+        @media (max-width: 768px) {
+            .container {
+                padding: 7px;
+            }
+            
+            .dashboard-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-group {
+                min-width: 100%;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .tabs {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+            }
+            
+            .tab {
+                padding: 6px 15px;
+                font-size: 14px;
+            }
+            
+            th, td {
+                padding: 6px 10px;
+                font-size: 14px;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 6px;
+            }
+            
+            .history-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .history-amount {
+                margin-left: 0;
+                margin-top: 6px;
+            }
+            
+            .modal-content {
+                padding: 9px;
+                width: 95%;
+            }
+            
+            .export-buttons {
+                flex-direction: column;
+            }
+            
+            .export-btn {
+                width: 100%;
+            }
+            
+            .pending-cards-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .week-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .result-filters {
+                flex-direction: column;
+            }
+
+            .card {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .card-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            
+            .card-content h3 {
+                font-size: 20px;
+            }
+            
+            .section {
+                padding: 7px;
+            }
+            
+            .filter-group select, .filter-group input {
+                padding: 6px;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+            
+            .section-title {
+                font-size: 16px;
+            }
+            
+            .card-actions {
+                flex-direction: column;
+            }
+
+            .aging-cards-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .aging-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .card-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            
+            .card-content h3 {
+                font-size: 20px;
+            }
+            
+            .section {
+                padding: 7px;
+            }
+            
+            .filter-group select, .filter-group input {
+                padding: 6px;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+            
+            .section-title {
+                font-size: 16px;
+            }
+            
+            .card-actions {
+                flex-direction: column;
+            }
+
+            .aging-item {
+                flex-direction: column;
+                gap: 6px;
+            }
+            
+            .aging-item-value {
+                align-self: flex-end;
+            }
+            
+            .aging-title {
+                font-size: 1.1rem;
+            }
+            
+            .aging-total {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="site-topbar">
+        <div class="site-topbar-inner">
+            <a href="index.html" class="logo"><i class="fas fa-tshirt"></i> ALISHAN</a>
+            <div class="site-topbar-right">
+                <nav class="site-nav-links">
+                    <ul>
+                        <li><a href="index.html"><i class="fas fa-home"></i> DASHBOARD</a></li>
+                        <li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
+                        <li><a href="reports.html" class="active"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
+                        <li><a href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
+                    </ul>
+                </nav>
+                <button class="site-menu-toggle" id="siteMenuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        <ul class="site-mobile-nav" id="siteMobileNav">
+            <li><a href="index.html"><i class="fas fa-home"></i> DASHBOARD</a></li>
+            <li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
+            <li><a href="reports.html" class="active"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
+            <li><a href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
+        </ul>
+    </header>
+
+    <div class="container">
+        <h2><i class="fas fa-chart-bar"></i> Advanced Inventory Reports & Analytics</h2>
+        
+        <!-- Search (search.js): the same search box on every page; it narrows every tab below -->
+        <div id="alishan-search"></div>
+
+        <!-- ================= DASHBOARD CARDS ================= -->
+        <div class="dashboard-cards">
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="card-content">
+                    <h3 id="totalValue">₹0</h3>
+                    <p>Total Inventory Value</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-boxes"></i>
+                </div>
+                <div class="card-content">
+                    <h3 id="totalItems">0</h3>
+                    <p>Total Items in Stock</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="card-content">
+                    <h3 id="agingItems">0</h3>
+                    <p id="agingLabel">Aging Stock</p>
+                    <div class="aging-breakdown" id="agingBreakdown"></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-calendar-week"></i>
+                </div>
+                <div class="card-content">
+                    <h3 id="weeklyAdded">0</h3>
+                    <p>Added This Week</p>
+                </div>
+            </div>
+            
+            <!-- NEW CARDS ADDED -->
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="card-content">
+                    <h3 id="receivedAmount">₹0</h3>
+                    <p>Total Amount Received</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="card-content">
+                    <h3 id="pendingAmount">₹0</h3>
+                    <p>Total Pending Amount</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ================= ADVANCED SEARCH SECTION ================= -->
+        <div class="advanced-search">
+            <div class="search-toggle" onclick="toggleAdvancedSearch()">
+                <h3><i class="fas fa-search-plus"></i> Advanced Quality Search</h3>
+                <i class="fas fa-chevron-down" id="searchToggleIcon"></i>
+            </div>
+            
+            <div class="search-content" id="advancedSearchContent">
+                <div class="search-grid">
+                    <div class="filter-group">
+                        <label for="qualitySearch">Quality Name</label>
+                        <input type="text" id="qualitySearch" placeholder="Enter quality name">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="lotNumberSearch">Lot Number</label>
+                        <input type="text" id="lotNumberSearch" placeholder="Enter lot number">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="uniqueCodeSearch">Unique Code</label>
+                        <input type="text" id="uniqueCodeSearch" placeholder="Enter unique code">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="amountStatus">Amount Status</label>
+                        <select id="amountStatus">
+                            <option value="all">All Status</option>
+                            <option value="received">Amount Received</option>
+                            <option value="pending">Amount Pending</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="dateRange">Date Range</label>
+                        <select id="dateRange">
+                            <option value="all">All Dates</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group" id="customDateRange" style="display: none;">
+                        <label for="startDate">Start Date</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    
+                    <div class="filter-group" id="customDateRangeEnd" style="display: none;">
+                        <label for="endDate">End Date</label>
+                        <input type="date" id="endDate">
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="performAdvancedSearch()">
+                    <i class="fas fa-search"></i> Search Qualities
+                </button>
+                
+                <div class="search-results" id="searchResults">
+                    <div class="result-filters">
+                        <button class="result-filter-btn active" onclick="filterResults('all', event)">All</button>
+                        <button class="result-filter-btn" onclick="filterResults('received', event)">Received</button>
+                        <button class="result-filter-btn" onclick="filterResults('pending', event)">Pending</button>
+                    </div>
+                    
+                    <div class="pending-cards-container" id="searchResultsContainer">
+                        <p style="text-align: center; color: var(--gray); padding: 40px;">
+                            Use the search options above to find quality data
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ================= FILTERS ================= -->
+        <div class="filters">
+            <div class="filter-group">
+                <label for="timePeriod">Time Period</label>
+                <select id="timePeriod">
+                    <option value="all">All Time</option>
+                    <option value="7">Last 7 Days</option>
+                    <option value="30">Last 30 Days</option>
+                    <option value="90">Last 90 Days</option>
+                    <option value="365">Last 365 Days</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="productType">Product Type</label>
+                <select id="productType">
+                    <option value="all">All Products</option>
+                    <option value="bra">Bra</option>
+                    <option value="panty">Panty</option>
+                    <option value="set">Set</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="qualityFilter">Quality</label>
+                <select id="qualityFilter">
+                    <option value="all">All Qualities</option>
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+            
+            <button class="btn" onclick="applyFilters()">Apply Filters</button>
+            <button class="btn btn-secondary" onclick="showExportModal()">Export Report</button>
+        </div>
+
+        <!-- ================= PAGINATION CONTROLS ================= -->
+        <div class="pagination-controls" id="paginationControls" style="display: none;">
+            <button class="btn btn-secondary" onclick="prevPage()">
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            
+            <span id="pageInfo" class="page-info">Page 1 of 1</span>
+            
+            <button class="btn btn-secondary" onclick="nextPage()">
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
+            
+            <select class="page-select" onchange="changeItemsPerPage(this.value)">
+                <option value="10">10 items</option>
+                <option value="20">20 items</option>
+                <option value="50" selected>50 items</option>
+                <option value="100">100 items</option>
+            </select>
+        </div>
+
+        <!-- ================= TABS ================= -->
+        <div class="tabs">
+            <div class="tab active" data-tab="pending">Pending Amount Receival</div>
+            <div class="tab" data-tab="weekly">Weekly Reports</div>
+            <div class="tab" data-tab="history">Amount History</div>
+            <div class="tab" data-tab="valuation">Inventory Valuation</div>
+            <div class="tab" data-tab="aging">Stock Aging Analysis</div>
+        </div>
+
+        <!-- ================= PENDING AMOUNT TAB ================= -->
+        <div class="tab-content active" id="pending-tab">
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Pending Amount Receival</span>
+                    </div>
+                    <button class="btn" onclick="showAddAmountModal()">Add Amount Received</button>
+                </div>
+                
+                <div class="pending-cards-container" id="pendingCardsContainer">
+                    <!-- Cards will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= WEEKLY REPORTS TAB ================= -->
+        <div class="tab-content" id="weekly-tab">
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-calendar-week"></i>
+                        <span>Weekly Amount Received</span>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="weekSelection">Select Week</label>
+                    <select id="weekSelection" onchange="loadWeeklyData()">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                
+                <div class="weekly-cards-container" id="weeklyCardsContainer">
+                    <!-- Weekly cards will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= AMOUNT HISTORY TAB ================= -->
+        <div class="tab-content" id="history-tab">
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-history"></i>
+                        <span>Amount Received History</span>
+                    </div>
+                </div>
+                
+                <div class="amount-history" id="amountHistory">
+                    <!-- History items will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VALUATION TAB ================= -->
+        <div class="tab-content" id="valuation-tab">
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Inventory Valuation Trend</span>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="valuationTrendChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-cubes"></i>
+                        <span>Stock Summary by Quality</span>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="qualityStockChart"></canvas>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Quality</th>
+                                <th>Total Quantity</th>
+                                <th>Total Value</th>
+                                <th>% of Inventory</th>
+                            </tr>
+                        </thead>
+                        <tbody id="qualityTable">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= AGING ANALYSIS TAB ================= -->
+        <div class="tab-content" id="aging-tab">
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-clock"></i>
+                        <span>Inventory Aging Report</span>
+                    </div>
+                </div>
+                
+                <div class="aging-cards-container" id="agingCardsContainer">
+                    <!-- Aging cards will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= ADD AMOUNT MODAL ================= -->
+    <div class="modal" id="addAmountModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Add Amount Received</div>
+                <button class="close-btn" onclick="closeAddAmountModal()">&times;</button>
+            </div>
+            
+            <form id="amountForm">
+                <input type="hidden" id="amountInventoryId">
+                
+                <div class="form-group">
+                    <label for="amountQuality">Quality</label>
+                    <input type="text" id="amountQuality" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="amountLotNumber">Lot Number</label>
+                    <input type="text" id="amountLotNumber" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="amountUniqueCode">Unique Code</label>
+                    <input type="text" id="amountUniqueCode" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="amountProductType">Product Type</label>
+                    <input type="text" id="amountProductType" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="amountExpected">Expected Amount (₹)</label>
+                    <input type="text" id="amountExpected" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="amountValue">Amount Received (₹)</label>
+                    <input type="number" id="amountValue" step="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="amountDate">Date Received</label>
+                    <input type="date" id="amountDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="amountNotes">Notes</label>
+                    <textarea id="amountNotes" placeholder="Optional notes"></textarea>
+                </div>
+                
+                <button type="submit" class="btn">Save Amount Received</button>
+                <button type="button" class="btn btn-secondary" onclick="closeAddAmountModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= EXPORT MODAL ================= -->
+    <div class="export-modal" id="exportModal">
+        <div class="export-modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Export Report</div>
+                <button class="close-btn" onclick="closeExportModal()">&times;</button>
+            </div>
+            
+            <p>Select the data you want to export:</p>
+            
+            <div class="export-options">
+                <label class="export-option">
+                    <input type="checkbox" id="exportPending" checked> Pending Amount Receival
+                </label>
+                <label class="export-option">
+                    <input type="checkbox" id="exportWeekly" checked> Weekly Reports
+                </label>
+                <label class="export-option">
+                    <input type="checkbox" id="exportHistory" checked> Amount History
+                </label>
+                <label class="export-option">
+                    <input type="checkbox" id="exportValuation" checked> Inventory Valuation
+                </label>
+                <label class="export-option">
+                    <input type="checkbox" id="exportAging" checked> Aging Analysis
+                </label>
+            </div>
+            
+            <div class="export-buttons">
+                <button class="export-btn csv" onclick="exportReport('csv')">
+                    <i class="fas fa-file-csv"></i> Export as CSV
+                </button>
+                <button class="export-btn excel" onclick="exportReport('excel')">
+                    <i class="fas fa-file-excel"></i> Export as Excel
+                </button>
+            </div>
+            
+            <div style="margin-top: 15px; text-align: center;">
+                <button class="btn btn-secondary" onclick="showDownloadHelp()" style="font-size: 12px;">
+                    <i class="fas fa-question-circle"></i> Where are my downloaded files?
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= NOTIFICATION CONTAINER ================= -->
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <script src="db.js"></script>
+    <script src="loader.js"></script>
+    <script src="calc.js"></script>
+    <script src="store.js"></script>
+    <script src="search.js"></script>
+    <script src="item-form.js"></script>
+    <script src="item-modal.js"></script>
+<script>
+        /* ============================================================
+           Reports page — UI ONLY.
+
+           No copy of the inventory or payments lives here, nothing is
+           calculated here and nothing is saved here:
+             • every list / total / report  <- AlishanStore (store.js) + AlishanCalc (calc.js)
+             • add / delete a payment        -> AlishanStore.addPayment / deletePayment
+             • stock toggle (aging button)   -> ItemModal -> AlishanStore.toggleStock
+           The page reads the filter boxes, asks the store for the data of that
+           ONE scope, draws it, and draws again whenever the store changes.
+           ============================================================ */
+
+        // ---------- UI state only ----------
+        let activeFilters = { timePeriod: 'all', productType: 'all', quality: 'all' };
+        // the words in the search box (search.js is optional: without it nothing is searched)
+        const currentSearch = () => (typeof AlishanSearch !== 'undefined' ? AlishanSearch.getTerm() : '');
+        let scope = [];                // the items every tab is drawn from (given by the store)
+        let currentResults = [];       // advanced-search result cards (display only)
+        let filterListenersAttached = false;
+
+        function escapeHtml(value) {
+            return String(value === undefined || value === null ? '' : value)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        // ================= ONE SCOPE FOR EVERY NUMBER =================
+        // The filters + quick search pick ONE list of items (the store finds them);
+        // cards, pending, weekly, history, valuation, quality, aging and exports are
+        // all drawn from that same list.
+
+        function applyScope() {
+            scope = AlishanStore.query({
+                period: activeFilters.timePeriod,
+                productType: activeFilters.productType,
+                quality: activeFilters.quality,
+                search: currentSearch()              // the words in the search box (search.js)
+            });
+        }
+
+        // Only the tab you are looking at is drawn. The others are marked "stale" and drawn the
+        // moment you open them — so a big inventory no longer builds thousands of cards that
+        // nobody is looking at (this was the main reason Reports felt slow).
+        const PAGE_STEP = 50;                       // long lists show 50 rows, then "Show more"
+        let pendingShown = PAGE_STEP;
+        let historyShown = PAGE_STEP;
+        let staleTabs = new Set();
+
+        function drawWeeklyTab() { populateWeekSelection(); loadWeeklyData(); }
+        function drawValuationTab() { generateQualitySummary(); generateValuationTrend(); }
+        const TAB_DRAW = {
+            pending: () => loadPendingAmounts(),
+            weekly: drawWeeklyTab,
+            history: () => loadAmountHistory(),
+            valuation: drawValuationTab,
+            aging: () => renderAgingReport()
+        };
+
+        function currentTab() {
+            const t = document.querySelector('.tab.active');
+            return t ? t.getAttribute('data-tab') : 'pending';
+        }
+
+        function drawTab(name) {
+            if (!staleTabs.has(name) || !TAB_DRAW[name]) return;
+            staleTabs.delete(name);
+            // a failing tab (e.g. a chart that could not load) must not break the others
+            try { TAB_DRAW[name](); } catch (err) { console.error(`Reports: ${name} tab failed`, err); }
+        }
+
+        function refreshAllReports(recomputeScope) {
+            if (recomputeScope) applyScope();
+            pendingShown = PAGE_STEP;
+            historyShown = PAGE_STEP;
+            staleTabs = new Set(Object.keys(TAB_DRAW));
+            try { updateDashboard(); } catch (err) { console.error('Reports: cards failed', err); }
+            drawTab(currentTab());
+        }
+
+        // ================= START UP =================
+
+        async function initPage() {
+            // makes sure every file is there (re-requests a file that did not load); search + loader are optional
+            if (typeof AlishanRequire === 'function' && !(await AlishanRequire({
+                AlishanDB: 'db.js', AlishanCalc: 'calc.js', AlishanStore: 'store.js',
+                ItemForm: 'item-form.js', ItemModal: 'item-modal.js'
+            }, { AlishanSearch: 'search.js', AlishanLoader: 'loader.js' }))) return;
+            const info = await AlishanStore.init();         // qualities, colours, inventory, payments
+            if (info.referenceError) showNotification(info.referenceError, 'error');
+            if (info.damaged) showNotification(`${info.damaged} damaged item(s) were set aside and backed up.`, 'warning');
+
+            setupEventListeners();
+            populateFilters();
+            if (typeof AlishanSearch !== 'undefined') AlishanSearch.init({ onSearch });   // the shared search box (search.js)
+            refreshAllReports(true);
+            checkLowStock();
+
+            // redraw whenever the store changes: a payment, a stock toggle (also from the
+            // Aging tab button), an edit in another page or another tab ...
+            AlishanStore.subscribe(() => {
+                populateFilters();
+                refreshAllReports(true);
+            });
+        }
+
+        function setupEventListeners() {
+            document.getElementById('amountForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveAmountReceived();
+            });
+
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                    drawTab(tabId);
+                });
+            });
+
+            document.getElementById('dateRange').addEventListener('change', function() {
+                const show = this.value === 'custom' ? 'flex' : 'none';
+                document.getElementById('customDateRange').style.display = show;
+                document.getElementById('customDateRangeEnd').style.display = show;
+            });
+        }
+
+        // ================= FILTERS =================
+
+        function populateFilters() {
+            const qualityFilter = document.getElementById('qualityFilter');
+            const keep = qualityFilter.value;
+
+            qualityFilter.innerHTML = '<option value="all">All Qualities</option>';
+            AlishanStore.qualityOptions().forEach(quality => {
+                const option = document.createElement('option');
+                option.value = quality;
+                option.textContent = quality;
+                qualityFilter.appendChild(option);
+            });
+            if ([...qualityFilter.options].some(o => o.value === keep)) qualityFilter.value = keep;
+            else activeFilters.quality = 'all';
+
+            if (filterListenersAttached) return;       // listeners are attached ONCE
+            filterListenersAttached = true;
+
+            document.getElementById('timePeriod').addEventListener('change', function() { activeFilters.timePeriod = this.value; applyFilters(); });
+            document.getElementById('productType').addEventListener('change', function() { activeFilters.productType = this.value; applyFilters(); });
+            qualityFilter.addEventListener('change', function() { activeFilters.quality = this.value; applyFilters(); });
+        }
+
+        function applyFilters() {
+            refreshAllReports(true);
+            showNotification(`Found ${scope.length} items matching your filters`, 'success');
+        }
+
+        function clearFilters() {
+            document.getElementById('timePeriod').value = 'all';
+            document.getElementById('productType').value = 'all';
+            document.getElementById('qualityFilter').value = 'all';
+            activeFilters = { timePeriod: 'all', productType: 'all', quality: 'all' };
+            if (typeof AlishanSearch !== 'undefined') AlishanSearch.setTerm('');   // clears the search box too (-> onSearch -> redraw)
+            else refreshAllReports(true);
+            showNotification('Filters cleared successfully', 'success');
+        }
+
+        // called by search.js whenever a search is run (or cleared): the search narrows every tab
+        function onSearch(term) {
+            refreshAllReports(true);
+            if (term) showNotification(`Found ${scope.length} items matching "${term}"`, 'info');
+        }
+
+        // ================= TOP CARDS =================
+
+        function updateDashboard() {
+            const summary = AlishanStore.summary(scope);
+            const C = AlishanCalc.CONFIG;
+
+            document.getElementById('totalValue').textContent = AlishanCalc.fmtMoney(summary.totalValue);
+            document.getElementById('totalItems').textContent = summary.totalItems;
+            document.getElementById('agingItems').textContent = summary.agingItems;
+            document.getElementById('agingLabel').textContent = `Aging Stock (>${C.AGING_AFTER_DAYS} Days, In Stock)`;
+            document.getElementById('agingBreakdown').innerHTML = AlishanCalc.agingBreakdownHTML(summary);
+            document.getElementById('weeklyAdded').textContent = summary.addedThisWeek;
+            document.getElementById('receivedAmount').textContent = AlishanCalc.fmtMoney(summary.received);
+            document.getElementById('pendingAmount').textContent = AlishanCalc.fmtMoney(summary.pending);
+        }
+
+        function checkLowStock() {
+            const low = AlishanStore.lowStockItems();
+            if (low.length > 0 && !sessionStorage.getItem('lowStockShown')) {
+                sessionStorage.setItem('lowStockShown', '1');
+                showNotification(`Low stock alert: ${low.length} items have less than ${AlishanCalc.CONFIG.LOW_STOCK_DOZENS} dozens`, 'warning');
+            }
+        }
+
+        // ================= PENDING TAB + ADVANCED SEARCH =================
+
+        function toggleAdvancedSearch() {
+            const searchContent = document.getElementById('advancedSearchContent');
+            const toggleIcon = document.getElementById('searchToggleIcon');
+            if (searchContent.style.display === 'block') {
+                searchContent.style.display = 'none';
+                toggleIcon.className = 'fas fa-chevron-down';
+            } else {
+                searchContent.style.display = 'block';
+                toggleIcon.className = 'fas fa-chevron-up';
+            }
+        }
+
+        function createPendingCard(item) {
+            const card = document.createElement('div');
+            card.className = `pending-card ${item.status === 'paid' ? 'received' : ''}`;
+
+            const completionPercent = item.completionPercent;
+            const manualBadge = item.isManualEntry
+                ? '<span class="badge-warning" style="margin-left: 8px; font-size: 0.7rem;">MANUAL DATE</span>' : '';
+            const badgeText = item.status === 'paid' ? 'Received' : item.status === 'partial' ? 'Partially Received' : 'Pending';
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <div class="card-title">${escapeHtml(item.quality)} ${manualBadge}</div>
+                    <div class="card-lot">${escapeHtml(item.lotNumber || 'No Lot')} <span class="unique-code">${escapeHtml(item.code || '')}</span></div>
+                </div>
+                <div class="card-details">
+                    <div class="detail-row"><span class="detail-label">Product Type:</span><span class="detail-value">${escapeHtml(item.productType)}</span></div>
+                    <div class="detail-row"><span class="detail-label">Quantity:</span><span class="detail-value">${AlishanCalc.fmtDozens(item.totalDozens)} dozens</span></div>
+                    <div class="detail-row"><span class="detail-label">Expected Amount:</span><span class="detail-value">${AlishanCalc.fmtMoney(item.expectedAmount)}</span></div>
+                    <div class="detail-row"><span class="detail-label">Received Amount:</span><span class="detail-value">${AlishanCalc.fmtMoney(item.amountReceived)}</span></div>
+                    <div class="detail-row"><span class="detail-label">Pending Amount:</span><span class="detail-value">${AlishanCalc.fmtMoney(item.pendingAmount)}</span></div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar"><div class="progress-fill" style="width: ${completionPercent}%"></div></div>
+                    <div class="progress-text"><span>0%</span><span>${completionPercent}% Complete</span><span>100%</span></div>
+                </div>
+                <div class="card-actions">
+                    <span class="amount-badge ${item.status === 'paid' ? 'badge-received' : 'badge-pending'}">${badgeText}</span>
+                    ${item.pendingAmount > 0 ? `<button class="btn btn-sm" onclick="addAmountForItem('${item.id}')">Add Amount</button>` : ''}
+                </div>`;
+            return card;
+        }
+
+        function moreButtonHTML(kind, shown, total) {
+            return `<div style="text-align:center; padding:14px;">
+                        <button type="button" class="btn" onclick="showMore('${kind}')">
+                            Show ${Math.min(PAGE_STEP, total - shown)} more (${total - shown} left)
+                        </button>
+                    </div>`;
+        }
+
+        function showMore(kind) {
+            if (kind === 'pending') { pendingShown += PAGE_STEP; loadPendingAmounts(); }
+            else { historyShown += PAGE_STEP; loadAmountHistory(); }
+        }
+
+        function loadPendingAmounts() {
+            const container = document.getElementById('pendingCardsContainer');
+            container.innerHTML = '';
+
+            const pending = AlishanStore.pendingList(scope);
+            if (pending.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--gray);">
+                        <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 15px; color: var(--success);"></i>
+                        <h3>No Pending Amounts</h3>
+                        <p>All amounts have been received</p>
+                    </div>`;
+                return;
+            }
+            const fragment = document.createDocumentFragment();
+            pending.slice(0, pendingShown).forEach(card => fragment.appendChild(createPendingCard(card)));
+            container.appendChild(fragment);
+            if (pending.length > pendingShown) container.insertAdjacentHTML('beforeend', moreButtonHTML('pending', pendingShown, pending.length));
+        }
+
+        function filterResults(status, event = null) {
+            if (event) {
+                document.querySelectorAll('.result-filter-btn').forEach(btn => btn.classList.remove('active'));
+                event.target.classList.add('active');
+            }
+            const container = document.getElementById('searchResultsContainer');
+            container.innerHTML = '';
+
+            if (currentResults.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--gray); padding: 40px;">No results found</p>';
+                return;
+            }
+            let list = currentResults;
+            if (status === 'received') list = currentResults.filter(i => i.amountReceived > 0);
+            else if (status === 'pending') list = currentResults.filter(i => i.status !== 'paid');
+
+            if (list.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--gray); padding: 40px;">No results match your filter</p>';
+                return;
+            }
+            list.forEach(item => container.appendChild(createPendingCard(item)));
+        }
+
+        // the advanced search looks through ALL items (not just the current scope);
+        // the store finds them and works out the payment numbers
+        function performAdvancedSearch() {
+            const val = (id) => document.getElementById(id).value;
+            currentResults = AlishanStore.advancedPaymentSearch({
+                quality: val('qualitySearch'),
+                lotNumber: val('lotNumberSearch').trim(),
+                code: val('uniqueCodeSearch').trim(),
+                amountStatus: val('amountStatus'),
+                dateRange: val('dateRange'),
+                startDate: val('startDate'),
+                endDate: val('endDate')
+            });
+            filterResults('all');
+        }
+
+        // ================= ADD / DELETE PAYMENT (the store does it) =================
+
+        function showAddAmountModal() {
+            document.getElementById('amountForm').reset();
+            ['amountInventoryId', 'amountQuality', 'amountLotNumber', 'amountUniqueCode', 'amountProductType', 'amountExpected']
+                .forEach(id => { document.getElementById(id).value = ''; });
+            document.getElementById('amountDate').valueAsDate = new Date();
+            document.getElementById('addAmountModal').style.display = 'flex';
+        }
+
+        function addAmountForItem(inventoryId) {
+            const item = AlishanStore.getItem(inventoryId);
+            if (!item) {
+                showNotification('Inventory item not found!', 'error');
+                return;
+            }
+            const pay = AlishanStore.itemPayment(item);
+
+            document.getElementById('amountInventoryId').value = item.id;
+            document.getElementById('amountQuality').value = item.quality;
+            document.getElementById('amountLotNumber').value = item.lotNumber || 'N/A';
+            document.getElementById('amountUniqueCode').value = item.code || 'N/A';
+            document.getElementById('amountProductType').value = item.productType;
+            document.getElementById('amountExpected').value = AlishanCalc.fmtMoney(pay.expected) +
+                (pay.received > 0 ? ` (received ${AlishanCalc.fmtMoney(pay.received)}, pending ${AlishanCalc.fmtMoney(pay.pending)})` : '');
+            document.getElementById('amountValue').value = pay.pending;      // default = what is still pending
+            document.getElementById('amountDate').valueAsDate = new Date();
+            document.getElementById('addAmountModal').style.display = 'flex';
+        }
+
+        function closeAddAmountModal() {
+            document.getElementById('addAmountModal').style.display = 'none';
+        }
+
+        async function saveAmountReceived() {
+            const result = await AlishanStore.addPayment({
+                inventoryId: document.getElementById('amountInventoryId').value,
+                amount: document.getElementById('amountValue').value,
+                date: document.getElementById('amountDate').value,
+                notes: document.getElementById('amountNotes').value
+            });
+            if (!result.ok) {
+                showNotification(result.error, 'error');
+                return;
+            }
+            closeAddAmountModal();
+            showNotification(result.message, 'success');       // the page redraws itself (store change)
+        }
+
+        async function deleteAmountEntry(amountId) {
+            if (!confirm('Are you sure you want to delete this amount entry?')) return;
+            const result = await AlishanStore.deletePayment(amountId);
+            showNotification(result.ok ? result.message : result.error, result.ok ? 'success' : 'error');
+        }
+
+        // ================= WEEKLY / HISTORY =================
+
+        function populateWeekSelection() {
+            const select = document.getElementById('weekSelection');
+            const previous = select.value;
+            select.innerHTML = '';
+
+            const weeks = AlishanStore.weekOptions(scope);
+            if (weeks.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No data available';
+                select.appendChild(option);
+                return;
+            }
+            weeks.forEach(w => {
+                const option = document.createElement('option');
+                option.value = w.key;
+                option.textContent = w.label;
+                select.appendChild(option);
+            });
+            if (previous && weeks.some(w => w.key === previous)) select.value = previous;
+        }
+
+        function loadWeeklyData() {
+            const selectedWeek = document.getElementById('weekSelection').value;
+            const container = document.getElementById('weeklyCardsContainer');
+            container.innerHTML = '';
+            if (!selectedWeek) return;
+
+            const report = AlishanStore.weeklyReport(scope, selectedWeek);
+            if (report.days.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--gray);">
+                        <i class="fas fa-calendar-times" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                        <h3>No Data Available</h3>
+                        <p>No amount received data for selected week</p>
+                    </div>`;
+                return;
+            }
+
+            const [weekNum, year] = selectedWeek.split('-');
+            const section = document.createElement('div');
+            section.className = 'week-section';
+            section.innerHTML = `
+                <div class="week-header">
+                    <div class="week-title">Week ${weekNum}, ${year}</div>
+                    <div class="week-total">Total: ${AlishanCalc.fmtMoney(report.total)}</div>
+                </div>
+                <div class="week-cards"></div>`;
+            container.appendChild(section);
+            const cards = section.querySelector('.week-cards');
+
+            [...report.days].reverse().forEach(day => {
+                day.entries.forEach(({ payment, item }) => {
+                    const card = document.createElement('div');
+                    card.className = 'week-card';
+                    card.innerHTML = `
+                        <div class="week-card-header">
+                            <div class="week-card-title">${escapeHtml(payment.quality)}</div>
+                            <div class="week-card-date">${AlishanCalc.fmtDate(day.date)}</div>
+                        </div>
+                        <div class="week-card-details">
+                            <div>Lot: ${item ? escapeHtml(item.lotNumber || 'N/A') : 'N/A'} <span class="unique-code">${item ? escapeHtml(item.code || '') : ''}</span></div>
+                            <div>Type: ${item ? escapeHtml(item.productType) : 'N/A'}</div>
+                            <div class="week-card-amount">${AlishanCalc.fmtMoney(payment.amount)}</div>
+                        </div>`;
+                    cards.appendChild(card);
+                });
+            });
+        }
+
+        function loadAmountHistory() {
+            const container = document.getElementById('amountHistory');
+            container.innerHTML = '';
+
+            const history = AlishanStore.paymentHistory(scope);
+            if (history.length === 0) {
+                container.innerHTML = '<p>No amount received history</p>';
+                return;
+            }
+            const fragment = document.createDocumentFragment();
+            history.slice(0, historyShown).forEach(({ payment, item, weekLabel, expected }) => {
+                const row = document.createElement('div');
+                row.className = 'history-item';
+                row.innerHTML = `
+                    <div class="history-info">
+                        <div class="history-quality">${escapeHtml(payment.quality)} ${item ? `- ${escapeHtml(item.lotNumber || 'No Lot')}` : ''} <span class="unique-code">${item ? escapeHtml(item.code || '') : ''}</span></div>
+                        <div class="history-date">${AlishanCalc.fmtDate(payment.date)} • ${weekLabel}</div>
+                        ${payment.notes ? `<div class="history-notes">${escapeHtml(payment.notes)}</div>` : ''}
+                        ${item ? `
+                            <div class="entry-details">
+                                <div class="entry-detail"><span>Product Type:</span> <span>${escapeHtml(item.productType)}</span></div>
+                                <div class="entry-detail"><span>Quantity:</span> <span>${AlishanCalc.fmtDozens(AlishanCalc.itemDozens(item))} dozens</span></div>
+                                <div class="entry-detail"><span>Expected Amount:</span> <span>${AlishanCalc.fmtMoney(expected)}</span></div>
+                            </div>` : ''}
+                    </div>
+                    <div>
+                        <div class="history-amount">${AlishanCalc.fmtMoney(payment.amount)}</div>
+                        <button class="btn btn-danger btn-sm" onclick="deleteAmountEntry(${payment.id})" style="margin-top: 5px;">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>`;
+                fragment.appendChild(row);
+            });
+            container.appendChild(fragment);
+            if (history.length > historyShown) container.insertAdjacentHTML('beforeend', moreButtonHTML('history', historyShown, history.length));
+        }
+
+        // ================= VALUATION / QUALITY (charts) =================
+
+        function generateValuationTrend() {
+            const trend = AlishanStore.valuationTrend(scope);
+            AlishanLoader.chart().then(() => {
+            const ctx = document.getElementById('valuationTrendChart').getContext('2d');
+            if (window.trendChart) window.trendChart.destroy();
+
+            window.trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: trend.labels,
+                    datasets: [{ label: 'Inventory Value (₹)', data: trend.values, fill: false, borderColor: 'rgb(67, 97, 238)', tension: 0.1 }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { callback: (value) => AlishanCalc.fmtMoney(value) } } }
+                }
+            });
+            }).catch(err => showNotification(err.message, 'warning'));
+        }
+
+        function generateQualitySummary() {
+            const summary = AlishanStore.qualitySummary(scope);
+            const table = document.getElementById('qualityTable');
+            table.innerHTML = '';
+
+            summary.rows.forEach(r => {
+                const row = table.insertRow();
+                row.innerHTML = `
+                    <td>${escapeHtml(r.quality)}</td>
+                    <td>${AlishanCalc.fmtDozens(r.dozens)} dozen(s)</td>
+                    <td>${AlishanCalc.fmtMoney(r.value)}</td>
+                    <td>${r.percent}%</td>`;
+            });
+
+            AlishanLoader.chart().then(() => {
+            const ctx = document.getElementById('qualityStockChart').getContext('2d');
+            if (window.qualityChart) window.qualityChart.destroy();
+            window.qualityChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: summary.rows.map(r => r.quality),
+                    datasets: [{
+                        label: 'Inventory Value by Quality (₹)',
+                        data: summary.rows.map(r => r.value),
+                        backgroundColor: summary.rows.map((_, i) => `hsl(${(i * 360) / summary.rows.length}, 70%, 60%)`),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { tooltip: { callbacks: { label: (context) => `${AlishanCalc.fmtMoney(context.raw)} (${AlishanCalc.percent(context.raw, summary.totalValue)}%)` } } }
+                }
+            });
+            }).catch(() => { /* the message was already shown by the trend chart */ });
+        }
+
+        // ================= AGING TAB =================
+        // The store gives in-stock items grouped by level; the stock button on every
+        // item is the SAME button as on the item cards (ItemModal -> AlishanStore.toggleStock).
+
+        function renderAgingReport() {
+            const report = AlishanStore.agingReport(scope);
+            const container = document.getElementById('agingCardsContainer');
+            container.innerHTML = '';
+            [...AlishanCalc.AGING_ORDER].reverse().forEach(level => {
+                container.appendChild(createAgingCategoryCard(level, AlishanCalc.agingTitle(level), report[level]));
+            });
+        }
+
+        function createAgingCategoryCard(type, title, data) {
+            const L = AlishanCalc.AGING_LEVELS[type];
+            const card = document.createElement('div');
+            card.className = `aging-category aging-${type}`;
+
+            card.innerHTML = `
+                <div class="aging-header">
+                    <div class="aging-title">
+                        <i class="fas fa-${L.icon}"></i>
+                        ${title}
+                        <span class="aging-count">${data.items.length} item(s)</span>
+                    </div>
+                    <div class="aging-total">${AlishanCalc.fmtMoney(data.totalValue)}</div>
+                </div>
+                <div class="aging-items">
+                    ${data.items.length === 0
+                        ? '<p style="text-align: center; color: var(--gray); padding: 20px;">No in-stock items in this level</p>'
+                        : data.items.map(({ item, days, dozens, amount }) => `
+                            <div class="aging-item">
+                                <div class="aging-item-info">
+                                    <div class="aging-item-name">${escapeHtml(item.quality)} <span class="unique-code">${escapeHtml(item.code || '')}</span></div>
+                                    <div class="aging-item-details">${escapeHtml(item.lotNumber || 'No Lot')} • ${days} days • ${AlishanCalc.fmtDozens(dozens)} dozens</div>
+                                </div>
+                                <div class="aging-item-side">
+                                    <div class="aging-item-value">${AlishanCalc.fmtMoney(amount)}</div>
+                                    <button type="button" class="aging-stock-btn" onclick="ItemModal.toggleStock('${item.id}')"
+                                            title="Click to mark Out of Stock (leaves Aging)">
+                                        <i class="fas fa-check"></i><span>Complete</span>
+                                    </button>
+                                </div>
+                            </div>`).join('')}
+                </div>`;
+            return card;
+        }
+
+        // ================= EXPORT (rows come from the store) =================
+
+        function showExportModal() { document.getElementById('exportModal').style.display = 'flex'; }
+        function closeExportModal() { document.getElementById('exportModal').style.display = 'none'; }
+
+        async function exportReport(format) {
+            const wanted = [
+                ['exportPending', 'pending', 'Pending Amounts'],
+                ['exportWeekly', 'weekly', 'Weekly Reports'],
+                ['exportHistory', 'history', 'Amount History'],
+                ['exportValuation', 'valuation', 'Inventory Valuation'],
+                ['exportAging', 'aging', 'Aging Analysis']
+            ].filter(([id]) => document.getElementById(id).checked);
+
+            if (wanted.length === 0) {
+                showNotification('Please select at least one data type to export', 'error');
+                return;
+            }
+
+            try {
+                await AlishanLoader.xlsx();       // the Excel library is fetched only now, when needed
+            } catch (error) {
+                showNotification(error.message, 'error');
+                return;
+            }
+            const wb = XLSX.utils.book_new();
+            let hasData = false;
+            wanted.forEach(([, kind, sheetName]) => {
+                const rows = AlishanStore.exportRows(kind, scope);   // same scope as the screen
+                if (rows.length > 0) {
+                    XLSX.utils.book_append_sheet(wb, AlishanLoader.fitColumns(XLSX.utils.json_to_sheet(rows)), sheetName);
+                    hasData = true;
+                }
+            });
+            if (!hasData) {
+                showNotification('No data available for export', 'error');
+                return;
+            }
+
+            const date = new Date();
+            const fileName = `ALISHAN_Report_${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}_${date.getHours()}-${date.getMinutes()}.${format === 'csv' ? 'csv' : 'xlsx'}`;
+            try {
+                if (format === 'csv') {
+                    const first = wb.SheetNames[0];
+                    if (first) downloadFile(XLSX.utils.sheet_to_csv(wb.Sheets[first]), fileName, 'text/csv');
+                } else {
+                    AlishanLoader.saveWorkbook(wb, fileName);
+                }
+                showNotification(`Report exported successfully! File: ${fileName}`, 'success');
+                closeExportModal();
+                setTimeout(() => showNotification('Check your Downloads folder for the exported file', 'info', 5000), 1000);
+            } catch (error) {
+                console.error('Export error: ' + (error && error.message ? error.message : String(error)), error);
+                showNotification('Error exporting report: ' + (error && error.message ? error.message : 'unknown reason'), 'error');
+            }
+        }
+
+        function downloadFile(data, fileName, type) {
+            try {
+                const blob = new Blob([data], { type: type });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
+            } catch (error) {
+                console.error('Download error:', error);
+                showNotification('Error downloading file. Please try again.', 'error');
+            }
+        }
+
+        function showDownloadHelp() {
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            const helpText = isMobile
+                ? 'Check your device\'s Download folder or Files app to find the exported file. On Android, look for the "Downloads" app. On iOS, check the "Files" app.'
+                : 'File saved to your Downloads folder. Press Ctrl+J (Windows) or Cmd+J (Mac) to quickly view downloads in your browser.';
+            showNotification(helpText, 'info', 6000);
+        }
+
+        function showNotification(message, type = 'info', duration = 5000) {
+            const container = document.getElementById('notificationContainer');
+            if (!container) return;
+
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div class="notification-icon">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' :
+                                  type === 'error' ? 'fa-exclamation-circle' :
+                                  type === 'warning' ? 'fa-exclamation-triangle' :
+                                  'fa-info-circle'}"></i>
+                </div>
+                <div class="notification-content"></div>
+                <button class="notification-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
+            notification.querySelector('.notification-content').textContent = message;
+            container.appendChild(notification);
+
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, duration);
+        }
+
+        document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+    <script src="nav.js"></script>
+
+    <nav class="tabbar" aria-label="Main">
+        <a href="index.html"><i class="fas fa-home"></i>Home</a>
+        <a href="inventory.html"><i class="fas fa-database"></i>Inventory</a>
+        <a href="index.html#add" class="tab-add" aria-label="New entry"><i class="fas fa-plus"></i></a>
+        <a href="reports.html" class="active"><i class="fas fa-chart-bar"></i>Reports</a>
+        <a href="setting.html"><i class="fas fa-cog"></i>Settings</a>
+    </nav>
+    <script src="ui.js"></script>
+</body>
+</html>

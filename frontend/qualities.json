@@ -1,68 +1,270 @@
 {
-  "bra": [
-    "SUZEN-MOLD",
-    "AMIRI-MOLD",
-    "SILENT-MOLD",
-    "JAIKAT-MOLD",
-    "U-SEEMLESS-MOLD",
-    "MINI-MIZER-MOLD",
-    "ADDITION-MOLD",
-    "JAXXON-MOLD",
-    "CHARLIE-MOLD",
-    "KANISHKA-MOLD",
-    "FLORA-MOLD",
-    "EAZY-MOLD",
-    "EXOTIC-MOLD",
-    "NAIRA-MOLD",
-    "NANCY-MOLD",
-    "CIBA-MOLD",
-    "FIDDING-MOLD",
-    "KIARA-MOLD",
-    "DIXCY-MOLD",
-    "DENIM-MOLD",
-    "KOMAL-MOLD",
-    "BEAUTYBEX-MOLD",
-    "ROSE-MOLD",
-    "RIHANA -PAD",
-    "SISKA-PAD",
-    "YUKTA-PAD",
-    "KIRTI-FOAM",
-    "DOT-FOAM",
-    "PALLAVI-COTTON",
-    "PARFECTO-COTTON",
-    "CHHAYA-COTTON",
-    "JANVI-COTTON",
-    "MEERA-COTTON",
-    "C-CUP COTTON",
-    "KAVITA-COTTON",
-    "LAZO",
-    "CHARU-BRA",
-    "DOVE",
-    "SKYLA"
-  ],
-  "panty": [
-    "ICE-PANTY",
-    "7200-PANTY"
-  ],
-  "set": [
-    "SONALIKA-SET",
-    "SHAGUN-SET",
-    "DIOMOND-SET",
-    "NICE-SET",
-    "JACKLINE-SET",
-    "EVING-SET",
-    "AROHI-SET",
-    "ARTICLE-55-SET",
-    "SHINING-SET",
-    "LIVIA-SET",
-    "MIX-MATCH-MOLD-CONDUM",
-    "EXOTIC-SET",
-    "CANDY-SET",
-    "GLAIMUN-SET"
-  ],
-  "blouse": [
-    "ORRY-BLOUSE",
-    "CORFIT-BLOUSE",
-    "MERRYKOM-BLOUSE"
-  ]
+  "bra": {
+    "MOLD QUALITIES": [
+      {
+        "name": "SUZEN-MOLD",
+        "price": 22
+      },
+      {
+        "name": "AMIRI-MOLD",
+        "price": 10
+      },
+      {
+        "name": "SILENT-MOLD",
+        "price": 22
+      },
+      {
+        "name": "JAIKAT-MOLD",
+        "price": 10
+      },
+      {
+        "name": "U-SEEMLESS-MOLD",
+        "price": 32
+      },
+      {
+        "name": "MINI-MIZER-MOLD",
+        "price": 48
+      },
+      {
+        "name": "ADDITION-MOLD",
+        "price": 32
+      },
+      {
+        "name": "JAXXON-MOLD",
+        "price": 32
+      },
+      {
+        "name": "CHARLIE-MOLD",
+        "price": 27
+      },
+      {
+        "name": "KANISHKA-MOLD",
+        "price": 16
+      },
+      {
+        "name": "FLORA-MOLD",
+        "price": 24
+      },
+      {
+        "name": "EAZY-MOLD",
+        "price": 22
+      },
+      {
+        "name": "EXOTIC-MOLD",
+        "price": 22
+      },
+      {
+        "name": "NAIRA-MOLD",
+        "price": 16
+      },
+      {
+        "name": "NANCY-MOLD",
+        "price": 16
+      },
+      {
+        "name": "CIBA-MOLD",
+        "price": 32
+      },
+      {
+        "name": "FIDDING-MOLD",
+        "price": 24
+      },
+      {
+        "name": "KIARA-MOLD",
+        "price": 10
+      },
+      {
+        "name": "DIXCY-MOLD",
+        "price": 28
+      },
+      {
+        "name": "KOMAL-MOLD",
+        "price": 22
+      },
+      {
+        "name": "ROSEI-MOLD",
+        "price": 24
+      },
+      {
+        "name": "BEAUTYBEX-MOLD",
+        "price": 16
+      },
+      {
+        "name": "DENIM-MOLD",
+        "price": 10
+      }
+    ],
+    "PAD QUALITIES": [
+      {
+        "name": "RIHANA-PAD",
+        "price": 25
+      },
+      {
+        "name": "SISKA-PAD",
+        "price": 25
+      },
+      {
+        "name": "YUKTA-PAD",
+        "price": 16
+      }
+    ],
+    "FOAM QUALITIES": [
+      {
+        "name": "KIRTI-FOAM",
+        "price": 15
+      },
+      {
+        "name": "DOT-FOAM",
+        "price": 10
+      }
+    ],
+    "COTTON QUALITIES": [
+      {
+        "name": "PALLAVI-COTTON",
+        "price": 10
+      },
+      {
+        "name": "PARFECTO-COTTON",
+        "price": 10
+      },
+      {
+        "name": "CHHAYA-COTTON",
+        "price": 10
+      },
+      {
+        "name": "JANVI-COTTON",
+        "price": 10
+      },
+      {
+        "name": "MEERA-COTTON",
+        "price": 10
+      },
+      {
+        "name": "KAVITA-COTTON",
+        "price": 10
+      },
+      {
+        "name": "C-CUP COTTON",
+        "price": 10
+      }
+    ],
+    "OTHER QUALITIES": [
+      {
+        "name": "LAZO",
+        "price": 17
+      },
+      {
+        "name": "CHARU-BRA",
+        "price": 10
+      },
+      {
+        "name": "DOVE",
+        "price": 10
+      },
+      {
+        "name": "SKYLA",
+        "price": 10
+      },
+      {
+        "name": "ALIZA",
+        "price": 10
+      },
+      {
+        "name": "MAYA",
+        "price": 30
+      }
+    ]
+  },
+  "panty": {
+    "PANTY QUALITIES": [
+      {
+        "name": "ICE-PANTY",
+        "price": 10
+      },
+      {
+        "name": "7200-PANTY",
+        "price": 10
+      }
+    ]
+  },
+  "set": {
+    "SET QUALITIES": [
+      {
+        "name": "SONALIKA-SET",
+        "price": 55
+      },
+      {
+        "name": "SHAGUN-SET",
+        "price": 10
+      },
+      {
+        "name": "DIOMOND-SET",
+        "price": 10
+      },
+      {
+        "name": "NICE-SET",
+        "price": 26
+      },
+      {
+        "name": "JACKLINE-SET",
+        "price": 60
+      },
+      {
+        "name": "EVING-SET",
+        "price": 32
+      },
+      {
+        "name": "AROHI-SET",
+        "price": 32
+      },
+      {
+        "name": "ARTICLE-55-SET",
+        "price": 42
+      },
+      {
+        "name": "SHINING-SET",
+        "price": 48
+      },
+      {
+        "name": "LIVIA-SET",
+        "price": 40
+      },
+      {
+        "name": "MIX-MATCH-MOLD-CONDUM",
+        "price": 52
+      },
+      {
+        "name": "EXOTIC-SET",
+        "price": 32
+      },
+      {
+        "name": "CANDY-SET",
+        "price": 10
+      },
+      {
+        "name": "GLAIMUN-SET",
+        "price": 50
+      },
+      {
+        "name": "MQ-SET",
+        "price": 50
+      }
+    ]
+  },
+  "blouse": {
+    "BLOUSE QUALITIES": [
+      {
+        "name": "ORRY-BLOUSE",
+        "price": 25
+      },
+      {
+        "name": "CORFIT-BLOUSE",
+        "price": 10
+      },
+      {
+        "name": "MERRYKOM-BLOUSE",
+        "price": 10
+      }
+    ]
+  }
 }

@@ -1,7 +1,7 @@
 // theme-manager.js - Global Theme Management
 class GlobalThemeManager {
   constructor() {
-    this.currentTheme = this.getSavedTheme();
+    this.currentTheme = 'light-default'; // fast fallback until AlishanDB resolves
     this.availableThemes = [
       'light-default', 'light-warm', 'dark-deep',
       'dark-blue', 'gold', 'purple', 'mint'
@@ -9,19 +9,15 @@ class GlobalThemeManager {
     this.init();
   }
   
-  init() {
+  async init() {
+    await AlishanDB.init();
+    this.currentTheme = await this.getSavedTheme();
+
     // Apply saved theme on page load
     this.applyTheme(this.currentTheme);
     
-    // Listen for theme changes from other tabs
-    window.addEventListener('storage', (e) => {
-      if (e.key === 'selectedTheme') {
-        this.applyTheme(e.newValue);
-      }
-    });
-    
     // System theme detection
-    this.detectSystemTheme();
+    await this.detectSystemTheme();
   }
   
   getAvailableThemes() {
@@ -44,8 +40,8 @@ class GlobalThemeManager {
     // Update theme toggle icon
     this.updateThemeToggleIcon(themeName);
     
-    // Save to localStorage
-    localStorage.setItem('selectedTheme', themeName);
+    // Persist through the single source of truth (AlishanDB)
+    AlishanDB.setTheme(themeName);
     this.currentTheme = themeName;
     
     // Update theme selector if exists
@@ -80,8 +76,8 @@ class GlobalThemeManager {
     document.dispatchEvent(event);
   }
   
-  getSavedTheme() {
-    return localStorage.getItem('selectedTheme') || 'light-default';
+  async getSavedTheme() {
+    return AlishanDB.getTheme('light-default');
   }
   
   // Method for other pages to get current theme
@@ -90,10 +86,11 @@ class GlobalThemeManager {
   }
   
   // Auto theme detection based on system preference
-  detectSystemTheme() {
+  async detectSystemTheme() {
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      // Only apply if no theme is saved
-      if (!localStorage.getItem('selectedTheme')) {
+      // Only apply if no theme is saved yet
+      const saved = await AlishanDB.getSetting('selectedTheme', null);
+      if (!saved) {
         this.applyTheme('dark-deep');
       }
     }

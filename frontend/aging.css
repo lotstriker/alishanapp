@@ -1,0 +1,23 @@
+/* aging.css — colours come from calc.js (AGING_LEVELS) as CSS variables:
+   --aging-fresh / --aging-aging / --aging-warning / --aging-critical
+   (+ "-soft" and "-text" versions). Change them in calc.js, not here. */
+
+.aging-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0.15rem 0.6rem 0 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.aging-chip i {
+    display: inline-block;
+    width: 0.65rem;
+    height: 0.65rem;
+    border-radius: 50%;
+}
+.aging-breakdown {
+    margin-top: 0.2rem;
+    line-height: 1.3;
+}

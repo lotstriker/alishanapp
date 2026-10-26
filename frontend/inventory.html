@@ -4,32 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ALISHAN - Complete Inventory</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- icons: local SVG set (icons.js), no CDN -->
+    <script src="icons.js"></script>
     
     <link rel="stylesheet" href="inventory.css">
-    
-    <style>
-        /* CSS yahan add hoga */
-    </style>
+    <link rel="stylesheet" href="item-form.css">
+    <link rel="stylesheet" href="item-card.css">
+    <link rel="stylesheet" href="item-modal.css">
+    <link rel="stylesheet" href="aging.css">
+    <link rel="stylesheet" href="search.css">
+    <link rel="stylesheet" href="bulk-import.css">
+    <link rel="stylesheet" href="nav.css">
+    <link rel="stylesheet" href="mobile.css">
 </head>
 <body>
-    <header>
-        <div class="header-content">
-            <div class="logo">
-                <i class="fas fa-tshirt logo-icon"></i>
-                <h1>ALISHAN</h1>
+    <header class="site-topbar">
+        <div class="site-topbar-inner">
+            <a href="index.html" class="logo"><i class="fas fa-tshirt"></i> ALISHAN</a>
+            <div class="site-topbar-right">
+                <nav class="site-nav-links">
+                    <ul>
+                        <li><a href="index.html"><i class="fas fa-home"></i> DASHBOARD</a></li>
+                        <li><a href="inventory.html" class="active"><i class="fas fa-database"></i> INVENTORY</a></li>
+                        <li><a href="reports.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
+                        <li><a href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
+                    </ul>
+                </nav>
+                <button class="site-menu-toggle" id="siteMenuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
-            
-            <nav>
-                <ul>
-                    <li><a href="index.html"><i class="fas fa-home"></i> HOME</a></li>
-                    <li><a href="inventory.html" class="active"><i class="fas fa-database"></i> INVENTORY</a></li>
-                    <li><a href="report.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
-                    <li><a href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
-                </ul>
-            </nav>
         </div>
+        <ul class="site-mobile-nav" id="siteMobileNav">
+            <li><a href="index.html"><i class="fas fa-home"></i> DASHBOARD</a></li>
+            <li><a href="inventory.html" class="active"><i class="fas fa-database"></i> INVENTORY</a></li>
+            <li><a href="reports.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
+            <li><a href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
+        </ul>
     </header>
 
     <div class="container">
@@ -72,10 +83,19 @@
                 </div>
                 <div class="card-content">
                     <h3 id="agingItems">0</h3>
-                    <p>Aging Stock (>8 Days)</p>
+                    <p id="agingLabel">Aging Stock</p>
+                    <div class="aging-breakdown" id="agingBreakdown"></div>
                 </div>
             </div>
         </div>
+
+        <div class="inv-tools">
+            <button type="button" class="tool-filters" data-open-filters><i class="fas fa-filter"></i> Filters</button>
+            <button type="button" onclick="showExportModal()"><i class="fas fa-file-export"></i> Export</button>
+            <button type="button" onclick="showImportModal()"><i class="fas fa-file-import"></i> Import</button>
+            <button type="button" onclick="openBulkImport()"><i class="fas fa-magic"></i> Bulk import</button>
+        </div>
+        <div class="sheet-scrim"></div>
 
         <div class="filters">
             <div class="filter-group">
@@ -85,9 +105,7 @@
                     <option value="bra">Bra</option>
                     <option value="panty">Panty</option>
                     <option value="set">Set</option>
-                    <option value="blouse"><blockquote>
-                        
-                    </blockquote>use</option>
+                    <option value="blouse">Blouse</option>
                 </select>
             </div>
 
@@ -122,12 +140,11 @@
             <button class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
             <button class="btn btn-success" onclick="showExportModal()"><i class="fas fa-file-export"></i> Export</button>
             <button class="btn btn-info" onclick="showImportModal()"><i class="fas fa-file-import"></i> Import</button>
+            <button class="btn btn-info" onclick="openBulkImport()" title="Add many old entries from an AI-made JSON, with review"><i class="fas fa-magic"></i> Bulk Import</button>
         </div>
 
-        <div class="search-container">
-            <input type="text" id="searchInput" class="search-input" placeholder="Search by quality, lot number, or notes..." onkeyup="handleSearch(event)">
-            <button class="search-btn" onclick="performSearch()"><i class="fas fa-search"></i> Search</button>
-        </div>
+        <!-- Search (search.js): the same search box on every page -->
+        <div id="alishan-search"></div>
 
         <div class="section">
             <div class="section-header">
@@ -135,9 +152,14 @@
                     <i class="fas fa-list"></i>
                     <span>All Inventory Items</span>
                 </div>
-                <button class="btn" onclick="location.href='index.html'">
-                    <i class="fas fa-plus"></i> Add New Item
-                </button>
+                <div class="ic-list-tools">
+                    <button type="button" class="ic-collapse-btn" data-collapse-all onclick="ItemCard.collapseAll()" disabled>
+                        <i class="fas fa-compress-alt"></i> Collapse all<span class="ic-open-count"></span>
+                    </button>
+                    <button class="btn" onclick="location.href='index.html'">
+                        <i class="fas fa-plus"></i> Add New Item
+                    </button>
+                </div>
             </div>
             
             <div class="inventory-cards" id="inventoryCards">
@@ -165,162 +187,6 @@
         </div>
     </div>
 
-    <!-- Edit Modal -->
-    <div class="modal" id="editModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Edit Product Entry</h2>
-                <div id="uniqueCodeDisplay" class="unique-code-display"></div>
-                <button class="close-btn" onclick="closeEditModal()">&times;</button>
-            </div>
-            <form id="editForm">
-                <input type="hidden" id="editIndex">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="editProductType">Product Type</label>
-                        <select id="editProductType" required onchange="updateEditQualityOptions(this.value)">
-                            <option value="">Select Type</option>
-                            <option value="bra">Bra</option>
-                            <option value="panty">Panty</option>
-                            <option value="set">Set</option>
-                            <option value="blouse">Blouse</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="editCupSize">Cup Size</label>
-                        <select id="editCupSize">
-                            <option value="">Select Cup Size</option>
-                            <option value="A">A Cup</option>
-                            <option value="B">B Cup</option>
-                            <option value="C">C Cup</option>
-                            <option value="D">D Cup</option>
-                            <option value="E">E Cup</option>
-                            <option value="F">F Cup</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editLotNumber">Lot Number</label>
-                        <input type="text" id="editLotNumber" placeholder="Enter lot number">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editQuality">Quality Name</label>
-                        <select id="editQuality" required>
-                            <option value="">Select Quality</option>
-                            <option value="LAZO">LAZO</option>
-                            <option value="ORRY">ORRY</option>
-                            <option value="NAIRA">NAIRA</option>
-                            <option value="EXOTIC">EXOTIC</option>
-                            <option value="PARFECTO">PARFECTO</option>
-                            <option value="ADDITION">ADDITION</option>
-                            <option value="JAXXON">JAXXON</option>
-                            <option value="CHARLIE">CHARLIE</option>
-                            <option value="KANISHKA">KANISHKA</option>
-                            <option value="FLORA">FLORA</option>
-                            <option value="EAZY">EAZY</option>
-                            <option value="NANCY">NANCY</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editMaterial">Material (meters)</label>
-                        <input type="number" id="editMaterial" step="0.01" placeholder="Enter material in meters">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editWeight">Weight (kg)</label>
-                        <input type="number" id="editWeight" step="0.01" placeholder="Enter weight in kg">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editPrice">Price (per dozen)</label>
-                        <input type="number" id="editPrice" step="0.01" placeholder="Enter price per dozen">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editColors">Colors (space separated)</label>
-                        <input type="text" id="editColors" placeholder="Red Blue Green">
-                    </div>
-                </div>
-                
-                <div class="size-option">
-                    <label>
-                        <input type="radio" name="editSizeOption" value="same" checked onchange="toggleEditSizeOption()">
-                        Same sizes for all colors
-                    </label>
-                    <label>
-                        <input type="radio" name="editSizeOption" value="different" onchange="toggleEditSizeOption()">
-                        Different sizes for each color
-                    </label>
-                </div>
-                
-                <h3>Size Quantities (in dozens)</h3>
-                
-                <div id="editSameSizesContainer">
-                    <div class="size-grid">
-                        <div class="size-input-group">
-                            <label for="editSize28">Size 28</label>
-                            <input type="number" id="editSize28" min="0" step="1" placeholder="Dozens">
-                        </div>
-                        <div class="size-input-group">
-                            <label for="editSize30">Size 30</label>
-                            <input type="number" id="editSize30" min="0" step="1" placeholder="Dozens">
-                        </div>
-                        <div class="size-input-group">
-                            <label for="editSize32">Size 32</label>
-                            <input type="number" id="editSize32" min="0" step="1" placeholder="Dozens">
-                        </div>
-                        <div class="size-input-group">
-                            <label for="editSize34">Size 34</label>
-                            <input type="number" id="editSize34" min="0" step="1" placeholder="Dozens">
-                        </div>
-                        <div class="size-input-group">
-                            <label for="editSize36">Size 36</label>
-                            <input type="number" id="editSize36" min="0" step="1" placeholder="Dozens">
-                        </div>
-                        <div class="size-input-group">
-                            <label for="editSize38">Size 38</label>
-                            <input type="number" id="editSize38" min="0" step="1" placeholder="Dozens">
-                        </div>
-                        <div class="size-input-group">
-                            <label for="editSize40">Size 40</label>
-                            <input type="number" id="editSize40" min="0" step="1" placeholder="Dozens">
-                        </div>
-                        <div class="size-input-group">
-                            <label for="editSize42">Size 42</label>
-                            <input type="number" id="editSize42" min="0" step="1" placeholder="Dozens">
-                        </div>
-                        <div class="size-input-group">
-                            <label for="editSize44">Size 44</label>
-                            <input type="number" id="editSize44" min="0" step="1" placeholder="Dozens">
-                        </div>
-                        <div class="size-input-group">
-                            <label for="editSize46">Size 46</label>
-                            <input type="number" id="editSize46" min="0" step="1" placeholder="Dozens">
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="editDifferentSizesContainer" class="color-size-container" style="display: none;">
-                    <div id="editColorSizeItems">
-                        <!-- Color size items will be added dynamically -->
-                    </div>
-                    <button type="button" class="add-color-btn" onclick="addEditColorSizeItem()">
-                        <i class="fas fa-plus"></i> Add Color with Sizes
-                    </button>
-                </div>
-                
-                <div class="form-group" style="margin-top: 20px;">
-                    <label for="editNotes">Notes</label>
-                    <textarea id="editNotes" rows="3" placeholder="Additional notes"></textarea>
-                </div>
-                
-                <button type="submit" class="btn">Update Product Entry</button>
-                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
-            </form>
-        </div>
-    </div>
 
     <!-- Export Modal -->
     <div class="modal" id="exportModal">
@@ -350,6 +216,9 @@
                 </button>
                 <button class="btn btn-info" onclick="exportCompleteBackup()">
                     <i class="fas fa-download"></i> Complete Backup
+                </button>
+                <button class="btn btn-secondary" onclick="showBackupSettingsModal()">
+                    <i class="fas fa-shield-alt"></i> Backup Settings
                 </button>
                 <!-- Advanced Export Button Added -->
                 <button class="btn btn-warning" onclick="showAdvancedExportModal()">
@@ -554,6 +423,9 @@
             </div>
             
             <div class="backup-actions">
+                <button class="btn" onclick="saveBackupSettings()">
+                    <i class="fas fa-check"></i> Save Settings
+                </button>
                 <button class="btn btn-success" onclick="createBackupNow()">
                     <i class="fas fa-save"></i> Create Backup Now
                 </button>
@@ -576,21 +448,45 @@
 
 
 
+    <!-- Backup History Modal -->
+    <div class="modal" id="backupHistoryModal">
+        <div class="modal-content" style="max-width: 640px;">
+            <div class="modal-header">
+                <h2>Backup History</h2>
+                <button class="close-btn" onclick="closeBackupHistoryModal()">&times;</button>
+            </div>
+            <p style="color: var(--gray); font-size: 0.85rem; margin-bottom: 0.8rem;">
+                Auto backups are kept inside this browser (last 7). Use "Complete Backup" to save a file on your computer too.
+            </p>
+            <div id="backupHistoryList"></div>
+        </div>
+    </div>
+
     <!-- Notification Container -->
     <div class="notification-container" id="notificationContainer"></div>
     
     
+    <script src="db.js"></script>
+    <script src="loader.js"></script>
+    <script src="calc.js"></script>
+    <script src="store.js"></script>
+    <script src="search.js"></script>
+    <script src="item-form.js"></script>
+    <script src="item-card.js"></script>
+    <script src="item-modal.js"></script>
+    <script src="bulk-import.js"></script>
     <script src="inventory.js" type="text/javascript" charset="utf-8"></script>
     
     
-    <!-- Google Cloud Scripts -->
-<script src="https://apis.google.com/js/api.js"></script>
-<script src="https://accounts.google.com/gsi/client"></script>
-<script src="config.js"></script>
-<script src="google-cloud-config.js"></script>
+    <script src="nav.js"></script>
 
-    <script>
-        // JavaScript yahan add hoga
-    </script>
+    <nav class="tabbar" aria-label="Main">
+        <a href="index.html"><i class="fas fa-home"></i>Home</a>
+        <a href="inventory.html" class="active"><i class="fas fa-database"></i>Inventory</a>
+        <a href="index.html#add" class="tab-add" aria-label="New entry"><i class="fas fa-plus"></i></a>
+        <a href="reports.html"><i class="fas fa-chart-bar"></i>Reports</a>
+        <a href="setting.html"><i class="fas fa-cog"></i>Settings</a>
+    </nav>
+    <script src="ui.js"></script>
 </body>
 </html>

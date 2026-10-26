@@ -1,0 +1,353 @@
+/* ============================================================
+   item-modal.css — styling for the shared Edit Product modal
+   (item-modal.js). Loaded by BOTH index.html and inventory.html,
+   after each page's own CSS, and every rule is scoped to
+   #editModal so the page-specific .modal / .form-grid / .btn
+   rules (which were different on Dashboard and Inventory and
+   made the modal look different/cramped) can no longer leak in.
+   ============================================================ */
+
+body.modal-open {
+    overflow: hidden;
+}
+
+#editModal.modal {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 18, 30, 0.65);
+    backdrop-filter: blur(2px);
+    z-index: 2000;               /* above the sticky navbar (1000) */
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+#editModal .edit-modal-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 980px;
+    max-height: 100%;
+    padding: 0;
+    overflow: hidden;            /* header/footer stay fixed, only the body scrolls */
+    border: none;
+    border-radius: 14px;
+    background: var(--white, #fff);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- header ---------- */
+#editModal .modal-header {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--light-gray, #e9ecef);
+    background: #fafbfe;
+}
+
+#editModal .edit-modal-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    min-width: 0;
+}
+
+#editModal .modal-header h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--dark, #212529);
+}
+
+#editModal .unique-code-display {
+    margin: 0;
+    padding: 3px 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--primary, #4361ee);
+    background: rgba(67, 97, 238, 0.1);
+    border: none;
+    border-radius: 999px;
+}
+#editModal .unique-code-display:empty {
+    display: none;
+}
+
+#editModal .close-btn {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 1.5rem;
+    line-height: 1;
+    border-radius: 50%;
+    color: var(--gray, #6c757d);
+}
+#editModal .close-btn:hover {
+    background: var(--light-gray, #e9ecef);
+    color: var(--danger, #f72585);
+}
+
+/* ---------- form: scrolling body + fixed footer ---------- */
+#editModal .edit-modal-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0;
+}
+
+#editModal .edit-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 18px 20px 6px;
+    -webkit-overflow-scrolling: touch;
+}
+
+#editModal .edit-section {
+    margin-bottom: 20px;
+}
+
+#editModal .edit-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+    padding: 0;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--primary, #4361ee);
+}
+
+/* ---------- fields ---------- */
+#editModal .edit-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+#editModal .edit-field {
+    min-width: 0;
+}
+
+#editModal .edit-field label {
+    display: block;
+    margin: 0 0 5px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--gray, #6c757d);
+}
+
+#editModal .edit-field input[type="text"],
+#editModal .edit-field input[type="number"],
+#editModal .edit-field select,
+#editModal .edit-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.92rem;
+    font-family: inherit;
+    color: var(--dark, #212529);
+    background: var(--white, #fff);
+    border: 1px solid #d9deea;
+    border-radius: 8px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#editModal .edit-field textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+#editModal .edit-field input:focus,
+#editModal .edit-field select:focus,
+#editModal .edit-field textarea:focus {
+    outline: none;
+    border-color: var(--primary, #4361ee);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.12);
+}
+
+/* quality + color pickers: keep them compact inside the modal */
+#editModal .quality-selector-container {
+    max-height: 260px;
+}
+#editModal .quality-search-container input {
+    padding: 0.6rem 0.75rem 0.6rem 2.1rem;
+    border-width: 1px;
+}
+#editModal .quality-search-container > i {
+    position: absolute;
+    left: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray, #6c757d);
+    pointer-events: none;
+}
+#editModal .color-selector {
+    min-height: 44px;
+    padding: 8px 12px;
+    border-width: 1px;
+}
+#editModal .color-dropdown {
+    max-height: 320px;
+}
+
+/* ---------- size option (same / different) ---------- */
+#editModal .size-option {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 12px;
+    padding: 0;
+    background: none;
+}
+#editModal .size-option label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--dark, #212529);
+    background: rgba(67, 97, 238, 0.06);
+    border: 1px solid transparent;
+    border-radius: 999px;
+}
+#editModal .size-option label:has(input:checked) {
+    background: rgba(67, 97, 238, 0.14);
+    border-color: var(--primary, #4361ee);
+    color: var(--primary, #4361ee);
+}
+#editModal .size-option input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--primary, #4361ee);
+}
+
+/* ---------- size grid inside the modal: 5 x 2 on desktop ---------- */
+#editModal .size-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 0;
+}
+#editModal .color-size-item {
+    padding: 12px;
+    margin-bottom: 12px;
+}
+#editModal .color-size-header h4 {
+    margin: 0;
+    font-size: 0.9rem;
+}
+#editModal .color-size-header {
+    padding: 8px 12px;
+    border: 1px solid;
+    border-radius: 8px;
+}
+#editModal .add-color-btn {
+    width: 100%;
+    margin-top: 4px;
+}
+
+/* ---------- footer ---------- */
+#editModal .edit-modal-actions {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--light-gray, #e9ecef);
+    background: #fafbfe;
+}
+#editModal .edit-modal-actions .btn {
+    min-width: 130px;
+    margin: 0;
+    padding: 0.65rem 1.2rem;
+    transform: none;
+}
+#editModal .edit-modal-actions .btn:hover {
+    transform: none;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+    #editModal .edit-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    #editModal .size-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    #editModal .size-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 560px) {
+    #editModal.modal {
+        padding: 0;
+    }
+    #editModal .edit-modal-content {
+        max-width: 100%;
+        height: 100%;
+        border-radius: 0;
+    }
+    #editModal .edit-modal-body {
+        padding: 14px 14px 4px;
+    }
+    #editModal .modal-header,
+    #editModal .edit-modal-actions {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+    #editModal .edit-grid {
+        grid-template-columns: 1fr;
+    }
+    #editModal .size-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    #editModal .edit-modal-actions {
+        flex-direction: column-reverse;
+    }
+    #editModal .edit-modal-actions .btn {
+        width: 100%;
+    }
+}
+
+/* neutralise page-specific h2 / button styles that leaked into the header & footer */
+#editModal .modal-header h2 {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+#editModal .modal-header h2::after,
+#editModal .modal-header h2::before {
+    display: none;
+}
+#editModal .edit-modal-actions .btn {
+    text-transform: none;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}

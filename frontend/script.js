@@ -2,7 +2,7 @@
 class CompleteSettingsManager {
     constructor() {
         this.currentSection = 'dashboard';
-        this.settings = this.loadSettings();
+        this.settings = {}; // populated async in init() from AlishanDB
         this.undoStack = [];
         this.redoStack = [];
         this.users = [
@@ -63,14 +63,16 @@ class CompleteSettingsManager {
         this.init();
     }
 
-    init() {
+    async init() {
+        await AlishanDB.init();
+        this.settings = await this.loadSettings();
         this.setupNavigation();
         this.setupSearch();
         this.setupEventListeners();
         this.populateAllSelectors();
-        this.updateBackupList();
+        await this.updateBackupList();
         this.updateAISuggestions();
-        this.calculateStorageUsage();
+        await this.calculateStorageUsage();
         this.showToast('Settings dashboard loaded successfully', 'success');
     }
 
@@ -519,26 +521,25 @@ class CompleteSettingsManager {
         });
     }
 
-    calculateStorageUsage() {
-        let totalSize = 0;
-        
-        for (let key in localStorage) {
-            if (localStorage.hasOwnProperty(key)) {
-                totalSize += localStorage[key].length * 2;
-            }
-        }
-        
-        const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
-        const maxStorage = 5 * 1024 * 1024;
-        const percentage = Math.min(100, (totalSize / maxStorage) * 100).toFixed(0);
-        
+    async calculateStorageUsage() {
         const progressBar = document.getElementById('storageProgressBar');
         const usageText = document.getElementById('storageUsageText');
         const percentageText = document.getElementById('storagePercentage');
-        
-        if (progressBar) progressBar.style.width = `${percentage}%`;
-        if (usageText) usageText.textContent = `${totalSizeMB} MB of 5 MB used`;
-        if (percentageText) percentageText.textContent = `${percentage}%`;
+
+        // Data now lives in IndexedDB (AlishanDB), not localStorage,
+        // so usage is read from the browser's storage estimate API.
+        if (navigator.storage && navigator.storage.estimate) {
+            const { usage = 0, quota = 0 } = await navigator.storage.estimate();
+            const usageMB = (usage / (1024 * 1024)).toFixed(2);
+            const quotaMB = quota ? (quota / (1024 * 1024)).toFixed(0) : '—';
+            const percentage = quota ? Math.min(100, (usage / quota) * 100).toFixed(0) : 0;
+
+            if (progressBar) progressBar.style.width = `${percentage}%`;
+            if (usageText) usageText.textContent = `${usageMB} MB of ${quotaMB} MB used`;
+            if (percentageText) percentageText.textContent = `${percentage}%`;
+        } else if (usageText) {
+            usageText.textContent = 'Storage usage unavailable in this browser';
+        }
     }
 
     // ===== CURRENCY & EXCHANGE RATES =====
@@ -817,7 +818,7 @@ class CompleteSettingsManager {
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onloadend = () => {
-                localStorage.setItem('businessLogo', reader.result);
+                AlishanDB.setSetting('businessLogo', reader.result);
             };
             
             this.closeCropperModal();
@@ -874,11 +875,11 @@ class CompleteSettingsManager {
     }
 
     // ===== SETTINGS SAVING =====
-    loadSettings() {
-        return JSON.parse(localStorage.getItem('completeSettings')) || {};
+    async loadSettings() {
+        return (await AlishanDB.getSetting('completeSettings')) || {};
     }
 
-    saveSettings() {
+    async saveSettings() {
         const settings = {
             businessName: document.getElementById('businessName')?.value || '',
             businessAddress: document.getElementById('businessAddress')?.value || '',
@@ -888,12 +889,12 @@ class CompleteSettingsManager {
             lastSaved: new Date().toISOString()
         };
         
-        localStorage.setItem('completeSettings', JSON.stringify(settings));
+        await AlishanDB.setSetting('completeSettings', settings);
         this.showSaveIndicator();
         this.showToast('Settings saved successfully', 'success');
     }
 
-    saveGeneralSettings() {
+    async saveGeneralSettings() {
         const businessName = document.getElementById('businessName').value;
         if (!this.validateBusinessName(businessName)) {
             return;
@@ -907,12 +908,12 @@ class CompleteSettingsManager {
             businessAddress: document.getElementById('businessAddress').value
         };
         
-        localStorage.setItem('appSettings', JSON.stringify(settings));
+        await AlishanDB.setSetting('appSettings', settings);
         this.showSaveIndicator('general');
         this.showToast('General settings saved successfully!', 'success');
     }
 
-    saveNotificationSettings() {
+    async saveNotificationSettings() {
         const email = document.getElementById('notificationEmail').value;
         if (!this.validateEmail(email)) {
             document.getElementById('emailError').style.display = 'block';
@@ -928,12 +929,12 @@ class CompleteSettingsManager {
             notificationEmail: email
         };
         
-        localStorage.setItem('notificationSettings', JSON.stringify(settings));
+        await AlishanDB.setSetting('notificationSettings', settings);
         this.showSaveIndicator('notification');
         this.showToast('Notification settings saved successfully!', 'success');
     }
 
-    saveAppearanceSettings() {
+    async saveAppearanceSettings() {
         const settings = {
             theme: document.querySelector('.theme-option.selected')?.dataset.theme || 'light-default',
             primaryColor: document.getElementById('primaryColor').value,
@@ -942,13 +943,13 @@ class CompleteSettingsManager {
             compactMode: document.getElementById('compactMode').checked
         };
         
-        localStorage.setItem('appearanceSettings', JSON.stringify(settings));
+        await AlishanDB.setSetting('appearanceSettings', settings);
         window.globalThemeManager.applyTheme(settings.theme);
         this.showSaveIndicator('appearance');
         this.showToast('Appearance settings saved successfully!', 'success');
     }
 
-    saveSecuritySettings() {
+    async saveSecuritySettings() {
         const settings = {
             twoFactorAuth: document.getElementById('twoFactorAuth').checked,
             sessionTimeout: document.getElementById('sessionTimeout').value,
@@ -962,7 +963,7 @@ class CompleteSettingsManager {
             allowedIPs: document.getElementById('allowedIPs').value
         };
         
-        localStorage.setItem('securitySettings', JSON.stringify(settings));
+        await AlishanDB.setSetting('securitySettings', settings);
         this.showSaveIndicator('security');
         this.showToast('Security settings saved successfully!', 'success');
     }
@@ -1018,34 +1019,34 @@ class CompleteSettingsManager {
 }
 
 // ===== GLOBAL FUNCTIONS =====
-function createBackup() {
+async function createBackup() {
     window.settingsManager.saveState();
-    const inventoryData = localStorage.getItem('inventoryItems');
-    const settingsData = localStorage.getItem('appSettings');
+    const inventoryData = await AlishanDB.getInventory();
+    const settingsData = await AlishanDB.getSetting('appSettings', {});
     
     const backup = {
         timestamp: new Date().toISOString(),
-        inventory: inventoryData ? JSON.parse(inventoryData) : [],
-        settings: settingsData ? JSON.parse(settingsData) : {}
+        inventory: inventoryData || [],
+        settings: settingsData || {}
     };
     
-    const backups = JSON.parse(localStorage.getItem('backups')) || [];
+    const backups = (await AlishanDB.getSetting('backups', [])) || [];
     backups.push(backup);
-    localStorage.setItem('backups', JSON.stringify(backups));
+    await AlishanDB.setSetting('backups', backups);
     
     window.settingsManager.updateBackupList();
     window.settingsManager.calculateStorageUsage();
     window.settingsManager.showToast('Backup created successfully', 'success');
 }
 
-function exportData() {
-    const inventoryData = localStorage.getItem('inventoryItems');
-    const settingsData = localStorage.getItem('appSettings');
+async function exportData() {
+    const inventoryData = await AlishanDB.getInventory();
+    const settingsData = await AlishanDB.getSetting('appSettings', {});
     
     const format = document.getElementById('exportFormat')?.value || 'json';
     const data = {
-        inventory: inventoryData ? JSON.parse(inventoryData) : [],
-        settings: settingsData ? JSON.parse(settingsData) : {},
+        inventory: inventoryData || [],
+        settings: settingsData || {},
         exportedAt: new Date().toISOString()
     };
     
@@ -1080,16 +1081,16 @@ function importData() {
         const file = fileInput.files[0];
         const reader = new FileReader();
         
-        reader.onload = function(e) {
+        reader.onload = async function(e) {
             try {
                 const data = JSON.parse(e.target.result);
                 
                 if (data.inventory) {
-                    localStorage.setItem('inventoryItems', JSON.stringify(data.inventory));
+                    await AlishanDB.saveInventory(data.inventory);
                 }
                 
                 if (data.settings) {
-                    localStorage.setItem('appSettings', JSON.stringify(data.settings));
+                    await AlishanDB.setSetting('appSettings', data.settings);
                 }
                 
                 window.settingsManager.showToast('Data imported successfully!', 'success');
@@ -1125,8 +1126,8 @@ function showCloudBackupModal() {
     document.getElementById('cloudBackupModal').classList.add('active');
 }
 
-function confirmRestoreBackup() {
-    const backups = JSON.parse(localStorage.getItem('backups')) || [];
+async function confirmRestoreBackup() {
+    const backups = (await AlishanDB.getSetting('backups', [])) || [];
     if (backups.length === 0) {
         window.settingsManager.showToast('No backups available to restore', 'error');
         return;
@@ -1134,8 +1135,8 @@ function confirmRestoreBackup() {
     
     if (confirm('Are you sure you want to restore from the latest backup? This will overwrite current data.')) {
         const backup = backups[backups.length - 1];
-        localStorage.setItem('inventoryItems', JSON.stringify(backup.inventory));
-        localStorage.setItem('appSettings', JSON.stringify(backup.settings));
+        await AlishanDB.saveInventory(backup.inventory);
+        await AlishanDB.setSetting('appSettings', backup.settings);
         window.settingsManager.showToast('Data restored successfully!', 'success');
     }
 }
