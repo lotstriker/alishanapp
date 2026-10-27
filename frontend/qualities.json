@@ -3,7 +3,7 @@
     "MOLD QUALITIES": [
       {
         "name": "SUZEN-MOLD",
-        "price": 22
+        "price": 16
       },
       {
         "name": "AMIRI-MOLD",
@@ -35,7 +35,7 @@
       },
       {
         "name": "CHARLIE-MOLD",
-        "price": 25
+        "price": 27
       },
       {
         "name": "KANISHKA-MOLD",
@@ -43,7 +43,7 @@
       },
       {
         "name": "FLORA-MOLD",
-        "price": 24
+        "price": 26
       },
       {
         "name": "EAZY-MOLD",
@@ -55,7 +55,7 @@
       },
       {
         "name": "NAIRA-MOLD",
-        "price": 16
+        "price": 13
       },
       {
         "name": "NANCY-MOLD",
@@ -71,7 +71,7 @@
       },
       {
         "name": "KIARA-MOLD",
-        "price": 10
+        "price": 16
       },
       {
         "name": "DIXCY-MOLD",
@@ -91,7 +91,47 @@
       },
       {
         "name": "DENIM-MOLD",
-        "price": 10
+        "price": 25
+      },
+      {
+        "name": "SIWWI-MOLD",
+        "price": 22
+      },
+      {
+        "name": "HELLY-MOLD",
+        "price": 18
+      },
+      {
+        "name": "CROSS-MOLD",
+        "price": 22
+      },
+      {
+        "name": "EAZY-MOLD-SINGLE",
+        "price": 16
+      },
+      {
+        "name": "POWER-NET-MOLD",
+        "price": 25
+      },
+      {
+        "name": "NEW-SANJALI-MOLD",
+        "price": 16
+      },
+      {
+        "name": "GLORIA-MOLD",
+        "price": 16
+      },
+      {
+        "name": "ULTIMA-MOLD",
+        "price": 30
+      },
+      {
+        "name": "CHARU-MOLD",
+        "price": 16
+      },
+      {
+        "name": "RIVA-MOLD",
+        "price": 16
       }
     ],
     "PAD QUALITIES": [
@@ -106,6 +146,10 @@
       {
         "name": "YUKTA-PAD",
         "price": 16
+      },
+      {
+        "name": "ARTICLE-PAD",
+        "price": 25
       }
     ],
     "FOAM QUALITIES": [
@@ -116,12 +160,20 @@
       {
         "name": "DOT-FOAM",
         "price": 10
+      },
+      {
+        "name": "ZARA-FOAM",
+        "price": 15
+      },
+      {
+        "name": "DREAM-FOAM",
+        "price": 15
       }
     ],
     "COTTON QUALITIES": [
       {
         "name": "PALLAVI-COTTON",
-        "price": 10
+        "price": 8
       },
       {
         "name": "PARFECTO-COTTON",
@@ -141,11 +193,39 @@
       },
       {
         "name": "KAVITA-COTTON",
-        "price": 10
+        "price": 19
       },
       {
         "name": "C-CUP COTTON",
         "price": 14
+      },
+      {
+        "name": "JULIAT-COTTON",
+        "price": 13
+      },
+      {
+        "name": "RUHI-COTTON",
+        "price": 13
+      },
+      {
+        "name": "RAJNI-COTTON",
+        "price": 22
+      },
+      {
+        "name": "KRUTICA-COTTON",
+        "price": 17
+      },
+      {
+        "name": "MANVI-COTTON",
+        "price": 8
+      },
+      {
+        "name": "SOFT-COTTON",
+        "price": 8
+      },
+      {
+        "name": "MINAKSHI-COTTON",
+        "price": 22
       }
     ],
     "OTHER QUALITIES": [
@@ -159,7 +239,7 @@
       },
       {
         "name": "DOVE",
-        "price": 10
+        "price": 17
       },
       {
         "name": "SKYLA",
@@ -172,6 +252,62 @@
       {
         "name": "MAYA",
         "price": 30
+      },
+      {
+        "name": "MISTI-FY",
+        "price": 12
+      },
+      {
+        "name": "ARYA-BRA",
+        "price": 22
+      },
+      {
+        "name": "ANKITA",
+        "price": 15
+      },
+      {
+        "name": "GUCCHI-BRA",
+        "price": 15
+      },
+      {
+        "name": "ROYAL-NET",
+        "price": 34
+      },
+      {
+        "name": "FLORA",
+        "price": 28
+      },
+      {
+        "name": "AROMA",
+        "price": 17
+      },
+      {
+        "name": "SIGNORA",
+        "price": 36
+      },
+      {
+        "name": "E-BONY",
+        "price": 16
+      },
+      {
+        "name": "ANAMIKA",
+        "price": 24
+      },
+      {
+        "name": "SHAGUN-BRA",
+        "price": 25
+      },
+      {
+        "name": "A-FIT",
+        "price": 24
+      },
+      {
+        "name": "RANJANA",
+        "price": 17
+      },
+      {
+        "name": "MISS-WORLD",
+        "price": 15
       }
     ]
   },
@@ -191,10 +327,10 @@
     "SET QUALITIES": [
       {
         "name": "SONALIKA-SET",
-        "price": 55
+        "price": 60
       },
       {
-        "name": "SHAGUN-FOAM-SET",
+        "name": "SHAGUN-SET",
         "price": 40
       },
       {
@@ -207,15 +343,15 @@
       },
       {
         "name": "JACKLINE-SET",
-        "price": 60
+        "price": 65
       },
       {
         "name": "EVING-SET",
-        "price": 32
+        "price": 30
       },
       {
         "name": "AROHI-SET",
-        "price": 32
+        "price": 28
       },
       {
         "name": "ARTICLE-55-SET",
@@ -230,16 +366,12 @@
         "price": 40
       },
       {
-        "name": "MIX-MATCH-MOLD-CONDUM",
-        "price": 52
-      },
-      {
         "name": "EXOTIC-SET",
         "price": 32
       },
       {
         "name": "CANDY-SET",
-        "price": 10
+        "price": 18
       },
       {
         "name": "GLAIMUN-SET",
@@ -248,6 +380,78 @@
       {
         "name": "MQ-SET",
         "price": 50
+      },
+      {
+        "name": "ALICIA-SET",
+        "price": 20
+      },
+      {
+        "name": "LYCRA-SET",
+        "price": 40
+      },
+      {
+        "name": "INCHENTING-SET",
+        "price": 42
+      },
+      {
+        "name": "ARTICLE-SET-MOLD",
+        "price": 40
+      },
+      {
+        "name": "SIRIA-SET",
+        "price": 42
+      },
+      {
+        "name": "CHARM-FOAM-SET",
+        "price": 35
+      },
+      {
+        "name": "BELI-SET",
+        "price": 40
+      },
+      {
+        "name": "DAINA-SET",
+        "price": 30
+      },
+      {
+        "name": "BEAUTIFUL-FOAM-SET",
+        "price": 37
+      },
+      {
+        "name": "AROMA-SET",
+        "price": 20
+      },
+      {
+        "name": "CHHAVI-FOAM-SET",
+        "price": 45
+      },
+      {
+        "name": "RIYA-MOLD-SET",
+        "price": 26
+      },
+      {
+        "name": "LACEY-MOLD-SET",
+        "price": 32
+      },
+      {
+        "name": "RAVI-PAD-SET",
+        "price": 55
+      },
+      {
+        "name": "VEVI-MOLD-SET",
+        "price": 26
+      },
+      {
+        "name": "NEKAR-SET",
+        "price": 60
+      },
+      {
+        "name": "VVIP-SET",
+        "price": 52
+      },
+      {
+        "name": "RADHIKA-SET",
+        "price": 45
       }
     ]
   },
@@ -259,11 +463,27 @@
       },
       {
         "name": "CORFIT-BLOUSE",
-        "price": 10
+        "price": 25
       },
       {
         "name": "MERRYKOM-BLOUSE",
-        "price": 10
+        "price": 22
+      },
+      {
+        "name": "SPORTY-BLOUSE",
+        "price": 12
+      },
+      {
+        "name": "KISS-ME-BLOUSE",
+        "price": 25
+      },
+      {
+        "name": "LILY-BLOUSE",
+        "price": 18
+      },
+      {
+        "name": "BABY-BLOUSE",
+        "price": 18
       }
     ]
   }
