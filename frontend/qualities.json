@@ -125,15 +125,15 @@
       },
       {
         "name": "PARFECTO-COTTON",
-        "price": 10
+        "price": 19
       },
       {
         "name": "CHHAYA-COTTON",
-        "price": 10
+        "price": 8
       },
       {
         "name": "JANVI-COTTON",
-        "price": 10
+        "price": 15
       },
       {
         "name": "MEERA-COTTON",
@@ -145,7 +145,7 @@
       },
       {
         "name": "C-CUP COTTON",
-        "price": 10
+        "price": 14
       }
     ],
     "OTHER QUALITIES": [
@@ -155,7 +155,7 @@
       },
       {
         "name": "CHARU-BRA",
-        "price": 10
+        "price": 9
       },
       {
         "name": "DOVE",
@@ -167,7 +167,7 @@
       },
       {
         "name": "ALIZA",
-        "price": 10
+        "price": 22
       },
       {
         "name": "MAYA",
@@ -194,8 +194,8 @@
         "price": 55
       },
       {
-        "name": "SHAGUN-SET",
-        "price": 10
+        "name": "SHAGUN-FOAM-SET",
+        "price": 40
       },
       {
         "name": "DIOMOND-SET",
