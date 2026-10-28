@@ -47,7 +47,7 @@
       },
       {
         "name": "CHARLIE-MOLD",
-        "price": 27
+        "price": 25
       },
       {
         "name": "KANISHKA-MOLD",
@@ -55,7 +55,7 @@
       },
       {
         "name": "FLORA-MOLD",
-        "price": 26,
+        "price": 28
         "aliases": [
           "Filora Mold"
         ]
@@ -288,7 +288,7 @@
       },
       {
         "name": "SKYLA",
-        "price": 10
+        "price": 9
       },
       {
         "name": "ALIZA",
@@ -398,7 +398,7 @@
       },
       {
         "name": "EVING-SET",
-        "price": 30
+        "price": 40
       },
       {
         "name": "AROHI-SET",
