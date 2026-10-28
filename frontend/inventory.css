@@ -71,7 +71,7 @@ h2 {
     align-items: center;
     justify-content: center;
     font-size: 18px;
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
     flex-shrink: 0;
 }
 
@@ -122,7 +122,7 @@ h2 {
 .btn {
     padding: 10px 20px;
     background: var(--primary);
-    color: var(--white);
+    color: var(--on-color, #ffffff);
     border: none;
     border-radius: 5px;
     font-weight: 600;
@@ -200,7 +200,7 @@ h2 {
 .section-title {
     font-size: 18px;
     font-weight: 600;
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
     display: flex;
     align-items: center;
     gap: 10px;
@@ -264,7 +264,7 @@ h2 {
 }
 
 .close-btn:hover {
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
 }
 
 /* Form Styles for Edit Modal */
@@ -453,7 +453,7 @@ h2 {
 .search-btn {
     padding: 10px 20px;
     background: var(--primary);
-    color: var(--white);
+    color: var(--on-color, #ffffff);
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -488,7 +488,7 @@ h2 {
 /* Advanced Export Styling - NEW ADDED */
 
 .export-sub-options {
-    background: #f8f9fa;
+    background: var(--surface-soft, #f8f9fa);
     padding: 15px;
     border-radius: 8px;
     margin: 10px 0;
@@ -497,7 +497,7 @@ h2 {
 }
 
 .export-summary {
-    background: #e8f5e8;
+    background: var(--tint-ok, #e8f5e8);
     padding: 15px;
     border-radius: 8px;
     margin: 15px 0;
@@ -537,7 +537,7 @@ h2 {
 /* Unique Code Styles */
 
 .unique-code-display {
-    background: #e9ecef;
+    background: var(--surface-soft, #e9ecef);
     color: #4361ee;
     padding: 8px 12px;
     border-radius: 4px;
@@ -698,7 +698,7 @@ h2 {
 }
 
 .entry-date-item .detail-label {
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
     font-weight: 700;
 }
 
@@ -710,7 +710,7 @@ h2 {
 /* Calendar Icon Styling */
 
 .fa-calendar {
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
     background: rgba(67, 97, 238, 0.1);
     padding: 5px;
     border-radius: 50%;

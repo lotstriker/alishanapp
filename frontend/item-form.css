@@ -35,7 +35,7 @@
 .size-input-group label {
     font-weight: 600;
     margin-bottom: 0.3rem;
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
     font-size: 0.68rem;
     text-transform: uppercase;
     text-align: center;
@@ -134,7 +134,7 @@
 
 .remove-color-btn {
     background: var(--danger);
-    color: var(--white);
+    color: var(--on-color, #ffffff);
     border: none;
     border-radius: 0.25rem;
     padding: 0.4rem 0.8rem;
@@ -145,7 +145,7 @@
 
 .add-color-btn {
     background: var(--success);
-    color: var(--white);
+    color: var(--on-color, #ffffff);
     border: none;
     border-radius: 0.5rem;
     padding: 0.6rem 1rem;
@@ -229,7 +229,7 @@
     padding: 12px 15px;
     background: linear-gradient(135deg, rgba(67, 97, 238, 0.1), rgba(63, 55, 201, 0.1));
     font-weight: 600;
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
     cursor: pointer;
     display: flex;
     justify-content: space-between;
@@ -276,7 +276,7 @@
 
 .quality-option.selected {
     background: rgba(67, 97, 238, 0.1);
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
     font-weight: 600;
     border-left: 4px solid var(--primary);
 }
@@ -296,7 +296,7 @@
 .quality-option.selected .quality-checkbox {
     background: var(--primary);
     border-color: var(--primary);
-    color: white;
+    color: var(--on-color, #ffffff);
 }
 
 .quality-option.selected .quality-checkbox::after {
@@ -311,7 +311,7 @@
 }
 
 .match-highlight {
-    background-color: #fff3cd;
+    background-color: var(--tint-warn, #fff3cd);
     font-weight: 600;
     padding: 1px 4px;
     border-radius: 3px;
@@ -328,7 +328,7 @@
 }
 
 .selected-quality-display strong {
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
 }
 
 .no-results {
@@ -448,7 +448,7 @@
 }
 
 .color-dropdown-toggle:hover {
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
     background: var(--light-gray);
 }
 
@@ -551,7 +551,7 @@
 .color-option.selected .color-checkbox {
     background: var(--primary);
     border-color: var(--primary);
-    color: white;
+    color: var(--on-color, #ffffff);
 }
 
 .color-option.selected .color-checkbox::after {
@@ -630,7 +630,7 @@
 }
 
 .color-selector-section h4 {
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
     margin-bottom: 15px;
     display: flex;
     align-items: center;
@@ -645,7 +645,7 @@
 /* ============ Entry date card (Add form) + preview (Add form & Edit modal) ============ */
 .entry-date-card {
     padding: 0.9rem 1rem;
-    background: #fafbff;
+    background: var(--surface-soft, #fafbff);
     border: 1px solid #e3e8f7;
     border-radius: 0.8rem;
 }
@@ -664,7 +664,7 @@
     font-size: 0.85rem;
     letter-spacing: 0.4px;
     text-transform: uppercase;
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
 }
 .entry-date-hint {
     margin: 0.5rem 0 0;
@@ -728,8 +728,8 @@
     padding: 0.35rem 0.8rem;
     font-size: 0.78rem;
     font-weight: 600;
-    color: var(--primary);
-    background: #fff;
+    color: var(--accent-text, var(--primary));
+    background: var(--white, #fff);
     border: 1px solid #cdd6f5;
     border-radius: 999px;
     cursor: pointer;
@@ -737,7 +737,7 @@
 }
 .entry-quick button:hover { background: rgba(67, 97, 238, 0.08); }
 .entry-quick button.active {
-    color: #fff;
+    color: var(--on-color, #ffffff);
     background: var(--primary);
     border-color: var(--primary);
 }
@@ -752,7 +752,7 @@
     margin-top: 0.7rem;
     padding: 0.55rem 0.8rem;
     font-size: 0.85rem;
-    background: #fff;
+    background: var(--white, #fff);
     border: 1px dashed #cdd6f5;
     border-radius: 0.6rem;
 }
@@ -787,4 +787,4 @@
     border: 1px dashed #cdd6f5;
     border-radius: 0.6rem;
 }
-.different-sizes-hint i { color: var(--primary); margin-right: 0.3rem; }
+.different-sizes-hint i { color: var(--accent-text, var(--primary)); margin-right: 0.3rem; }

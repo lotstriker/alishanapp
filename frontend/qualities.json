@@ -15,15 +15,24 @@
       },
       {
         "name": "JAIKAT-MOLD",
-        "price": 32
+        "price": 32,
+        "aliases": [
+          "Jekat Mold"
+        ]
       },
       {
         "name": "U-SEEMLESS-MOLD",
-        "price": 32
+        "price": 32,
+        "aliases": [
+          "U-Seemless"
+        ]
       },
       {
         "name": "MINI-MIZER-MOLD",
-        "price": 45
+        "price": 45,
+        "aliases": [
+          "Mini Mizer"
+        ]
       },
       {
         "name": "ADDITION-MOLD",
@@ -31,7 +40,10 @@
       },
       {
         "name": "JAXXON-MOLD",
-        "price": 32
+        "price": 32,
+        "aliases": [
+          "Jackson"
+        ]
       },
       {
         "name": "CHARLIE-MOLD",
@@ -43,7 +55,10 @@
       },
       {
         "name": "FLORA-MOLD",
-        "price": 26
+        "price": 26,
+        "aliases": [
+          "Filora Mold"
+        ]
       },
       {
         "name": "EAZY-MOLD",
@@ -55,15 +70,24 @@
       },
       {
         "name": "NAIRA-MOLD",
-        "price": 13
+        "price": 13,
+        "aliases": [
+          "Naira"
+        ]
       },
       {
         "name": "NANCY-MOLD",
-        "price": 16
+        "price": 16,
+        "aliases": [
+          "Nency Mold"
+        ]
       },
       {
         "name": "CIBA-MOLD",
-        "price": 32
+        "price": 32,
+        "aliases": [
+          "Ciba"
+        ]
       },
       {
         "name": "FIDDING-MOLD",
@@ -79,11 +103,17 @@
       },
       {
         "name": "KOMAL-MOLD",
-        "price": 22
+        "price": 22,
+        "aliases": [
+          "Komal"
+        ]
       },
       {
         "name": "ROSEI-MOLD",
-        "price": 24
+        "price": 24,
+        "aliases": [
+          "Rosie-Mold"
+        ]
       },
       {
         "name": "BEAUTYBEX-MOLD",
@@ -91,7 +121,10 @@
       },
       {
         "name": "DENIM-MOLD",
-        "price": 25
+        "price": 25,
+        "aliases": [
+          "Denime"
+        ]
       },
       {
         "name": "SIWWI-MOLD",
@@ -149,7 +182,10 @@
       },
       {
         "name": "ARTICLE-PAD",
-        "price": 25
+        "price": 25,
+        "aliases": [
+          "Artical-Pad"
+        ]
       }
     ],
     "FOAM QUALITIES": [
@@ -177,15 +213,24 @@
       },
       {
         "name": "PARFECTO-COTTON",
-        "price": 19
+        "price": 19,
+        "aliases": [
+          "Perfecto"
+        ]
       },
       {
         "name": "CHHAYA-COTTON",
-        "price": 8
+        "price": 8,
+        "aliases": [
+          "Monalisa Chhaya"
+        ]
       },
       {
         "name": "JANVI-COTTON",
-        "price": 15
+        "price": 15,
+        "aliases": [
+          "Janvi"
+        ]
       },
       {
         "name": "MEERA-COTTON",
@@ -331,7 +376,10 @@
       },
       {
         "name": "SHAGUN-SET",
-        "price": 40
+        "price": 40,
+        "aliases": [
+          "Shagun-foam Set"
+        ]
       },
       {
         "name": "DIOMOND-SET",
@@ -343,7 +391,10 @@
       },
       {
         "name": "JACKLINE-SET",
-        "price": 65
+        "price": 65,
+        "aliases": [
+          "Jacklin Set"
+        ]
       },
       {
         "name": "EVING-SET",
@@ -355,7 +406,10 @@
       },
       {
         "name": "ARTICLE-55-SET",
-        "price": 42
+        "price": 42,
+        "aliases": [
+          "55 no Set"
+        ]
       },
       {
         "name": "SHINING-SET",
@@ -364,6 +418,10 @@
       {
         "name": "LIVIA-SET",
         "price": 40
+      },
+      {
+        "name": "MIX-MATCH-MOLD-CONDUM",
+        "price": 52
       },
       {
         "name": "EXOTIC-SET",
@@ -395,7 +453,10 @@
       },
       {
         "name": "ARTICLE-SET-MOLD",
-        "price": 40
+        "price": 40,
+        "aliases": [
+          "Artical Set Mold"
+        ]
       },
       {
         "name": "SIRIA-SET",
@@ -415,7 +476,10 @@
       },
       {
         "name": "BEAUTIFUL-FOAM-SET",
-        "price": 37
+        "price": 37,
+        "aliases": [
+          "Beatiful-foam-set"
+        ]
       },
       {
         "name": "AROMA-SET",
@@ -463,19 +527,31 @@
       },
       {
         "name": "CORFIT-BLOUSE",
-        "price": 25
+        "price": 25,
+        "aliases": [
+          "Corfit Blause"
+        ]
       },
       {
         "name": "MERRYKOM-BLOUSE",
-        "price": 22
+        "price": 22,
+        "aliases": [
+          "Merry-kom-Blause"
+        ]
       },
       {
         "name": "SPORTY-BLOUSE",
-        "price": 12
+        "price": 12,
+        "aliases": [
+          "Sporty Blous"
+        ]
       },
       {
         "name": "KISS-ME-BLOUSE",
-        "price": 25
+        "price": 25,
+        "aliases": [
+          "Kiss me Blause"
+        ]
       },
       {
         "name": "LILY-BLOUSE",
@@ -483,7 +559,10 @@
       },
       {
         "name": "BABY-BLOUSE",
-        "price": 18
+        "price": 18,
+        "aliases": [
+          "Baby Blause"
+        ]
       }
     ]
   }

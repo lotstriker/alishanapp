@@ -97,6 +97,26 @@ Inventory page -> **Bulk Import**:
 - New entry form: same fields and ids; sizes are two per line (dozen + pieces) and the Add / Reset bar stays above
   the tab bar. Entry date and More details are the two folded parts.
 
+### qualities.json: prices and spellings
+- Prices come from the shop's Excel price list (checked against it, see `quality_price_update_report.xlsx`). A paper
+  spelling that differs from the app name (for example "Jekat Mold" for JAIKAT-MOLD) is listed in that quality's
+  `"aliases"`, so bulk import finds it. Existing app names are never renamed (saved entries use them).
+
+### Offline mode, installing on the phone, themes
+- `sw.js` (service worker, started by `pwa.js`): app files are fetched from the server when online (so an updated file
+  always arrives) and a copy is kept; offline the copy is used. The libraries from the internet (Excel export, charts,
+  photo crop) are kept the first time they are downloaded. Entries, payments and backups are NOT in this cache: they
+  live in the browser database (IndexedDB). A thin red "Offline" strip shows when there is no connection.
+  If files are added or renamed, add them to `APP_FILES` in `sw.js` (a missing file is still kept after it is opened once).
+- `vendor/`: put `xlsx.full.min.js`, `chart.umd.js`, `cropper.min.js/css` here (see `vendor/README.txt`) and the app uses
+  them before going to the internet (`loader.js` looks in `vendor/` first).
+- `manifest.webmanifest` + `icons/`: lets the phone install the app ("Add to home screen" / "Install app"). It needs
+  https or localhost, like the service worker.
+- `themes.css` + `theme-boot.js`: the 7 colour themes apply on every page. The saved theme (AlishanDB) is put on `<html>`
+  as `theme-NAME`; the choice is also copied to localStorage only to avoid a flash of the default colours. The default
+  theme changes nothing (pages keep their own colours). A theme sets `--white/--dark/--gray/--light-gray/--light/--body-bg`
+  and `--accent-text` / `--on-color` (text on a coloured button); `mobile.css` reads the same variables.
+
 ### Names are never typed in the code
 Qualities, product types and colours used by the Bulk Import (matching, "Did you mean", the product type of a new
 quality, the examples inside the AI prompt) all come from `qualities.json` and `colors.json`.

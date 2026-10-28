@@ -15,26 +15,31 @@
 var AlishanLoader = (() => {
     'use strict';
 
+    // each library is looked for in vendor/ first (see vendor/README.txt), then on the internet
     const URLS = {
-        xlsx: 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
-        chart: 'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.js'
+        xlsx: ['vendor/xlsx.full.min.js', 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'],
+        chart: ['vendor/chart.umd.js', 'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.js']
     };
     const pending = {};
+
+    function addScript(sources, i, resolve, reject, name) {
+        const s = document.createElement('script');
+        s.src = sources[i];
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = () => {
+            s.remove();
+            if (i + 1 < sources.length) return addScript(sources, i + 1, resolve, reject, name);   // next place to look
+            reject(new Error(`Could not load the ${name} library. Connect to the internet once, or put it in the vendor folder.`));
+        };
+        document.head.appendChild(s);
+    }
 
     function load(name, isReady) {
         if (isReady()) return Promise.resolve();
         if (pending[name]) return pending[name];
-        pending[name] = new Promise((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = URLS[name];
-            s.async = true;
-            s.onload = () => resolve();
-            s.onerror = () => {
-                delete pending[name];         // allow a retry next time
-                reject(new Error(`Could not load the ${name} library — check your internet connection.`));
-            };
-            document.head.appendChild(s);
-        });
+        pending[name] = new Promise((resolve, reject) => addScript(URLS[name], 0, resolve, reject, name))
+            .catch(err => { delete pending[name]; throw err; });          // allow a retry next time
         return pending[name];
     }
 

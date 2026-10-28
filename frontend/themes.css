@@ -1,0 +1,184 @@
+/* ============================================================
+   themes.css - the 7 colour themes, for EVERY page (before, only Settings was coloured).
+   The saved theme name is put on <html> by theme-boot.js (Settings also puts it on <body>).
+   Each theme gives the palette (--bg-*, --text-*, --border-*); the page styles use --white / --dark / --gray /
+   --light-gray / --light / --body-bg, which are pointed at the palette below.
+   ============================================================ */
+
+body.theme-light-default {          /* the default theme changes nothing on the other pages: they keep their own colours */
+    --bg-body: #f5f7fb;
+    --bg-card: #ffffff;
+    --bg-sidebar: #ffffff;
+    --bg-header: #ffffff;
+    --bg-dropdown: #ffffff;
+    --bg-hover: #f8f9fa;
+    --bg-active: #e9ecef;
+    --bg-modal: #ffffff;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --border-primary: #e9ecef;
+    --border-secondary: #dee2e6;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --primary: #4361ee;
+    --primary-dark: #3a0ca3;
+}
+
+html.theme-light-warm, body.theme-light-warm {
+    --bg-body: #fef5e7;
+    --bg-card: #ffffff;
+    --bg-sidebar: #fff9f0;
+    --bg-header: #ffffff;
+    --bg-dropdown: #ffffff;
+    --bg-hover: #fdebd0;
+    --bg-active: #fad7a0;
+    --bg-modal: #ffffff;
+    --text-primary: #5a4a42;
+    --text-secondary: #8b7355;
+    --text-muted: #b4957a;
+    --border-primary: #fdebd0;
+    --border-secondary: #fad7a0;
+    --shadow-color: rgba(0, 0, 0, 0.08);
+    --primary: #f8961e;
+    --primary-dark: #e67e22;
+    --secondary: #daa520;
+}
+
+html.theme-dark-deep, body.theme-dark-deep {
+    --bg-body: #121212;
+    --bg-card: #1e1e1e;
+    --bg-sidebar: #1e1e1e;
+    --bg-header: #1e1e1e;
+    --bg-dropdown: #2d2d2d;
+    --bg-hover: #2d2d2d;
+    --bg-active: #3d3d3d;
+    --bg-modal: #1e1e1e;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --text-muted: #808080;
+    --text-success: #10b981;
+    --text-danger: #ef4444;
+    --text-warning: #f59e0b;
+    --text-info: #3b82f6;
+    --border-primary: #333333;
+    --border-secondary: #444444;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --primary: #4361ee;
+    --primary-dark: #3a0ca3;
+}
+
+html.theme-dark-blue, body.theme-dark-blue {
+    --bg-body: #1a2238;
+    --bg-card: #212b45;
+    --bg-sidebar: #212b45;
+    --bg-header: #212b45;
+    --bg-dropdown: #2d3a5a;
+    --bg-hover: #2d3a5a;
+    --bg-active: #374a73;
+    --bg-modal: #212b45;
+    --text-primary: #ffffff;
+    --text-secondary: #a8b5db;
+    --text-muted: #7a88b5;
+    --border-primary: #2d3a5a;
+    --border-secondary: #374a73;
+    --shadow-color: rgba(0, 0, 0, 0.4);
+    --primary: #4895ef;
+    --primary-dark: #3a0ca3;
+    --secondary: #4361ee;
+}
+
+html.theme-gold, body.theme-gold {
+    --bg-body: #2c2c2c;
+    --bg-card: #3a3a3a;
+    --bg-sidebar: #3a3a3a;
+    --bg-header: #3a3a3a;
+    --bg-dropdown: #4a4a4a;
+    --bg-hover: #4a4a4a;
+    --bg-active: #5a5a5a;
+    --bg-modal: #3a3a3a;
+    --text-primary: #ffd700;
+    --text-secondary: #daa520;
+    --text-muted: #b8860b;
+    --border-primary: #4a4a4a;
+    --border-secondary: #5a5a5a;
+    --shadow-color: rgba(0, 0, 0, 0.4);
+    --primary: #ffd700;
+    --secondary: #daa520;
+}
+
+html.theme-purple, body.theme-purple {
+    --bg-body: #f5f0ff;
+    --bg-card: #ffffff;
+    --bg-sidebar: #ffffff;
+    --bg-header: #ffffff;
+    --bg-dropdown: #ffffff;
+    --bg-hover: #e6d9ff;
+    --bg-active: #d4c2ff;
+    --bg-modal: #ffffff;
+    --text-primary: #4b0082;
+    --text-secondary: #8a2be2;
+    --text-muted: #9370db;
+    --border-primary: #e6d9ff;
+    --border-secondary: #d4c2ff;
+    --shadow-color: rgba(75, 0, 130, 0.1);
+    --primary: #8a2be2;
+    --secondary: #4b0082;
+}
+
+html.theme-mint, body.theme-mint {
+    --bg-body: #f0fffd;
+    --bg-card: #ffffff;
+    --bg-sidebar: #ffffff;
+    --bg-header: #ffffff;
+    --bg-dropdown: #ffffff;
+    --bg-hover: #d1f2ef;
+    --bg-active: #a3e4e0;
+    --bg-modal: #ffffff;
+    --text-primary: #1a5f5a;
+    --text-secondary: #37b2ac;
+    --text-muted: #5dade2;
+    --border-primary: #d1f2ef;
+    --border-secondary: #a3e4e0;
+    --shadow-color: rgba(26, 95, 90, 0.1);
+    --primary: #37b2ac;
+    --secondary: #25857d;
+}
+
+html[class*="theme-"]:not(.theme-light-default), body[class*="theme-"]:not(.theme-light-default) {          /* the selectors start with html / body so they beat a page's own :root variables (reports.html has some) */
+    --white: var(--bg-card);
+    --body-bg: var(--bg-body);
+    --page-bg: var(--bg-body);
+    --dark: var(--text-primary);
+    --gray: var(--text-secondary);
+    --light-gray: var(--border-primary);
+    --light: var(--bg-hover);
+    --on-color: #ffffff;                 /* text on a coloured button or header */
+}
+html.theme-gold, body.theme-gold { --on-color: #2c2c2c; }
+html.theme-dark-deep, html.theme-dark-blue, html.theme-gold { color-scheme: dark; }
+
+/* ---- tokens the page styles use for soft surfaces and tints (the default look keeps the original colours) ---- */
+html:is(.theme-light-warm, .theme-purple, .theme-mint, .theme-dark-deep, .theme-dark-blue, .theme-gold) {
+    --surface-soft: var(--bg-hover);
+    --surface-hover: var(--border-primary);
+}
+html:is(.theme-dark-deep, .theme-dark-blue, .theme-gold) {
+    --tint-warn: rgba(255, 193, 7, 0.18);
+    --tint-info: rgba(66, 165, 245, 0.18);
+    --tint-ok: rgba(76, 175, 80, 0.18);
+}
+/* ---- accessible accent / text-on-colour per theme (a pale accent is not readable as text on white, a dark one not on black) ---- */
+html.theme-light-warm, body.theme-light-warm { --primary: #c2610c; --secondary: #92400e; }
+html.theme-mint, body.theme-mint { --primary: #0f766e; --secondary: #115e59; --text-secondary: #2a7f79; }
+html.theme-dark-deep, body.theme-dark-deep { --accent-text: #8fa5ff; }
+html.theme-dark-blue, body.theme-dark-blue { --accent-text: #8dc0ff; }
+html.theme-gold, body.theme-gold { --on-color: #1a1a1a; }
+
+/* ---- dark themes: places where the page styles say "grey button" or put dark text on a light tint ---- */
+html:is(.theme-dark-deep, .theme-dark-blue, .theme-gold) .btn-secondary,
+html:is(.theme-dark-deep, .theme-dark-blue, .theme-gold) .bi-btn { background: #5f6770; color: #ffffff; }
+html:is(.theme-dark-deep, .theme-dark-blue, .theme-gold) .aging-header { --dark: #212529; --gray: #495057; }
+html:is(.theme-dark-deep, .theme-dark-blue, .theme-gold) .ic-collapse-btn { color: var(--accent-text, var(--primary)); }
+html.theme-gold .tabbar a.tab-add, html.theme-gold .inv-tools .tool-filters { color: #1a1a1a; }
+html:is(.theme-dark-deep, .theme-dark-blue, .theme-gold) .aging-total { color: #212529; }
+html:is(.theme-dark-deep, .theme-dark-blue, .theme-gold) .ic-details-btn { color: #c4b8ff; }

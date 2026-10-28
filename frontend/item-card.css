@@ -74,7 +74,7 @@
 .inventory-card .unique-code {
     color: #4361ee !important;
     font-weight: bold;
-    background-color: #e9ecef;
+    background-color: var(--surface-soft, #e9ecef);
     padding: 4px 8px;
     border-radius: 4px;
     border: 1px solid #4361ee;
@@ -94,7 +94,7 @@
 
 .inventory-card .badge-primary {
     background-color: rgba(67, 97, 238, 0.1);
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
     border: 1px solid rgba(67, 97, 238, 0.3);
 }
 
@@ -123,7 +123,7 @@
 
 .inventory-card .flow-box h4 {
     margin-bottom: 0.75rem;
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
     font-size: 0.9rem;
     text-transform: uppercase;
     display: flex;
@@ -218,7 +218,7 @@
 
 .inventory-card .divider-icon {
     margin: 0 0.5rem;
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
 }
 
 .inventory-card .details-container {
@@ -235,7 +235,7 @@
 
 .inventory-card .detail-box h4 {
     margin-bottom: 0.75rem;
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
     font-size: 0.9rem;
     text-transform: uppercase;
     display: flex;
@@ -340,7 +340,7 @@
 .inventory-card .total-amount {
     font-size: 0.95rem;
     font-weight: 700;
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
     text-transform: none;
 }
 
@@ -359,7 +359,7 @@
 
 .inventory-card .btn-edit {
     background-color: transparent;
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
 }
 
 .inventory-card .btn-edit:hover {
@@ -548,7 +548,7 @@
 .inventory-card .size-item-simple .size-value {
     font-weight: 600;
     font-size: 1rem;
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
 }
 
 .inventory-card .size-chart-simple {
@@ -584,7 +584,7 @@
 .inventory-card .size-item-simple .size-value {
     font-weight: 600;
     font-size: 0.9rem;
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
 }
 
 .inventory-card .size-item-simple:empty {
@@ -654,7 +654,7 @@
 .inventory-card .size-item-simple .size-value {
     font-weight: 700;
     font-size: 1.1rem;
-    color: var(--primary);
+    color: var(--accent-text, var(--primary));
 }
 
 /* Fallback for a color tag whose color has no colors.json entry */
@@ -767,7 +767,7 @@
     max-width: 45%;
 }
 .inventory-card .ic-badges .card-badge { margin: 0; padding: 0.25rem 0.65rem; font-weight: 700; }
-.inventory-card .ic-badge-type { background: #fff; color: var(--ic); }
+.inventory-card .ic-badge-type { background: var(--white, #fff); color: var(--ic); }
 .inventory-card .ic-badge-cup  { background: rgba(255, 255, 255, 0.25); color: #fff; border: 1px solid rgba(255, 255, 255, 0.4); }
 
 .ic-chevron {
@@ -830,12 +830,12 @@
     letter-spacing: 0.4px;
     text-transform: uppercase;
     color: var(--ic);
-    background: #f6f7fb;
+    background: var(--surface-soft, #f6f7fb);
     border: none;
     border-top: 1px solid var(--light-gray, #e9ecef);
     cursor: pointer;
 }
-.ic-expand-bar:hover { background: #eceef7; }
+.ic-expand-bar:hover { background: var(--surface-hover, #eceef7); }
 .ic-expand-bar i { transition: transform 0.25s ease; }
 .ic-open .ic-expand-bar i { transform: rotate(180deg); }
 
@@ -858,12 +858,12 @@
     letter-spacing: 0.3px;
     text-transform: uppercase;
     color: var(--ic);
-    background: #f6f7fb;
+    background: var(--surface-soft, #f6f7fb);
     border: 1px dashed var(--ic);
     border-radius: 0.6rem;
     cursor: pointer;
 }
-.ic-details-btn:hover { background: #eceef7; }
+.ic-details-btn:hover { background: var(--surface-hover, #eceef7); }
 .ic-details-chevron { margin-left: auto; transition: transform 0.25s ease; }
 .ic-details-open .ic-details-chevron { transform: rotate(180deg); }
 .inventory-card .ic-details { display: none; margin-top: 0.8rem; }
@@ -883,7 +883,7 @@
     font-size: 0.82rem;
     font-weight: 700;
     color: var(--primary, #4361ee);
-    background: #fff;
+    background: var(--white, #fff);
     border: 1px solid var(--primary, #4361ee);
     border-radius: 999px;
     cursor: pointer;
