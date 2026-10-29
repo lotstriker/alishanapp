@@ -323,6 +323,7 @@
             color: var(--gray);
             font-size: 11px;
         }
+        .stat-note { font-size: 0.75rem; margin-top: 2px; opacity: 0.85; }
 
         /* ================= FILTERS ================= */
         .filters {
@@ -1445,6 +1446,16 @@
                     <p>Total Pending Amount</p>
                 </div>
             </div>
+            <div class="card">
+                <div class="card-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="card-content">
+                    <h3 id="avgWeeklyAmount">₹0</h3>
+                    <p>Average Weekly Amount Received</p>
+                    <p class="stat-note" id="avgWeeklyNote">No payments yet</p>
+                </div>
+            </div>
         </div>
         
         <!-- ================= ADVANCED SEARCH SECTION ================= -->
@@ -1523,7 +1534,10 @@
         </div>
         
         <!-- ================= FILTERS ================= -->
-        <div class="filters">
+        <button type="button" class="filters-toggle" id="filtersToggle" aria-expanded="false" aria-controls="reportFilters">
+            <i class="fas fa-filter"></i><span class="ft-title">Filters</span><span class="ft-sum" id="filtersSummary">All Time, All Products, All Qualities</span><i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="filters" id="reportFilters">
             <div class="filter-group">
                 <label for="timePeriod">Time Period</label>
                 <select id="timePeriod">
@@ -2005,6 +2019,13 @@
             document.getElementById('weeklyAdded').textContent = summary.addedThisWeek;
             document.getElementById('receivedAmount').textContent = AlishanCalc.fmtMoney(summary.received);
             document.getElementById('pendingAmount').textContent = AlishanCalc.fmtMoney(summary.pending);
+
+            // average money received per week, from the first payment until now (maths is in calc.js)
+            const avg = AlishanCalc.weeklyAverage(scope, AlishanStore.getPayments());
+            document.getElementById('avgWeeklyAmount').textContent = AlishanCalc.fmtMoney(avg.average);
+            document.getElementById('avgWeeklyNote').textContent = avg.weeks
+                ? `since ${AlishanCalc.fmtDateLong(avg.since)}, ${avg.weeks} week${avg.weeks === 1 ? '' : 's'}`
+                : 'No payments yet';
         }
 
         function checkLowStock() {

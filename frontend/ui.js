@@ -25,6 +25,31 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // ---- Reports: the filters are folded; the button shows what is chosen ----
+    var toggle = document.getElementById('filtersToggle');
+    var box = document.getElementById('reportFilters');
+    if (toggle && box) {
+        var sum = document.getElementById('filtersSummary');
+        function chosen(id) {
+            var el = document.getElementById(id);
+            return el && el.selectedOptions && el.selectedOptions[0] ? el.selectedOptions[0].text : '';
+        }
+        function refreshSummary() {
+            if (sum) sum.textContent = [chosen('timePeriod'), chosen('productType'), chosen('qualityFilter')].filter(Boolean).join(', ');
+        }
+        function setFilters(open) {
+            box.classList.toggle('open', open);
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+        toggle.addEventListener('click', function () { setFilters(!box.classList.contains('open')); });
+        box.addEventListener('change', refreshSummary);
+        box.querySelectorAll('button').forEach(function (b) {
+            if (/apply/i.test(b.textContent)) b.addEventListener('click', function () { refreshSummary(); setFilters(false); });
+            if (/export/i.test(b.textContent)) b.addEventListener('click', function () { setFilters(false); });
+        });
+        refreshSummary();
+    }
+
     // ---- "+" tab -> the New entry form ----
     if (location.hash === '#add' && typeof window.scrollToForm === 'function') {
         setTimeout(window.scrollToForm, 400);

@@ -93,6 +93,11 @@ Inventory page -> **Bulk Import**:
   compact block each, the valuation table scrolls inside its own box, and the Add Amount Received popup uses two fields
   per row. The report filters stay on the page. (The Filters bottom sheet is only for the Inventory page: its CSS is
   scoped with `.inv-tools ~ .filters`.)
+- Reports "Average Weekly Amount Received" card: `AlishanCalc.weeklyAverage(scope, payments)` = total received / number of
+  weeks (Monday to Sunday, like the weekly report) from the week of the first payment to the current week; weeks with no
+  payment count as 0. It follows the search / filters like the other stat cards.
+- Reports filters (phone): folded behind the one-line `#filtersToggle` button, which shows the chosen values; Apply folds
+  them again. On desktop they stay open as before.
 - Settings: same sections, smaller type and spacing, system font.
 - New entry form: same fields and ids; sizes are two per line (dozen + pieces) and the Add / Reset bar stays above
   the tab bar. Entry date and More details are the two folded parts.

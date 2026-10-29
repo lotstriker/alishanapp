@@ -6,10 +6,6 @@
         "price": 16
       },
       {
-        "name": "VEVI-NET",
-        "price": 25
-      },
-      {
         "name": "AMIRI-MOLD",
         "price": 37
       },
@@ -51,7 +47,7 @@
       },
       {
         "name": "CHARLIE-MOLD",
-        "price": 25
+        "price": 27
       },
       {
         "name": "KANISHKA-MOLD",
@@ -59,7 +55,7 @@
       },
       {
         "name": "FLORA-MOLD",
-        "price": 28,
+        "price": 26,
         "aliases": [
           "Filora Mold"
         ]
@@ -292,7 +288,7 @@
       },
       {
         "name": "SKYLA",
-        "price": 9
+        "price": 10
       },
       {
         "name": "ALIZA",
@@ -402,7 +398,7 @@
       },
       {
         "name": "EVING-SET",
-        "price": 40
+        "price": 30
       },
       {
         "name": "AROHI-SET",

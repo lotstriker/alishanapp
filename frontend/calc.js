@@ -919,6 +919,29 @@ var AlishanCalc = (() => {
         return payments.filter(p => ids.has(String(p.inventoryId)));
     }
 
+    // Average money received per week, from the week of the FIRST payment up to the current week.
+    // Weeks follow the weekly report (Monday to Sunday). A week with no payment counts as 0, so the average is
+    // total received / number of weeks in that period. Only the payments of the items in `scope` are used.
+    function weeklyAverage(scope, payments, today) {
+        const list = scopePayments(scope, payments || []).filter(p => Number(p.amount) > 0 && p.date);
+        if (!list.length) return { total: 0, weeks: 0, average: 0, since: null };
+        const mondayOf = (value) => {
+            const d = parseDate(value);
+            const t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            t.setDate(t.getDate() - ((t.getDay() || 7) - 1));
+            return t;
+        };
+        let total = 0;
+        let first = null;
+        list.forEach(p => {
+            total += Number(p.amount);
+            const d = parseDate(p.date);
+            if (!first || d < first) first = d;
+        });
+        const weeks = Math.max(1, Math.round((mondayOf(today || new Date()) - mondayOf(first)) / (7 * DAY_MS)) + 1);
+        return { total: round2(total), weeks, average: round2(total / weeks), since: first };
+    }
+
     function cardData(item, payments) {
         const pay = paymentStatus(item, payments);
         return {
@@ -1914,7 +1937,7 @@ Return exactly: { "entries": [ ...one object per block... ] }`;
         // finding things
         itemSearchText, matchesSearch, filterItems, paginate, typeStats, suggest,
         // numbers for the pages
-        summarize, scopePayments, cardData, pendingList, paymentCards, weekOptions, weeklyReport,
+        summarize, scopePayments, weeklyAverage, cardData, pendingList, paymentCards, weekOptions, weeklyReport,
         paymentHistory, valuationTrend, qualitySummary, agingReport, advancedPaymentSearch,
         // Excel rows + backups
         exportRows, makeBackup, inspectBackup, mergeBackup,
