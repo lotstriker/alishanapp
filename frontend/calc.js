@@ -69,6 +69,21 @@ var AlishanCalc = (() => {
 
     // ================= quantity =================
 
+    // Display size quantity in the app's compact dozen.pieces notation.
+    // This is presentation-only: calculations and stored quantities stay unchanged.
+    // Examples: 7 pieces -> "0.7", 12 pieces -> "1", 30 pieces -> "2.6",
+    // 47 pieces -> "3.11", 48 pieces -> "4".
+    // The digits after the dot are remaining pieces (0-11), not decimal fractions.
+    function formatSizeQuantity(dozens, pieces) {
+        const dz = Math.max(0, Number(dozens) || 0);
+        const pcs = Math.max(0, parseInt(pieces, 10) || 0);
+        const totalPieces = Math.round(dz * 12) + pcs;
+        const d = Math.floor(totalPieces / 12);
+        const p = totalPieces % 12;
+        if (p === 0) return String(d);
+        return `${d}.${p}`;
+    }
+
     // pieces inside ONE set of size boxes ({size28, size28_pieces, ...})
     function sizesPieces(obj) {
         if (!obj) return 0;
@@ -465,7 +480,11 @@ var AlishanCalc = (() => {
             info.summary = `${round2(perColor)} dozens per color × ${colors.length} colors = ${info.totalDozens} dozens`;
             SIZES.forEach(size => {
                 const d = Number(item[`size${size}`]) || 0, p = Number(item[`size${size}_pieces`]) || 0;
-                if (d || p) info.sizes.push({ size, value: round2(d + p / 12) });
+                if (d || p) info.sizes.push({
+                    size,
+                    value: round2(d + p / 12),
+                    displayValue: formatSizeQuantity(d, p)
+                });
             });
         } else if (info.mode === 'different') {
             info.summary = `${info.totalDozens} dozens`;
@@ -477,7 +496,11 @@ var AlishanCalc = (() => {
                     .filter(size => (Number(c.sizes[`size${size}`]) || 0) > 0 || (Number(c.sizes[`size${size}_pieces`]) || 0) > 0)
                     .map(size => ({
                         size,
-                        value: round2((Number(c.sizes[`size${size}`]) || 0) + (Number(c.sizes[`size${size}_pieces`]) || 0) / 12)
+                        value: round2((Number(c.sizes[`size${size}`]) || 0) + (Number(c.sizes[`size${size}_pieces`]) || 0) / 12),
+                        displayValue: formatSizeQuantity(
+                            Number(c.sizes[`size${size}`]) || 0,
+                            Number(c.sizes[`size${size}_pieces`]) || 0
+                        )
                     }))
             }));
         }

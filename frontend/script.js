@@ -35,10 +35,21 @@ class CompleteSettingsManager {
             { id: 'light-default', name: 'Light Default' },
             { id: 'light-warm', name: 'Warm Light' },
             { id: 'dark-deep', name: 'Deep Dark' },
-            { id: 'dark-blue', name: 'Midnight Blue' },
             { id: 'gold', name: 'Gold Dark' },
             { id: 'purple', name: 'Purple Light' },
-            { id: 'mint', name: 'Mint Light' }
+            { id: 'mint', name: 'Mint Light' },
+            { id: 'midnight-slate', name: 'Midnight Slate' },
+            { id: 'forest-night', name: 'Forest Night' },
+            { id: 'carbon-flame', name: 'Carbon Flame' },
+            { id: 'ash-orange', name: 'Ash Orange' },
+            { id: 'ember-forge', name: 'Ember Forge' },
+            { id: 'deep-teal', name: 'Deep Teal' },
+            { id: 'arctic-teal', name: 'Arctic Teal' },
+            { id: 'red-inferno', name: 'Red Inferno' },
+            { id: 'royal-teal', name: 'Royal Teal' },
+            { id: 'github-dark', name: 'GitHub Dark' },
+            { id: 'material-dark', name: 'Material Dark' },
+            { id: 'teal-finance', name: 'Teal Finance' }
         ];
         
         this.permissions = [

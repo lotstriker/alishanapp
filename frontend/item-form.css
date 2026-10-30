@@ -788,3 +788,22 @@
     border-radius: 0.6rem;
 }
 .different-sizes-hint i { color: var(--accent-text, var(--primary)); margin-right: 0.3rem; }
+
+
+/* v37: use theme-aware surfaces instead of a pale blue wash on form controls. */
+.size-input-group,
+.color-size-item {
+    background: var(--surface-soft, rgba(67, 97, 238, 0.035));
+}
+.size-input-group {
+    padding: 0.38rem;
+}
+.color-size-item {
+    padding: 0.48rem;
+}
+.size-input-group label {
+    margin-bottom: 0.2rem;
+}
+.color-size-header {
+    min-height: 0;
+}

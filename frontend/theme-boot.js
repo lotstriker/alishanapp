@@ -3,7 +3,11 @@
 // The theme name is also kept in localStorage, only so the page does not flash in the default colours first;
 // the real saved value is the one in AlishanDB.
 (function () {
-    var THEMES = ['light-default', 'light-warm', 'dark-deep', 'dark-blue', 'gold', 'purple', 'mint'];
+    var THEMES = [
+        'light-default', 'light-warm', 'dark-deep', 'gold', 'purple', 'mint',
+        'midnight-slate', 'forest-night', 'carbon-flame', 'ash-orange', 'ember-forge', 'deep-teal', 'arctic-teal',
+        'red-inferno', 'royal-teal', 'github-dark', 'material-dark', 'teal-finance'
+    ];
     function apply(name) {
         if (THEMES.indexOf(name) < 0) name = 'light-default';
         var list = document.documentElement.classList;

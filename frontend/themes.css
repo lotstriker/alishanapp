@@ -67,26 +67,6 @@ html.theme-dark-deep, body.theme-dark-deep {
     --primary-dark: #3a0ca3;
 }
 
-html.theme-dark-blue, body.theme-dark-blue {
-    --bg-body: #1a2238;
-    --bg-card: #212b45;
-    --bg-sidebar: #212b45;
-    --bg-header: #212b45;
-    --bg-dropdown: #2d3a5a;
-    --bg-hover: #2d3a5a;
-    --bg-active: #374a73;
-    --bg-modal: #212b45;
-    --text-primary: #ffffff;
-    --text-secondary: #a8b5db;
-    --text-muted: #7a88b5;
-    --border-primary: #2d3a5a;
-    --border-secondary: #374a73;
-    --shadow-color: rgba(0, 0, 0, 0.4);
-    --primary: #4895ef;
-    --primary-dark: #3a0ca3;
-    --secondary: #4361ee;
-}
-
 html.theme-gold, body.theme-gold {
     --bg-body: #2c2c2c;
     --bg-card: #3a3a3a;
@@ -144,6 +124,22 @@ html.theme-mint, body.theme-mint {
     --secondary: #25857d;
 }
 
+
+/* ---- Additional low-glare dark palettes ---- */
+html.theme-midnight-slate, body.theme-midnight-slate {
+    --bg-body: #202832; --bg-card: #2B3642; --bg-sidebar: #2B3642; --bg-header: #2B3642;
+    --bg-dropdown: #35414E; --bg-hover: #35414E; --bg-active: #414F5D; --bg-modal: #2B3642;
+    --text-primary: #E4E9EF; --text-secondary: #A5B0BC; --text-muted: #8593A2;
+    --border-primary: #35414E; --border-secondary: #414F5D; --shadow-color: rgba(0,0,0,.28);
+    --primary: #91AFC8; --primary-dark: #7898B3; --secondary: #91AFC8; --accent-text: #B8D0E4;
+}
+html.theme-forest-night, body.theme-forest-night {
+    --bg-body: #1D2926; --bg-card: #293832; --bg-sidebar: #293832; --bg-header: #293832;
+    --bg-dropdown: #34463E; --bg-hover: #34463E; --bg-active: #40564B; --bg-modal: #293832;
+    --text-primary: #E1E9E4; --text-secondary: #A7B7AE; --text-muted: #81968A;
+    --border-primary: #34463E; --border-secondary: #40564B; --shadow-color: rgba(0,0,0,.28);
+    --primary: #8DB6A2; --primary-dark: #719C87; --secondary: #8DB6A2; --accent-text: #B7D9C7;
+}
 html[class*="theme-"]:not(.theme-light-default), body[class*="theme-"]:not(.theme-light-default) {          /* the selectors start with html / body so they beat a page's own :root variables (reports.html has some) */
     --white: var(--bg-card);
     --body-bg: var(--bg-body);
@@ -155,30 +151,299 @@ html[class*="theme-"]:not(.theme-light-default), body[class*="theme-"]:not(.them
     --on-color: #ffffff;                 /* text on a coloured button or header */
 }
 html.theme-gold, body.theme-gold { --on-color: #2c2c2c; }
-html.theme-dark-deep, html.theme-dark-blue, html.theme-gold { color-scheme: dark; }
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night) { color-scheme: dark; }
 
 /* ---- tokens the page styles use for soft surfaces and tints (the default look keeps the original colours) ---- */
-html:is(.theme-light-warm, .theme-purple, .theme-mint, .theme-dark-deep, .theme-dark-blue, .theme-gold) {
+html:is(.theme-light-warm, .theme-purple, .theme-mint, .theme-dark-deep, .theme-gold,
+.theme-midnight-slate, .theme-forest-night) {
     --surface-soft: var(--bg-hover);
     --surface-hover: var(--border-primary);
 }
-html:is(.theme-dark-deep, .theme-dark-blue, .theme-gold) {
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night) {
     --tint-warn: rgba(255, 193, 7, 0.18);
     --tint-info: rgba(66, 165, 245, 0.18);
     --tint-ok: rgba(76, 175, 80, 0.18);
 }
-/* ---- accessible accent / text-on-colour per theme (a pale accent is not readable as text on white, a dark one not on black) ---- */
+/* ---- accessible accent / text-on-colour per existing theme ---- */
 html.theme-light-warm, body.theme-light-warm { --primary: #c2610c; --secondary: #92400e; }
 html.theme-mint, body.theme-mint { --primary: #0f766e; --secondary: #115e59; --text-secondary: #2a7f79; }
 html.theme-dark-deep, body.theme-dark-deep { --accent-text: #8fa5ff; }
-html.theme-dark-blue, body.theme-dark-blue { --accent-text: #8dc0ff; }
 html.theme-gold, body.theme-gold { --on-color: #1a1a1a; }
 
-/* ---- dark themes: places where the page styles say "grey button" or put dark text on a light tint ---- */
-html:is(.theme-dark-deep, .theme-dark-blue, .theme-gold) .btn-secondary,
-html:is(.theme-dark-deep, .theme-dark-blue, .theme-gold) .bi-btn { background: #5f6770; color: #ffffff; }
-html:is(.theme-dark-deep, .theme-dark-blue, .theme-gold) .aging-header { --dark: #212529; --gray: #495057; }
-html:is(.theme-dark-deep, .theme-dark-blue, .theme-gold) .ic-collapse-btn { color: var(--accent-text, var(--primary)); }
+/* ---- dark themes: shared component corrections for existing dark palettes ---- */
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night) .btn-secondary,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night) .bi-btn { background: #5f6770; color: #ffffff; }
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night) .aging-header { --dark: #212529; --gray: #495057; }
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night) .ic-collapse-btn { color: var(--accent-text, var(--primary)); }
 html.theme-gold .tabbar a.tab-add, html.theme-gold .inv-tools .tool-filters { color: #1a1a1a; }
-html:is(.theme-dark-deep, .theme-dark-blue, .theme-gold) .aging-total { color: #212529; }
-html:is(.theme-dark-deep, .theme-dark-blue, .theme-gold) .ic-details-btn { color: #c4b8ff; }
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night) .aging-total { color: #212529; }
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night) .ic-details-btn { color: #c4b8ff; }
+html:is(.theme-midnight-slate, .theme-forest-night),
+body:is(.theme-midnight-slate, .theme-forest-night) { --on-color: #202020; }
+
+/* ---- User-provided dark palettes (each theme uses only its own supplied palette colours) ---- */
+
+html.theme-carbon-flame, body.theme-carbon-flame {
+    --bg-body: #111111; --bg-card: #111111; --bg-sidebar: #111111; --bg-header: #111111;
+    --bg-dropdown: #111111; --bg-hover: #8E8E8E; --bg-active: #8E8E8E; --bg-modal: #111111;
+    --text-primary: #F2F2F2; --text-secondary: #8E8E8E; --text-muted: #8E8E8E;
+    --border-primary: #8E8E8E; --border-secondary: #8E8E8E; --shadow-color: rgba(17,17,17,.25);
+    --primary: #FF4D00; --primary-dark: #FF4D00; --secondary: #8E8E8E;
+    --accent-text: #FF4D00; --on-color: #111111;
+}
+
+html.theme-ash-orange, body.theme-ash-orange {
+    --bg-body: #1C1E2A; --bg-card: #1C1E2A; --bg-sidebar: #1C1E2A; --bg-header: #1C1E2A;
+    --bg-dropdown: #1C1E2A; --bg-hover: #CDCDCB; --bg-active: #CDCDCB; --bg-modal: #1C1E2A;
+    --text-primary: #CDCDCB; --text-secondary: #CDCDCB; --text-muted: #CDCDCB;
+    --border-primary: #CDCDCB; --border-secondary: #CDCDCB; --shadow-color: rgba(28,30,42,.25);
+    --primary: #FB5102; --primary-dark: #FB5102; --secondary: #CDCDCB;
+    --accent-text: #FB5102; --on-color: #1C1E2A;
+}
+
+html.theme-ember-forge, body.theme-ember-forge {
+    --bg-body: #191A20; --bg-card: #212C35; --bg-sidebar: #212C35; --bg-header: #212C35;
+    --bg-dropdown: #3F1611; --bg-hover: #4B525A; --bg-active: #7E4739; --bg-modal: #212C35;
+    --text-primary: #FBB715; --text-secondary: #DB5B0F; --text-muted: #4B525A;
+    --border-primary: #7E4739; --border-secondary: #4B525A; --shadow-color: rgba(25,26,32,.25);
+    --primary: #FBB715; --primary-dark: #DB5B0F; --secondary: #DB5B0F;
+    --accent-text: #FBB715; --on-color: #191A20;
+}
+
+html.theme-deep-teal, body.theme-deep-teal {
+    --bg-body: #050C0E; --bg-card: #132B35; --bg-sidebar: #132B35; --bg-header: #132B35;
+    --bg-dropdown: #1C3B42; --bg-hover: #1C3B42; --bg-active: #4A7983; --bg-modal: #132B35;
+    --text-primary: #7DA7A6; --text-secondary: #7DA7A6; --text-muted: #4A7983;
+    --border-primary: #1C3B42; --border-secondary: #4A7983; --shadow-color: rgba(5,12,14,.25);
+    --primary: #E99320; --primary-dark: #E99320; --secondary: #7DA7A6;
+    --accent-text: #E99320; --on-color: #050C0E;
+}
+
+html.theme-arctic-teal, body.theme-arctic-teal {
+    --bg-body: #020C0F; --bg-card: #053A41; --bg-sidebar: #053A41; --bg-header: #053A41;
+    --bg-dropdown: #044F58; --bg-hover: #1C7C84; --bg-active: #2A9DA6; --bg-modal: #053A41;
+    --text-primary: #FC931F; --text-secondary: #2A9DA6; --text-muted: #1C7C84;
+    --border-primary: #044F58; --border-secondary: #2A9DA6; --shadow-color: rgba(2,12,15,.25);
+    --primary: #FC931F; --primary-dark: #F67608; --secondary: #2A9DA6;
+    --accent-text: #FC931F; --on-color: #020C0F;
+}
+
+html:is(.theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal), body:is(.theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal) { color-scheme: dark; }
+html:is(.theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal) { --surface-soft: var(--bg-hover); --surface-hover: var(--border-primary); }
+html:is(.theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal) .btn-secondary, html:is(.theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal) .bi-btn { background: var(--primary); color: var(--on-color); }
+html:is(.theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal) .aging-header { --dark: var(--text-primary); --gray: var(--text-secondary); }
+html:is(.theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal) .ic-collapse-btn, html:is(.theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal) .ic-details-btn { color: var(--accent-text); }
+html:is(.theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal) .aging-total { color: var(--text-primary); }
+
+/* ---- Additional dark palettes requested by the user ---- */
+html.theme-red-inferno, body.theme-red-inferno {
+    --bg-body: #000000; --bg-card: #830000; --bg-sidebar: #830000; --bg-header: #830000;
+    --bg-dropdown: #830000; --bg-hover: #BC0202; --bg-active: #FF0000; --bg-modal: #830000;
+    --text-primary: #FFFFFF; --text-secondary: #F2DADA; --text-muted: #E0A0A0;
+    --border-primary: #BC0202; --border-secondary: #FF0000; --shadow-color: rgba(0,0,0,.35);
+    --primary: #FF0000; --primary-dark: #BC0202; --secondary: #BC0202;
+    --accent-text: #FF0000; --on-color: #FFFFFF;
+}
+html.theme-royal-teal, body.theme-royal-teal {
+    --bg-body: #0D0B61; --bg-card: #294669; --bg-sidebar: #294669; --bg-header: #294669;
+    --bg-dropdown: #294669; --bg-hover: #478B8D; --bg-active: #E4D329; --bg-modal: #294669;
+    --text-primary: #FFFFFF; --text-secondary: #D5E3E8; --text-muted: #B4C8D0;
+    --border-primary: #478B8D; --border-secondary: #E4D329; --shadow-color: rgba(13,11,97,.3);
+    --primary: #E4D329; --primary-dark: #C5B51E; --secondary: #478B8D;
+    --accent-text: #E4D329; --on-color: #0D0B61;
+}
+html.theme-github-dark, body.theme-github-dark {
+    --bg-body: #0D1117; --bg-card: #161B22; --bg-sidebar: #161B22; --bg-header: #161B22;
+    --bg-dropdown: #21262D; --bg-hover: #21262D; --bg-active: #30363D; --bg-modal: #161B22;
+    --text-primary: #E6EDF3; --text-secondary: #B1BAC4; --text-muted: #7D8590;
+    --border-primary: #30363D; --border-secondary: #484F58; --shadow-color: rgba(0,0,0,.3);
+    --primary: #4493F8; --primary-dark: #2F81F7; --secondary: #4493F8;
+    --accent-text: #79C0FF; --on-color: #FFFFFF;
+}
+html.theme-material-dark, body.theme-material-dark {
+    --bg-body: #121212; --bg-card: #242424; --bg-sidebar: #242424; --bg-header: #242424;
+    --bg-dropdown: #303030; --bg-hover: #303030; --bg-active: #3A3A3A; --bg-modal: #242424;
+    --text-primary: #E6E1E5; --text-secondary: #C4C7C5; --text-muted: #929695;
+    --border-primary: #3A3A3A; --border-secondary: #494949; --shadow-color: rgba(0,0,0,.3);
+    --primary: #80CBC4; --primary-dark: #4DB6AC; --secondary: #80CBC4;
+    --accent-text: #A7FFEB; --on-color: #121212;
+}
+html.theme-teal-finance, body.theme-teal-finance {
+    --bg-body: #101A20; --bg-card: #1C2B33; --bg-sidebar: #1C2B33; --bg-header: #1C2B33;
+    --bg-dropdown: #263942; --bg-hover: #263942; --bg-active: #35515A; --bg-modal: #1C2B33;
+    --text-primary: #E1ECEE; --text-secondary: #B0C5C9; --text-muted: #81999E;
+    --border-primary: #35515A; --border-secondary: #47666E; --shadow-color: rgba(0,0,0,.3);
+    --primary: #5FB3B3; --primary-dark: #419494; --secondary: #5FB3B3;
+    --accent-text: #8DD8D5; --on-color: #101A20;
+}
+html:is(.theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance),
+body:is(.theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) { color-scheme: dark; }
+html:is(.theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) { --surface-soft: var(--bg-hover); --surface-hover: var(--border-primary); }
+html:is(.theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .btn-secondary,
+html:is(.theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .bi-btn { background: var(--primary); color: var(--on-color); }
+html:is(.theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .aging-header { --dark: var(--text-primary); --gray: var(--text-secondary); }
+html:is(.theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .ic-collapse-btn,
+html:is(.theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .ic-details-btn { color: var(--accent-text); }
+html:is(.theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .aging-total { color: var(--text-primary); }
+
+
+
+/* ============================================================
+   v37 THEME CONTRAST FIXES
+   Shared readable surfaces for the entry form, selectors, modals,
+   quality cards and colour chips across all dark themes.
+   ============================================================ */
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance), body:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) {
+    --form-surface: var(--bg-card);
+    --form-input-bg: var(--bg-body);
+    --form-input-text: var(--text-primary);
+    --form-label-text: var(--text-secondary);
+}
+
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .form-section,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) #productForm,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) #productForm .form-section-group,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .color-size-item,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .entry-date-card,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .collapsible-section,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .collapsible-content,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .form-section-group,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .item-modal .modal-content,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .modal-content,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .item-form-modal,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .quality-selector-container,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .color-selector-container,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .quality-category,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .category-content {
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-primary) !important;
+}
+
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .form-section h2,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .form-section-group h3,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .form-section-group h4,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) #productForm label,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .form-group label,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .entry-date-title,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .entry-date-hint,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .color-name,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .quality-option,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .quality-placeholder,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .color-option {
+    color: var(--text-primary) !important;
+}
+
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) #productForm input:not([type="checkbox"]):not([type="radio"]),
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) #productForm select,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) #productForm textarea,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .form-group input,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .form-group select,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .form-group textarea,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .quality-search-container input,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .color-search input,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .size-dozen,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .size-pieces,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .manual-date-input,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .manual-time-input {
+    background-color: var(--bg-body) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-secondary) !important;
+    caret-color: var(--primary);
+    color-scheme: dark;
+}
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) #productForm input::placeholder,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) #productForm textarea::placeholder,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .quality-search-container input::placeholder,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .color-search input::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 1;
+}
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) #productForm input:focus,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) #productForm select:focus,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) #productForm textarea:focus,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .quality-search-container input:focus,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .color-search input:focus {
+    outline: 2px solid var(--primary) !important;
+    outline-offset: 1px;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 24%, transparent) !important;
+}
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .quality-option,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .color-option,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .category-header,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .selected-color-tag {
+    background: var(--bg-dropdown) !important;
+    border-color: var(--border-primary) !important;
+}
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .quality-option:hover,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .color-option:hover,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .category-header:hover {
+    background: var(--bg-hover) !important;
+}
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .quality-option.selected,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .color-option.selected {
+    background: var(--bg-active) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--primary) !important;
+}
+
+/* Dark card headers must not retain the hard-coded pale gradient. */
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .card-header {
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-bottom-color: var(--border-primary) !important;
+}
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .unique-code {
+    color: var(--accent-text, var(--primary)) !important;
+    border-color: var(--border-secondary) !important;
+}
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .size-item,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .size-item-with-pieces,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .size-item-simple {
+    background: var(--bg-body) !important;
+    border: 1px solid var(--border-primary) !important;
+    box-shadow: none !important;
+    color: var(--text-primary) !important;
+}
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .size-label,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .size-item-simple .size-label,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .size-item-with-pieces .size-label {
+    color: var(--text-secondary) !important;
+}
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .size-value,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .size-item-simple .size-value {
+    color: var(--text-primary) !important;
+}
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .flow-box,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .calculation-step,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .ic-summary {
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .step-label,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .ic-stat-label {
+    color: var(--text-secondary) !important;
+}
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .step-value,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .ic-stat strong {
+    color: var(--text-primary) !important;
+}
+
+/* Per-colour chips are darkened by item-form.js while retaining their hue. */
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .color-tag[class*="color-"],
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .ic-colors .color-tag[class*="color-"],
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .selected-color-tag[class*="color-"] {
+    min-height: 1.45rem !important;
+    padding: 0.12rem 0.55rem !important;
+    line-height: 1.15 !important;
+    border-radius: 0.45rem !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+}
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .inventory-card .color-tags .color-tag,
+html:is(.theme-dark-deep, .theme-gold, .theme-midnight-slate, .theme-forest-night, .theme-carbon-flame, .theme-ash-orange, .theme-ember-forge, .theme-deep-teal, .theme-arctic-teal, .theme-red-inferno, .theme-royal-teal, .theme-github-dark, .theme-material-dark, .theme-teal-finance) .ic-colors .color-tag {
+    min-height: 1.45rem !important;
+    padding: 0.12rem 0.55rem !important;
+    line-height: 1.15 !important;
+    border-radius: 0.45rem !important;
+}

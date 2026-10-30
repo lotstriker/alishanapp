@@ -358,10 +358,20 @@ var ItemForm = (() => {
         return AlishanStore.getColorStyleSafe(colorName);
     }
 
+    function darkenColor(hex, factor) {
+        const match = /^#?([0-9a-f]{6})$/i.exec(String(hex || ''));
+        if (!match) return '#29313B';
+        const value = match[1];
+        const channels = [0, 2, 4].map(i => Math.max(0, Math.round(parseInt(value.slice(i, i + 2), 16) * factor)));
+        return '#' + channels.map(v => v.toString(16).padStart(2, '0')).join('');
+    }
+
     function generateColorCSS() {
         if (!colorData.colors) return;
         let css = '';
         colorData.colors.forEach(color => {
+            // Keep every colour's own palette from colors.json in every theme.
+            // Do not replace all dark-theme text with white or merge distinct colour backgrounds.
             css += `
                 .color-${color.name.toLowerCase()} {
                     background-color: ${color.backgroundColor} !important;

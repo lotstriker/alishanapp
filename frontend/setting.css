@@ -151,26 +151,6 @@
     --primary-dark: #3a0ca3;
 }
 
-.theme-dark-blue {
-    --bg-body: #1a2238;
-    --bg-card: #212b45;
-    --bg-sidebar: #212b45;
-    --bg-header: #212b45;
-    --bg-dropdown: #2d3a5a;
-    --bg-hover: #2d3a5a;
-    --bg-active: #374a73;
-    --bg-modal: #212b45;
-    --text-primary: #ffffff;
-    --text-secondary: #a8b5db;
-    --text-muted: #7a88b5;
-    --border-primary: #2d3a5a;
-    --border-secondary: #374a73;
-    --shadow-color: rgba(0, 0, 0, 0.4);
-    --primary: #4895ef;
-    --primary-dark: #3a0ca3;
-    --secondary: #4361ee;
-}
-
 .theme-gold {
     --bg-body: #2c2c2c;
     --bg-card: #3a3a3a;
@@ -1050,11 +1030,11 @@ input:checked + .toggle-slider:before {
 .theme-light-default .theme-preview { background: linear-gradient(135deg, #4361ee 0%, #4361ee 50%, #f8f9fa 50%, #f8f9fa 100%); }
 .theme-light-warm .theme-preview { background: linear-gradient(135deg, #f8961e 0%, #f8961e 50%, #fef5e7 50%, #fef5e7 100%); }
 .theme-dark-deep .theme-preview { background: linear-gradient(135deg, #4361ee 0%, #4361ee 50%, #121212 50%, #121212 100%); }
-.theme-dark-blue .theme-preview { background: linear-gradient(135deg, #4895ef 0%, #4895ef 50%, #1a2238 50%, #1a2238 100%); }
 .theme-gold .theme-preview { background: linear-gradient(135deg, #ffd700 0%, #ffd700 50%, #2c2c2c 50%, #2c2c2c 100%); }
 .theme-purple .theme-preview { background: linear-gradient(135deg, #8a2be2 0%, #8a2be2 50%, #f5f0ff 50%, #f5f0ff 100%); }
 .theme-mint .theme-preview { background: linear-gradient(135deg, #37b2ac 0%, #37b2ac 50%, #f0fffd 50%, #f0fffd 100%); }
-
+.theme-midnight-slate .theme-preview { background: linear-gradient(135deg, #91AFC8 0%, #91AFC8 50%, #202832 50%, #202832 100%); }
+.theme-forest-night .theme-preview { background: linear-gradient(135deg, #8DB6A2 0%, #8DB6A2 50%, #1D2926 50%, #1D2926 100%); }
 /* === BACKUP TIMELINE === */
 .backup-timeline {
     position: relative;
@@ -1648,3 +1628,18 @@ input:checked + .toggle-slider:before {
         margin: 1rem;
     }
 }
+.theme-carbon-flame .theme-preview { background: linear-gradient(135deg, #FF4D00 0%, #FF4D00 50%, #111111 50%, #111111 100%); }
+
+.theme-ash-orange .theme-preview { background: linear-gradient(135deg, #FB5102 0%, #FB5102 50%, #1C1E2A 50%, #1C1E2A 100%); }
+
+.theme-ember-forge .theme-preview { background: linear-gradient(135deg, #FBB715 0%, #FBB715 50%, #191A20 50%, #191A20 100%); }
+
+.theme-deep-teal .theme-preview { background: linear-gradient(135deg, #E99320 0%, #E99320 50%, #050C0E 50%, #050C0E 100%); }
+
+.theme-arctic-teal .theme-preview { background: linear-gradient(135deg, #FC931F 0%, #FC931F 50%, #020C0F 50%, #020C0F 100%); }
+
+.theme-red-inferno .theme-preview { background: linear-gradient(135deg, #FF0000 0%, #FF0000 50%, #000000 50%, #000000 100%); }
+.theme-royal-teal .theme-preview { background: linear-gradient(135deg, #E4D329 0%, #E4D329 50%, #0D0B61 50%, #0D0B61 100%); }
+.theme-github-dark .theme-preview { background: linear-gradient(135deg, #4493F8 0%, #4493F8 50%, #0D1117 50%, #0D1117 100%); }
+.theme-material-dark .theme-preview { background: linear-gradient(135deg, #80CBC4 0%, #80CBC4 50%, #121212 50%, #121212 100%); }
+.theme-teal-finance .theme-preview { background: linear-gradient(135deg, #5FB3B3 0%, #5FB3B3 50%, #101A20 50%, #101A20 100%); }

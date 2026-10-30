@@ -4,7 +4,16 @@ class GlobalThemeManager {
     this.currentTheme = 'light-default'; // fast fallback until AlishanDB resolves
     this.availableThemes = [
       'light-default', 'light-warm', 'dark-deep',
-      'dark-blue', 'gold', 'purple', 'mint'
+      'gold', 'purple', 'mint',
+      'midnight-slate', 'forest-night',
+      'carbon-flame', 'ash-orange', 'ember-forge', 'deep-teal', 'arctic-teal',
+      'red-inferno', 'royal-teal', 'github-dark', 'material-dark', 'teal-finance'
+    ];
+    this.darkThemes = [
+      'dark-deep', 'gold',
+      'midnight-slate', 'forest-night',
+      'carbon-flame', 'ash-orange', 'ember-forge', 'deep-teal', 'arctic-teal',
+      'red-inferno', 'royal-teal', 'github-dark', 'material-dark', 'teal-finance'
     ];
     this.init();
   }
@@ -54,7 +63,7 @@ class GlobalThemeManager {
   updateThemeToggleIcon(themeName) {
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
-      const isDark = themeName.includes('dark') || themeName === 'gold';
+      const isDark = this.darkThemes.includes(themeName);
       themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     }
   }
@@ -99,7 +108,7 @@ class GlobalThemeManager {
   // Toggle between light and dark
   toggleDarkLight() {
     const current = this.getCurrentTheme();
-    const isDark = current.includes('dark') || current === 'gold';
+    const isDark = this.darkThemes.includes(current);
     const newTheme = isDark ? 'light-default' : 'dark-deep';
     this.applyTheme(newTheme);
   }

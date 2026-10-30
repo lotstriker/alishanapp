@@ -410,14 +410,16 @@
 }
 
 .inventory-card .color-header {
-    padding: 0.5rem;
+    padding: 0.28rem 0.45rem;
     border-radius: 0.25rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
     font-weight: 600;
     text-transform: uppercase;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
+    min-height: 0;
+    line-height: 1.15;
 }
 
 .inventory-card .badge-new {
@@ -917,3 +919,119 @@
 .inventory-card.ic-open .ic-body { border-bottom: none; }
 
 .inventory-card .ic-badge-import { background: rgba(0, 0, 0, 0.28); color: #fff; border: 1px solid rgba(255, 255, 255, 0.35); }
+
+
+/* ============================================================
+   Size Focus Mode — isolated add-on for mobile quality cards.
+   Does not alter the existing card layout or saved records.
+   ============================================================ */
+.ic-size-focus-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 34px;
+    padding: 0.35rem 0.65rem;
+    border: 1px solid var(--primary, #4361ee);
+    border-radius: 8px;
+    background: var(--white, #fff);
+    color: var(--accent-text, var(--primary, #4361ee));
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.ic-size-focus-trigger:focus-visible,
+.ic-size-focus-close:focus-visible { outline: 3px solid var(--primary, #4361ee); outline-offset: 2px; }
+.inventory-card .size-chart-simple + .ic-size-focus-trigger { margin-bottom: 0.5rem; }
+.inventory-card .flow-box > .ic-size-focus-trigger { margin-bottom: 0.5rem; }
+.inventory-card .color-header { flex-wrap: nowrap; }
+.inventory-card .ic-color-header-label { flex: 1 1 auto; min-width: 0; line-height: 1.15; }
+.inventory-card .color-header .ic-size-focus-trigger {
+    margin-left: auto;
+    min-height: 24px;
+    padding: 0.12rem 0.4rem;
+    gap: 0.25rem;
+    font-size: 0.68rem;
+    line-height: 1;
+}
+.inventory-card .color-header .ic-size-focus-trigger span { display: none; }
+.ic-size-focus { position: fixed; inset: 0; z-index: 100000; display: flex; flex-direction: column; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; background: var(--white, #fff); color: var(--dark, #212529); }
+.ic-size-focus:fullscreen { width: 100vw; height: 100vh; }
+.ic-size-focus-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: max(10px, env(safe-area-inset-top)) 18px 10px; border-bottom: 2px solid var(--light-gray, #e9ecef); background: var(--white, #fff); }
+.ic-size-focus-title { min-width: 0; }
+.ic-size-focus-eyebrow { display: block; margin-bottom: 2px; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.12em; color: var(--gray, #6c757d); }
+.ic-size-focus-head h2 { margin: 0; padding: 0; border: 0; font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; line-height: 1.08; overflow-wrap: anywhere; }
+.ic-size-focus-close { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; min-height: 44px; padding: 0 14px; border: 1px solid var(--light-gray, #e9ecef); border-radius: 10px; background: var(--surface-soft, #f3f5f8); color: var(--dark, #212529); font: inherit; font-size: 1rem; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+.ic-size-focus-main { flex: 1; min-height: 0; overflow: auto; padding: clamp(4px, 0.7vw, 10px); display: flex; align-items: stretch; justify-content: stretch; }
+.ic-size-focus-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); align-content: stretch; align-items: stretch; gap: clamp(6px, 0.8vw, 12px); width: 100%; max-width: none; min-height: 100%; }
+.ic-size-focus-cell { display: flex; min-width: 0; min-height: 0; height: 100%; flex-direction: column; align-items: center; justify-content: center; gap: 0.45rem; padding: clamp(8px, 1.2vw, 18px); border: 2px solid var(--light-gray, #e9ecef); border-radius: 14px; background: var(--surface-soft, #f6f7fb); text-align: center; }
+.ic-size-focus-size { font-size: clamp(2rem, 5.5vw, 3.8rem); font-weight: 900; line-height: 1; color: var(--dark, #212529); transform: translateY(-7px); }
+.ic-size-focus-value { font-size: clamp(2.6rem, 7vw, 5rem); font-weight: 900; line-height: 1; color: var(--accent-text, var(--primary, #4361ee)); font-variant-numeric: tabular-nums; }
+.ic-size-focus-empty { align-self: center; color: var(--gray, #6c757d); font-size: 1.2rem; }
+body.ic-size-focus-active { overflow: hidden !important; }
+@media (max-width: 768px) {
+    .ic-size-focus-trigger { min-height: 36px; font-size: 0.72rem; }
+    .inventory-card .color-header { padding: 0.22rem 0.4rem !important; gap: 0.3rem !important; }
+    .inventory-card .color-header .ic-size-focus-trigger { min-height: 22px !important; padding: 0.1rem 0.35rem !important; font-size: 0.66rem !important; }
+    .ic-size-focus-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ic-size-focus-cell { min-height: 0; height: 100%; padding: clamp(8px, 1.5vh, 16px); }
+    .ic-size-focus-size { font-size: clamp(1.9rem, 7vw, 3.2rem); }
+    .ic-size-focus-value { font-size: clamp(2.4rem, 8vw, 4.3rem); }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+    .ic-size-focus-head { padding: 4px 14px; }
+    .ic-size-focus-eyebrow { font-size: 0.7rem; }
+    .ic-size-focus-head h2 { font-size: clamp(1.7rem, 4.5vw, 2.6rem); }
+    .ic-size-focus-close { min-height: 34px; }
+    .ic-size-focus-main { padding: 6px 12px; }
+    .ic-size-focus-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 7px; }
+    .ic-size-focus-cell { min-height: 0; height: 100%; padding: 6px 10px; gap: 0.3rem; }
+    .ic-size-focus-size { font-size: clamp(1.7rem, 6vh, 2.8rem); }
+    .ic-size-focus-value { font-size: clamp(2rem, 8vh, 3.5rem); }
+}
+@media (min-width: 769px) {
+    .ic-size-focus-trigger { display: none !important; }
+}
+
+
+/* v37: compact, low-glare size tiles shared by Dashboard and Inventory. */
+.inventory-card .size-chart,
+.inventory-card .size-chart-with-pieces,
+.inventory-card .size-chart-simple {
+    gap: 0.32rem !important;
+}
+.inventory-card .size-item,
+.inventory-card .size-item-with-pieces,
+.inventory-card .size-item-simple {
+    padding: 0.28rem 0.2rem !important;
+    min-height: 0 !important;
+    border-radius: 0.35rem !important;
+}
+.inventory-card .size-item .size-label,
+.inventory-card .size-item-with-pieces .size-label,
+.inventory-card .size-item-simple .size-label {
+    margin-bottom: 0.12rem !important;
+    font-size: 0.68rem !important;
+    line-height: 1.15 !important;
+}
+.inventory-card .size-item .size-value,
+.inventory-card .size-item-simple .size-value {
+    font-size: 0.95rem !important;
+    line-height: 1.2 !important;
+    overflow-wrap: anywhere;
+}
+.inventory-card .color-tags,
+.inventory-card .ic-colors {
+    gap: 0.28rem !important;
+    align-items: center;
+}
+.inventory-card .color-tag,
+.inventory-card .ic-colors .color-tag {
+    padding: 0.16rem 0.55rem !important;
+    min-height: 1.45rem;
+    line-height: 1.15 !important;
+    border-radius: 0.4rem !important;
+    font-size: 0.72rem !important;
+}
