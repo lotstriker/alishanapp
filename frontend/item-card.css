@@ -960,7 +960,9 @@
 .ic-size-focus { position: fixed; inset: 0; z-index: 100000; display: flex; flex-direction: column; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; background: var(--white, #fff); color: var(--dark, #212529); }
 .ic-size-focus:fullscreen { width: 100vw; height: 100vh; }
 .ic-size-focus-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: max(10px, env(safe-area-inset-top)) 18px 10px; border-bottom: 2px solid var(--light-gray, #e9ecef); background: var(--white, #fff); }
-.ic-size-focus-title { min-width: 0; }
+.ic-size-focus-title { min-width: 0; padding-left: 10px; }
+.ic-size-focus-title-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.75rem; }
+.ic-size-focus-total { font-size: clamp(1.1rem, 3vw, 1.7rem); font-weight: 800; line-height: 1.1; color: var(--accent-text, var(--primary, #4361ee)); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ic-size-focus-eyebrow { display: block; margin-bottom: 2px; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.12em; color: var(--gray, #6c757d); }
 .ic-size-focus-head h2 { margin: 0; padding: 0; border: 0; font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; line-height: 1.08; overflow-wrap: anywhere; }
 .ic-size-focus-close { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; min-height: 44px; padding: 0 14px; border: 1px solid var(--light-gray, #e9ecef); border-radius: 10px; background: var(--surface-soft, #f3f5f8); color: var(--dark, #212529); font: inherit; font-size: 1rem; font-weight: 700; cursor: pointer; flex-shrink: 0; }

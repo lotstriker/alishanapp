@@ -102,7 +102,10 @@ var ItemCard = (() => {
             <header class="ic-size-focus-head">
                 <div class="ic-size-focus-title">
                     <span class="ic-size-focus-eyebrow">${info.mode === 'same' ? 'COLOURS' : 'COLOUR'}</span>
-                    <h2>${escapeHtml(colorsTitle || 'N/A')}</h2>
+                    <div class="ic-size-focus-title-row">
+                        <h2>${escapeHtml(colorsTitle || 'N/A')}</h2>
+                        ${selectedColor ? `<span class="ic-size-focus-total">${AlishanCalc.fmtDozens(selectedColor.totalDozens)} Dozen</span>` : ''}
+                    </div>
                 </div>
                 <button type="button" class="ic-size-focus-close" aria-label="Close size view"><i class="fas fa-times"></i><span>Close</span></button>
             </header>
@@ -121,9 +124,6 @@ var ItemCard = (() => {
         try {
             if (overlay.requestFullscreen) await overlay.requestFullscreen();
         } catch (_) { /* Full-screen is best effort; fixed overlay still fills the viewport. */ }
-        try {
-            if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape');
-        } catch (_) { /* Some browsers/devices do not permit orientation locking. */ }
         overlay.querySelector('.ic-size-focus-close')?.focus({ preventScroll: true });
     }
 
@@ -138,7 +138,6 @@ var ItemCard = (() => {
         document.body.classList.remove('ic-size-focus-active');
         overlay.remove();
         try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen(); } catch (_) {}
-        try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (_) {}
     }
 
     function sizeChartHTML(info) {
