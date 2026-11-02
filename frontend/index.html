@@ -48,25 +48,42 @@
 
     <div class="main-content">
         <div class="container">
-            <!-- Search (search.js): the same search box on every page -->
-            <div id="alishan-search"></div>
+            <section class="home-summary-cards" aria-label="Inventory summary">
+                <article class="home-summary-card"><span class="home-summary-icon"><i class="fas fa-boxes"></i></span><div><strong id="homeTotalItems">0</strong><span>Total Items</span></div></article>
+                <article class="home-summary-card"><span class="home-summary-icon"><i class="fas fa-money-bill-wave"></i></span><div><strong id="homeTotalValue">₹0</strong><span>Total Inventory Value</span></div></article>
+                <article class="home-summary-card" data-summary-kind="in-stock"><span class="home-summary-icon"><i class="fas fa-check-circle"></i></span><div><strong id="homeInStockItems">0</strong><span>In Stock Items</span></div></article>
+                <article class="home-summary-card" data-summary-kind="aging"><span class="home-summary-icon"><i class="fas fa-clock"></i></span><div><strong id="homeAgingItems">0</strong><span id="homeAgingLabel">Aging Stock</span></div></article>
+                <article class="home-summary-card" data-summary-kind="added-week"><span class="home-summary-icon"><i class="fas fa-calendar-week"></i></span><div><strong id="homeAddedThisWeek">0</strong><span>Added This Week</span></div></article>
+                <article class="home-summary-card" data-summary-kind="pending"><span class="home-summary-icon"><i class="fas fa-exclamation-triangle"></i></span><div><strong id="homePendingAmount">₹0</strong><span>Pending Amount</span></div></article>
+            </section>
+            <section class="home-search-section" aria-label="Search inventory">
+                <div id="alishan-search"></div>
+            </section>
+
 
             <div class="dashboard">
-                    <div class="card">
-                        <div class="card-header">
-                            <h2><i class="fas fa-boxes"></i> Total Inventory</h2>
-                            <i class="fas fa-chevron-down"></i>
+                    <section class="card product-breakdown-card" aria-labelledby="productBreakdownTitle">
+                        <div class="card-header product-breakdown-header">
+                            <button type="button" class="breakdown-title-button" id="showAllProductTypes" aria-label="View all product types">
+                                <h2 id="productBreakdownTitle"><i class="fas fa-layer-group"></i> Product Type Breakdown <i class="fas fa-arrow-right breakdown-title-arrow"></i></h2>
+                            </button>
+                            <div class="breakdown-menu-wrap">
+                                <button type="button" class="breakdown-menu-button" id="breakdownMenuButton" aria-label="Product type breakdown options" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></button>
+                                <div class="breakdown-menu" id="breakdownMenu" hidden>
+                                    <span class="breakdown-menu-label">TIME PERIOD</span>
+                                    <button type="button" data-breakdown-period="all">All Time</button>
+                                    <button type="button" data-breakdown-period="week">This Week</button>
+                                    <button type="button" data-breakdown-period="month">This Month</button>
+                                </div>
+                            </div>
                         </div>
-                        <div class="stat-item">
-                            <h3 id="totalInventoryItems">0</h3>
-                            <p>Total Items</p>
-                        </div>
-                        <div class="type-breakdown">
-                            <div class="type-row"><span class="type-name">Bra</span><strong id="totalBraItems">0</strong><small id="braMostAdded">-</small></div>
-                            <div class="type-row"><span class="type-name">Panty</span><strong id="totalPantyItems">0</strong><small id="pantyMostAdded">-</small></div>
-                            <div class="type-row"><span class="type-name">Set</span><strong id="totalSetItems">0</strong><small id="setMostAdded">-</small></div>
-                            <div class="type-row"><span class="type-name">Blouse</span><strong id="totalBlouseItems">0</strong><small id="blouseMostAdded">-</small></div>
-                        </div>
+                        <div class="type-breakdown" id="productTypeBreakdown" aria-live="polite"></div>
+                    </section>
+                    <div class="breakdown-dialog-backdrop" id="breakdownDialogBackdrop" hidden>
+                        <section class="breakdown-dialog" role="dialog" aria-modal="true" aria-labelledby="breakdownDialogTitle">
+                            <div class="breakdown-dialog-header"><div><h2 id="breakdownDialogTitle">Product Types</h2><p id="breakdownDialogSubtitle"></p></div><button type="button" id="closeBreakdownDialog" class="breakdown-close-button" aria-label="Close"><i class="fas fa-times"></i></button></div>
+                            <div id="breakdownDialogContent" class="breakdown-dialog-content"></div>
+                        </section>
                     </div>
 
                     <div class="card">
@@ -74,277 +91,39 @@
                             <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
                         </div>
                         <div class="quick-actions">
-                            <button class="quick-action-btn" onclick="scrollToForm()">
-                                <i class="fas fa-plus"></i> Add New Item
+                            <button class="quick-action-btn" onclick="location.href='pending-amount.html'">
+                                <i class="fas fa-wallet"></i> Pending Amount
                             </button>
                             <!-- CHANGE YEH LINE -->
-                            <button class="quick-action-btn" onclick="generateReport()">
-                                    <i class="fas fa-file-excel"></i> Export Excel Report
+                            <button class="quick-action-btn" onclick="location.href='inventory.html#export'">
+                                <i class="fas fa-file-export"></i> Export Data
                             </button>
-                            <button class="quick-action-btn" onclick="checkStock()">
-                                <i class="fas fa-search"></i> Check Stock
+                            <button class="quick-action-btn" onclick="location.href='inventory.html#import'">
+                                <i class="fas fa-file-import"></i> Import Data
+                            </button>
+                            <button class="quick-action-btn" onclick="location.href='inventory.html#bulk-import'">
+                                <i class="fas fa-magic"></i> Bulk Import
+                            </button>
+                            <button class="quick-action-btn" onclick="location.href='quality-history.html'">
+                                <i class="fas fa-history"></i> Quality History
+                            </button>
+                            <button class="quick-action-btn" onclick="location.href='missing-lot.html'">
+                                <i class="fas fa-tag"></i> Missing Lot Number
                             </button>
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <h2><i class="fas fa-history"></i> Recent Activity</h2>
-                        </div>
-                        <ul class="activity-feed" id="activityFeed">
-                            <li>No recent activity</li>
-                        </ul>
-                    </div>
                 </div>
 
-                <div class="form-section">
-                    <h2><i class="fas fa-plus-circle"></i> Add New Product Entry</h2>
-                    <form id="productForm">
-                        <!-- SINGLE PAGE FORM - SARE SECTIONS EK SAATH -->
-                        <div class="form-single-page">
-                            <!-- Basic Information Section -->
-                            <div class="form-section-group">
-                                <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
-                                <div class="form-grid">
-                                    <div class="form-group">
-                                        <label for="productType">Product Type</label>
-                                        <select id="productType" required onchange="ItemForm.renderQualitySelector('', window.qualityData, this.value)">
-                                            <option value="">Select Type</option>
-                                            <option value="bra">Bra</option>
-                                            <option value="panty">Panty</option>
-                                            <option value="set">Set</option>
-                                            <option value="blouse">Blouse</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="cupSize">Cup Size</label>
-                                        <select id="cupSize">
-                                            <option value="">Select Cup Size</option>
-                                            <option value="A">A Cup</option>
-                                            <option value="B">B Cup</option>
-                                            <option value="C">C Cup</option>
-                                            <option value="D">D Cup</option>
-                                            <option value="E">E Cup</option>
-                                            <option value="F">F Cup</option>
-                                        </select>
-                                    </div>
-                                    <!-- Lot Number removed from Add — kept in Edit only, filled in later -->
-                                    
-                                    <!-- ENHANCED QUALITY SELECTOR WITH CATEGORIES & SEARCH -->
-                                        <div class="form-group full-width">
-                                            <label for="quality">Quality Name</label>
-                                            
-                                            <!-- Quality Search Box -->
-                                            <div class="quality-search-container">
-                                                <input type="text" id="qualitySearch" placeholder="🔍 Search quality by name..." 
-                                                       oninput="ItemForm.filterQuality('')">
-                                            </div>
-                                            
-                                            <!-- Enhanced Quality Selector -->
-                                            <div class="quality-selector-container">
-                                                <!-- Hidden select for form submission -->
-                                                <select id="quality" name="quality" required style="display: none;">
-                                                    <option value="">Select Quality</option>
-                                                </select>
-                                                
-                                                <!-- Categories will be loaded here dynamically -->
-                                                <div class="quality-categories" id="qualityCategories">
-                                                    <div class="quality-placeholder">
-                                                        <i class="fas fa-cube"></i>
-                                                        <p>Please select a product type first</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="selected-quality-display" id="selectedQualityDisplay" style="display: none;">
-                                                <strong>Selected:</strong> <span id="selectedQualityText"></span>
-                                            </div>
-                                        </div>
-                                    
-                                    
-                                    
-                                    
-                                    <!-- ENTRY DATE (new entry = now, or an old entry with its real date) -->
-                                    <div class="form-group full-width">
-                                        <div class="entry-date-card">
-                                            <div class="entry-date-head">
-                                                <div class="entry-date-title"><i class="fas fa-calendar-alt"></i> Entry Date</div>
-                                                <label for="useManualDateTime" class="entry-switch">
-                                                    <input type="checkbox" id="useManualDateTime" onchange="toggleManualDateTime()">
-                                                    <span class="entry-switch-track"></span>
-                                                    <span>Old entry (set date)</span>
-                                                </label>
-                                            </div>
-                                            <p class="entry-date-hint" id="entryDateHint">New entry — saved with today's date and the current time.</p>
-
-                                            <div id="manualDateTimeFields" class="manual-fields" style="display: none;">
-                                                <div class="entry-quick" id="entryQuick">
-                                                    <button type="button" data-days="1" onclick="setEntryDaysAgo(1)">Yesterday</button>
-                                                    <button type="button" data-days="3" onclick="setEntryDaysAgo(3)">3 days ago</button>
-                                                    <button type="button" data-days="7" onclick="setEntryDaysAgo(7)">1 week ago</button>
-                                                    <button type="button" data-days="14" onclick="setEntryDaysAgo(14)">2 weeks ago</button>
-                                                    <button type="button" data-days="30" onclick="setEntryDaysAgo(30)">1 month ago</button>
-                                                </div>
-
-                                                <div class="entry-date-grid">
-                                                    <div class="form-group">
-                                                        <label for="entryDate">Date</label>
-                                                        <input type="date" id="entryDate" class="manual-date-input">
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label for="entryTime">Time</label>
-                                                        <input type="time" id="entryTime" class="manual-time-input">
-                                                    </div>
-                                                </div>
-
-                                                <div class="entry-preview" id="entryPreview"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!-- END IMPROVED MANUAL DATE/TIME SECTION -->
-                                    
-                                    <div class="form-group full-width">
-                                        <label for="colors">Colors</label>
-                                        <div class="color-selector-container">
-                                            <div class="color-selector" id="colorSelector">
-                                                <div class="selected-colors" id="selectedColors">
-                                                    <span class="no-colors">No colors selected</span>
-                                                </div>
-                                                <button type="button" class="color-dropdown-toggle" id="colorDropdownToggle">
-                                                    <i class="fas fa-chevron-down"></i>
-                                                </button>
-                                            </div>
-                                            
-                                            <div class="color-dropdown" id="colorDropdown">
-                                                <div class="color-search">
-                                                    <input type="text" id="colorSearch" placeholder="Search colors...">
-                                                    <i class="fas fa-search"></i>
-                                                </div>
-                                                <div class="color-options" id="colorOptions">
-                                                    <!-- Colors will be loaded dynamically -->
-                                                </div>
-                                                <div class="color-actions">
-                                                    <button type="button" class="btn-select-all" onclick="ItemForm.selectAllColors('')">
-                                                        <i class="fas fa-check-double"></i> Select All
-                                                    </button>
-                                                    <button type="button" class="btn-clear-all" onclick="ItemForm.clearAllColors('')">
-                                                        <i class="fas fa-times"></i> Clear All
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <input type="hidden" id="colorsHidden" name="colors">
-                                    </div>
-                                </div>
-
-                                <!-- Collapsible: Material / Weight / Notes — collapsed by default,
-                                     opened only when actually needed. Price removed here; it will
-                                     come from qualities.json per-quality pricing instead. -->
-                                <div class="collapsible-section">
-                                    <button type="button" class="collapsible-toggle" onclick="toggleMoreDetails(this)">
-                                        <i class="fas fa-chevron-right"></i>
-                                        <span>More Details (Material, Weight, Notes)</span>
-                                    </button>
-                                    <div class="collapsible-content" id="moreDetailsContent">
-                                        <div class="form-grid">
-                                            <div class="form-group">
-                                                <label for="material">Material (meters)</label>
-                                                <input type="number" id="material" step="0.01" placeholder="Enter material in meters">
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="weight">Weight (kg)</label>
-                                                <input type="number" id="weight" step="0.01" placeholder="Enter weight in kg">
-                                            </div>
-                                            <div class="form-group full-width">
-                                                <label for="notes">Notes</label>
-                                                <textarea id="notes" rows="2" placeholder="Additional notes"></textarea>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Sizes & Colors Section -->
-                            <div class="form-section-group">
-                                <h3><i class="fas fa-ruler-combined"></i> Sizes & Colors</h3>
-                                
-                                <div class="size-option">
-                                    <label>
-                                        <input type="radio" name="sizeOption" value="same" checked onchange="toggleSizeOption()">
-                                        Same sizes for all colors
-                                    </label>
-                                    <label>
-                                        <input type="radio" name="sizeOption" value="different" onchange="toggleSizeOption()">
-                                        Different sizes for each color
-                                    </label>
-                                </div>
-                                
-                                <h4>Size Quantities (dozens + pieces)</h4>
-                                
-                                <div id="sameSizesContainer">
-                                </div>
-                                
-                                <div id="differentSizesContainer" class="color-size-container" style="display: none;">
-                                        <p class="different-sizes-hint" id="colorSizeHint">
-                                            <i class="fas fa-info-circle"></i>
-                                            Pick the colors in the <strong>Colors</strong> box above — a size card appears here for each color you pick.
-                                        </p>
-
-                                        <div id="colorSizeItems">
-                                            <!-- Color size items will be added dynamically based on selected colors -->
-                                        </div>
-                                        
-                                    </div>
-                            </div>
-
-                            <!-- Notes now lives in the "More Details" collapsible above -->
-                            <div class="form-section-group">
-                                <div class="form-actions">
-                                    <button type="submit" class="btn">Add Product Entry</button>
-                                    <button type="reset" class="btn btn-secondary">Reset Form</button>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
+            <section class="home-latest-section">
+                <div class="home-latest-heading">
+                    <h2><i class="fas fa-clock"></i> Latest Added Qualities</h2>
+                    <a href="inventory.html">View all <i class="fas fa-arrow-right"></i></a>
                 </div>
-
-                <div class="form-section">
-                    <div class="ic-list-tools" style="justify-content: space-between; margin-bottom: 0.4rem;">
-                        <h2 style="margin: 0;"><i class="fas fa-list"></i> Inventory Summary</h2>
-                        <button type="button" class="ic-collapse-btn" data-collapse-all onclick="ItemCard.collapseAll()" disabled>
-                            <i class="fas fa-compress-alt"></i> Collapse all<span class="ic-open-count"></span>
-                        </button>
-                    </div>
-                    <div class="inventory-cards" id="inventoryCards">
-                        <!-- Inventory cards will be added here dynamically -->
-                    </div>
+                <div class="home-latest-cards inventory-cards" id="homeLatestQualities">
+                    <div class="empty-state"><p>Loading latest qualities…</p></div>
                 </div>
-        </div>
-    </div>
-
-
-    <footer>
-        <p>&copy; 2023 ALISHAN Garment Inventory Management System. All rights reserved.</p>
-    </footer>
-
-    <!-- Pagination Controls -->
-    <div class="pagination-controls" id="paginationControls" style="display: none;">
-        <button class="btn btn-secondary" onclick="prevPage()">
-            <i class="fas fa-chevron-left"></i> Previous
-        </button>
-        
-        <span id="pageInfo" class="page-info">Page 1 of 1</span>
-        
-        <button class="btn btn-secondary" onclick="nextPage()">
-            Next <i class="fas fa-chevron-right"></i>
-        </button>
-        
-        <select class="page-select" onchange="changeItemsPerPage(this.value)">
-            <option value="10">10 items</option>
-            <option value="20">20 items</option>
-            <option value="50" selected>50 items</option>
-            <option value="100">100 items</option>
-        </select>
-    </div>
+            </section>
 
     <div class="notification-container" id="notificationContainer"></div>
     
@@ -354,6 +133,7 @@
     <script src="calc.js"></script>
     <script src="store.js"></script>
     <script src="search.js"></script>
+    <script src="advanced-search.js"></script>
     <script src="item-form.js"></script>
     <script src="item-card.js"></script>
     <script src="item-modal.js"></script>
@@ -364,7 +144,7 @@
     <nav class="tabbar" aria-label="Main">
         <a href="index.html" class="active"><i class="fas fa-home"></i>Home</a>
         <a href="inventory.html"><i class="fas fa-database"></i>Inventory</a>
-        <a href="index.html#add" class="tab-add" aria-label="New entry"><i class="fas fa-plus"></i></a>
+        <a href="add-entry.html" class="tab-add" aria-label="New entry"><i class="fas fa-plus"></i></a>
         <a href="reports.html"><i class="fas fa-chart-bar"></i>Reports</a>
         <a href="setting.html"><i class="fas fa-cog"></i>Settings</a>
     </nav>

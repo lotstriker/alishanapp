@@ -390,14 +390,19 @@ var AlishanCalc = (() => {
         const sizeWords = [];
         const sizeSets = item.sizeOption === 'different' ? (item.colors || []).map(c => c && c.sizes || {}) : [item];
         SIZES.forEach(size => {
-            if (sizeSets.some(o => (Number(o[`size${size}`]) || 0) > 0 || (Number(o[`size${size}_pieces`]) || 0) > 0)) sizeWords.push(`size ${size}`);
+            sizeSets.forEach((o, index) => {
+                const dozens = Number(o[`size${size}`]) || 0;
+                const pieces = Number(o[`size${size}_pieces`]) || 0;
+                if (dozens > 0 || pieces > 0) sizeWords.push(`size ${size} quantity ${size} ${dozens} ${pieces} ${round2(dozens + pieces / 12)}`);
+            });
         });
         const t = itemTotals(item);
+        const extra = Object.entries(item || {}).filter(([k,v]) => /maal|note|payment|lot|cup|weight|meter/i.test(k) && (typeof v === 'string' || typeof v === 'number')).map(([,v]) => v);
         return [
             item.quality, item.lotNumber, item.notes, item.source, item.productType,
             item.cupSize && item.cupSize !== 'N/A' ? `${item.cupSize} cup ${item.cupSize}` : '',
-            item.code, colors,
-            item.inStock !== false ? 'in stock' : 'out of stock',
+            item.code, colors, extra.join(' '),
+            item.inStock !== false ? 'complete in stock' : 'incomplete out of stock',
             level ? AGING_LEVELS[level].label : '',
             item.isManualEntry ? 'old entry manual' : 'new entry',
             item.sizeOption === 'same' ? 'same sizes' : 'different sizes',
@@ -405,12 +410,32 @@ var AlishanCalc = (() => {
             t.price, item.material, item.weight, round2(t.dozens), t.pieces, t.amount
         ].filter(v => v !== undefined && v !== null && v !== '' && v !== 0).join(' ').toLowerCase();
     }
-    // every word typed must match somewhere in the item
+    // AND is the default; explicit OR creates alternatives; a leading minus excludes a term.
+    // Short field aliases are optional: q:, id:, l:, t:, c:, cp:, s:, qt:, n:, m:, w:, mt:, d:, p:, a:, st:.
     function matchesSearch(item, query) {
-        const tokens = String(query || '').toLowerCase().split(/\s+/).filter(Boolean);
-        if (!tokens.length) return true;
-        const text = itemSearchText(item);
-        return tokens.every(t => text.includes(t));
+        const raw = String(query || '').trim().toLowerCase();
+        if (!raw) return true;
+        const allText = itemSearchText(item);
+        const fields = {
+            q: String(item.quality || ''), id: String(item.code || ''), l: String(item.lotNumber || ''),
+            t: String(item.productType || ''), c: (item.colors || []).map(colorName).join(' '), cp: String(item.cupSize || ''),
+            s: (item.sizeOption === 'different' ? (item.colors || []).map(c => c && c.sizes || {}) : [item]).flatMap(o => SIZES.filter(sz => (Number(o[`size${sz}`]) || 0) > 0 || (Number(o[`size${sz}_pieces`]) || 0) > 0).map(sz => String(sz))).join(' '),
+            qt: (item.sizeOption === 'different' ? (item.colors || []).map(c => c && c.sizes || {}) : [item]).flatMap(o => SIZES.map(sz => `${Number(o[`size${sz}`]) || 0} ${Number(o[`size${sz}_pieces`]) || 0} ${round2((Number(o[`size${sz}`]) || 0) + (Number(o[`size${sz}_pieces`]) || 0) / 12)}`)).join(' '),
+            n: String(item.notes || ''), m: Object.entries(item).filter(([k]) => /maal/i.test(k)).map(([,v]) => v).join(' '),
+            w: String(item.weight || ''), mt: String(item.weight || ''), d: String(item.dateTime || '') + ' ' + allText,
+            p: String(item.price || ''), a: String(item.totalAmount || itemAmount(item)), st: item.inStock === false ? 'incomplete out of stock' : 'complete in stock'
+        };
+        const groups = raw.split(/\s+or\s+/i).map(group => group.replace(/\s+and\s+/gi, ' ').split(/\s+/).filter(Boolean));
+        const test = token => {
+            const negative = token.startsWith('-');
+            if (negative) token = token.slice(1);
+            const match = token.match(/^([a-z]{1,3}):(.*)$/i);
+            let haystack = allText, needle = token;
+            if (match) { const key = match[1].toLowerCase(); if (fields[key] !== undefined) { haystack = String(fields[key]).toLowerCase(); needle = match[2]; } }
+            const found = needle ? haystack.includes(needle) : true;
+            return negative ? !found : found;
+        };
+        return groups.some(group => group.every(test));
     }
 
     function localDate(d) {

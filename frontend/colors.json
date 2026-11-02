@@ -1,6 +1,301 @@
 {
   "colors": [
     {
+      "name": "MOKA",
+      "displayName": "Moka",
+      "backgroundColor": "#efebe9",
+      "textColor": "#5d4037",
+      "borderColor": "#5d4037"
+    },
+    {
+      "name": "RAMA-GREEN",
+      "displayName": "Rama Green",
+      "backgroundColor": "#e8f5e9",
+      "textColor": "#81c784",
+      "borderColor": "#81c784",
+      "aliases": [
+        "PEACE"
+      ]
+    },
+    {
+      "name": "C-GREEN",
+      "displayName": "C Green",
+      "backgroundColor": "#e8f8ef",
+      "textColor": "#2e8b57",
+      "borderColor": "#2e8b57",
+      "aliases": [
+        "C_GREEN"
+      ]
+    },
+    {
+      "name": "L-COFFEE",
+      "displayName": "L Coffee",
+      "backgroundColor": "#fdf5e6",
+      "textColor": "#a1887f",
+      "borderColor": "#a1887f",
+      "aliases": [
+        "L_COFFEE"
+      ]
+    },
+    {
+      "name": "FIROZI",
+      "displayName": "Firozi",
+      "backgroundColor": "#e0f7fa",
+      "textColor": "#00bcd4",
+      "borderColor": "#00bcd4"
+    },
+    {
+      "name": "CREAM",
+      "displayName": "Cream",
+      "backgroundColor": "#fffdd0",
+      "textColor": "#d4af37",
+      "borderColor": "#d4af37"
+    },
+    {
+      "name": "MAHANDI",
+      "displayName": "Mahandi",
+      "backgroundColor": "#e8f5e9",
+      "textColor": "#2e7d32",
+      "borderColor": "#2e7d32",
+      "aliases": [
+        "MAHNDI"
+      ]
+    },
+    {
+      "name": "L-PISTA",
+      "displayName": "L Pista",
+      "backgroundColor": "#f0f8e8",
+      "textColor": "#bef574",
+      "borderColor": "#bef574",
+      "aliases": [
+        "PISTA"
+      ]
+    },
+    {
+      "name": "ONION",
+      "displayName": "Onion",
+      "backgroundColor": "#f8e8f0",
+      "textColor": "#dda0dd",
+      "borderColor": "#dda0dd"
+    },
+    {
+      "name": "D-GRAY",
+      "displayName": "D Gray",
+      "backgroundColor": "#616161",
+      "textColor": "#f5f5f5",
+      "borderColor": "#f5f5f5",
+      "aliases": [
+        "D_GRAY"
+      ]
+    },
+    {
+      "name": "L-GRAY",
+      "displayName": "L Gray",
+      "backgroundColor": "#fafafa",
+      "textColor": "#616161",
+      "borderColor": "#616161"
+    },
+    {
+      "name": "D-PISTA",
+      "displayName": "D Pista",
+      "backgroundColor": "#558b2f",
+      "textColor": "#ffffff",
+      "borderColor": "#ffffff"
+    },
+    {
+      "name": "L-GREEN",
+      "displayName": "L Green",
+      "backgroundColor": "#f0f8e8",
+      "textColor": "#90ee90",
+      "borderColor": "#90ee90",
+      "aliases": [
+        "L_GREEN"
+      ]
+    },
+    {
+      "name": "GRAY",
+      "displayName": "Gray",
+      "backgroundColor": "#f5f5f5",
+      "textColor": "#757575",
+      "borderColor": "#757575"
+    },
+    {
+      "name": "BELL-BERRY",
+      "displayName": "Bell Berry",
+      "backgroundColor": "#fce4ec",
+      "textColor": "#c2185b",
+      "borderColor": "#c2185b"
+    },
+    {
+      "name": "JAMINI",
+      "displayName": "Jamini",
+      "backgroundColor": "#f3e5f5",
+      "textColor": "#9c27b0",
+      "borderColor": "#9c27b0"
+    },
+    {
+      "name": "GAJRI",
+      "displayName": "Gajri",
+      "backgroundColor": "#fce4ec",
+      "textColor": "#c2185b",
+      "borderColor": "#c2185b"
+    },
+    {
+      "name": "CARROT",
+      "displayName": "Carrot",
+      "backgroundColor": "#fff3e0",
+      "textColor": "#ff8c00",
+      "borderColor": "#ff8c00"
+    },
+    {
+      "name": "D-PINK",
+      "displayName": "D Pink",
+      "backgroundColor": "#f8bbd9",
+      "textColor": "#ad1457",
+      "borderColor": "#ad1457",
+      "aliases": [
+        "D_PINK"
+      ]
+    },
+    {
+      "name": "L-PINK",
+      "displayName": "L Pink",
+      "backgroundColor": "#fff5f8",
+      "textColor": "#c2185b",
+      "borderColor": "#c2185b"
+    },
+    {
+      "name": "BABY-PINK",
+      "displayName": "Baby Pink",
+      "backgroundColor": "#fce4ec",
+      "textColor": "#f8bbd9",
+      "borderColor": "#f8bbd9",
+      "aliases": [
+        "BABY_PINK"
+      ]
+    },
+    {
+      "name": "DUST-PINK",
+      "displayName": "Dust Pink",
+      "backgroundColor": "#fce4ec",
+      "textColor": "#e8b4c9",
+      "borderColor": "#e8b4c9",
+      "aliases": [
+        "DUST_PINK"
+      ]
+    },
+    {
+      "name": "PINK",
+      "displayName": "Pink",
+      "backgroundColor": "#fce4ec",
+      "textColor": "#e91e63",
+      "borderColor": "#e91e63"
+    },
+    {
+      "name": "MAROON",
+      "displayName": "Maroon",
+      "backgroundColor": "#fce4ec",
+      "textColor": "#c2185b",
+      "borderColor": "#c2185b"
+    },
+    {
+      "name": "L-WOOD",
+      "displayName": "L Wood",
+      "backgroundColor": "#fdf5e6",
+      "textColor": "#deb887",
+      "borderColor": "#deb887",
+      "aliases": [
+        "L_WOOD"
+      ]
+    },
+    {
+      "name": "D-WOOD",
+      "displayName": "D Wood",
+      "backgroundColor": "#5d4037",
+      "textColor": "#ffffff",
+      "borderColor": "#ffffff"
+    },
+    {
+      "name": "WOOD",
+      "displayName": "Wood",
+      "backgroundColor": "#f5e8d7",
+      "textColor": "#8b4513",
+      "borderColor": "#8b4513"
+    },
+    {
+      "name": "PURPLE",
+      "displayName": "Purple",
+      "backgroundColor": "#f3e5f5",
+      "textColor": "#7b1fa2",
+      "borderColor": "#7b1fa2"
+    },
+    {
+      "name": "L-PURPLE",
+      "displayName": "L Purple",
+      "backgroundColor": "#faf4fc",
+      "textColor": "#7b1fa2",
+      "borderColor": "#7b1fa2"
+    },
+    {
+      "name": "DARK-PURPLE",
+      "displayName": "Dark Purple",
+      "backgroundColor": "#f3e5f5",
+      "textColor": "#7b1fa2",
+      "borderColor": "#7b1fa2"
+    },
+    {
+      "name": "COFFEE",
+      "displayName": "Coffee",
+      "backgroundColor": "#f5e8d7",
+      "textColor": "#6f4e37",
+      "borderColor": "#6f4e37"
+    },
+    {
+      "name": "DARK-COFFEE",
+      "displayName": "Dark Coffee",
+      "backgroundColor": "#efebe9",
+      "textColor": "#5d4037",
+      "borderColor": "#5d4037"
+    },
+    {
+      "name": "L-CARROT",
+      "displayName": "L Carrot",
+      "backgroundColor": "#fff3e0",
+      "textColor": "#ffb74d",
+      "borderColor": "#ffb74d",
+      "aliases": [
+        "L_CARROT"
+      ]
+    },
+    {
+      "name": "D-CARROT",
+      "displayName": "D Carrot",
+      "backgroundColor": "#e65100",
+      "textColor": "#ffffff",
+      "borderColor": "#ffffff"
+    },
+    {
+      "name": "GREEN",
+      "displayName": "Green",
+      "backgroundColor": "#e8f5e9",
+      "textColor": "#4caf50",
+      "borderColor": "#4caf50"
+    },
+    {
+      "name": "L-MAHANDI",
+      "displayName": "L Mahandi",
+      "backgroundColor": "#f5f8ed",
+      "textColor": "#68752b",
+      "borderColor": "#68752b"
+    },
+    {
+      "name": "D-MAHANDI",
+      "displayName": "D Mahandi",
+      "backgroundColor": "#33691e",
+      "textColor": "#ffffff",
+      "borderColor": "#ffffff"
+    },
+    {
       "name": "RED",
       "displayName": "Red",
       "backgroundColor": "#ffebee",
@@ -8,18 +303,281 @@
       "borderColor": "#f44336"
     },
     {
+      "name": "L-RED",
+      "displayName": "L Red",
+      "backgroundColor": "#fff5f5",
+      "textColor": "#6d4c41",
+      "borderColor": "#6d4c41"
+    },
+    {
+      "name": "D-RED",
+      "displayName": "D Red",
+      "backgroundColor": "#b71c1c",
+      "textColor": "#ffffff",
+      "borderColor": "#ffffff"
+    },
+    {
+      "name": "L-BLUE",
+      "displayName": "L Blue",
+      "backgroundColor": "#f1f8ff",
+      "textColor": "#1565c0",
+      "borderColor": "#1565c0"
+    },
+    {
+      "name": "D-BLUE",
+      "displayName": "D Blue",
+      "backgroundColor": "#1a237e",
+      "textColor": "#bbdefb",
+      "borderColor": "#bbdefb",
+      "aliases": [
+        "DARK_BLUE"
+      ]
+    },
+    {
       "name": "BLUE",
-      "displayName": "Blue", 
+      "displayName": "Blue",
       "backgroundColor": "#e3f2fd",
       "textColor": "#2196f3",
       "borderColor": "#2196f3"
     },
     {
-      "name": "GREEN",
-      "displayName": "Green",
-      "backgroundColor": "#e8f5e9", 
-      "textColor": "#4caf50",
-      "borderColor": "#4caf50"
+      "name": "OFF-WHITE",
+      "displayName": "Off White",
+      "backgroundColor": "#fffde7",
+      "textColor": "#8d6e00",
+      "borderColor": "#8d6e00"
+    },
+    {
+      "name": "ORENGE",
+      "displayName": "Orenge",
+      "backgroundColor": "#fff3e0",
+      "textColor": "#ff9800",
+      "borderColor": "#ff9800",
+      "aliases": [
+        "ORANGE"
+      ]
+    },
+    {
+      "name": "L-ORENGE",
+      "displayName": "L Orenge",
+      "backgroundColor": "#fff3e0",
+      "textColor": "#e65100",
+      "borderColor": "#e65100"
+    },
+    {
+      "name": "D-ORENGE",
+      "displayName": "D Orenge",
+      "backgroundColor": "#fff3e0",
+      "textColor": "#e65100",
+      "borderColor": "#e65100"
+    },
+    {
+      "name": "PEACH",
+      "displayName": "Peach",
+      "backgroundColor": "#fff0e6",
+      "textColor": "#d26945",
+      "borderColor": "#d26945"
+    },
+    {
+      "name": "L-PEACH",
+      "displayName": "L Peach",
+      "backgroundColor": "#fff6f0",
+      "textColor": "#6d4c41",
+      "borderColor": "#6d4c41"
+    },
+    {
+      "name": "D-PEACH",
+      "displayName": "D Peach",
+      "backgroundColor": "#bf6b4b",
+      "textColor": "#ffffff",
+      "borderColor": "#ffffff"
+    },
+    {
+      "name": "D-SKIN",
+      "displayName": "D Skin",
+      "backgroundColor": "#fdebd0",
+      "textColor": "#f5cba7",
+      "borderColor": "#f5cba7",
+      "aliases": [
+        "SKIN"
+      ]
+    },
+    {
+      "name": "L-SKIN",
+      "displayName": "L Skin",
+      "backgroundColor": "#fff8f0",
+      "textColor": "#a66b45",
+      "borderColor": "#a66b45"
+    },
+    {
+      "name": "SKY-BLUE",
+      "displayName": "Sky Blue",
+      "backgroundColor": "#e6f7ff",
+      "textColor": "#87ceeb",
+      "borderColor": "#87ceeb",
+      "aliases": [
+        "SKY"
+      ]
+    },
+    {
+      "name": "MOUSE",
+      "displayName": "Mouse",
+      "backgroundColor": "#f5f5f5",
+      "textColor": "#9e9e9e",
+      "borderColor": "#9e9e9e"
+    },
+    {
+      "name": "RED-COFFEE",
+      "displayName": "Red Coffee",
+      "backgroundColor": "#efebe9",
+      "textColor": "#5d4037",
+      "borderColor": "#5d4037"
+    },
+    {
+      "name": "RUST",
+      "displayName": "Rust",
+      "backgroundColor": "#fce4ec",
+      "textColor": "#f48fb1",
+      "borderColor": "#f48fb1",
+      "aliases": [
+        "ROST_PINK"
+      ]
+    },
+    {
+      "name": "WINE",
+      "displayName": "Wine",
+      "backgroundColor": "#f8e4e4",
+      "textColor": "#722f37",
+      "borderColor": "#722f37"
+    },
+    {
+      "name": "COPPER",
+      "displayName": "Copper",
+      "backgroundColor": "#fff3e0",
+      "textColor": "#b87333",
+      "borderColor": "#b87333"
+    },
+    {
+      "name": "L-COPPER",
+      "displayName": "L Copper",
+      "backgroundColor": "#fff6ef",
+      "textColor": "#9c4f24",
+      "borderColor": "#9c4f24"
+    },
+    {
+      "name": "D-COPPER",
+      "displayName": "D Copper",
+      "backgroundColor": "#7b3f00",
+      "textColor": "#ffffff",
+      "borderColor": "#ffffff"
+    },
+    {
+      "name": "GRAY-MILANCH",
+      "displayName": "Gray Milanch",
+      "backgroundColor": "#eeeeee",
+      "textColor": "#616161",
+      "borderColor": "#616161"
+    },
+    {
+      "name": "WHITE-GRAY",
+      "displayName": "White Gray",
+      "backgroundColor": "#eeeeee",
+      "textColor": "#616161",
+      "borderColor": "#616161"
+    },
+    {
+      "name": "COOL-PINK",
+      "displayName": "Cool Pink",
+      "backgroundColor": "#fce4ec",
+      "textColor": "#c2185b",
+      "borderColor": "#c2185b"
+    },
+    {
+      "name": "RANI",
+      "displayName": "Rani",
+      "backgroundColor": "#f3e5f5",
+      "textColor": "#ba68c8",
+      "borderColor": "#ba68c8"
+    },
+    {
+      "name": "YELLOW",
+      "displayName": "Yellow",
+      "backgroundColor": "#fffde7",
+      "textColor": "#ffc107",
+      "borderColor": "#ffc107"
+    },
+    {
+      "name": "ALMOND",
+      "displayName": "Almond",
+      "backgroundColor": "#fff3e0",
+      "textColor": "#efd5b7",
+      "borderColor": "#efd5b7"
+    },
+    {
+      "name": "SURMAI",
+      "displayName": "Surmai",
+      "backgroundColor": "#eeeeee",
+      "textColor": "#616161",
+      "borderColor": "#616161"
+    },
+    {
+      "name": "KAAI",
+      "displayName": "Kaai",
+      "backgroundColor": "#fff0f5",
+      "textColor": "#ff1493",
+      "borderColor": "#ff1493",
+      "aliases": [
+        "KAI_RANI"
+      ]
+    },
+    {
+      "name": "GOLDEN",
+      "displayName": "Golden",
+      "backgroundColor": "#fff8e1",
+      "textColor": "#9a7200",
+      "borderColor": "#9a7200"
+    },
+    {
+      "name": "MUSTERED",
+      "displayName": "Mustered",
+      "backgroundColor": "#fff8e1",
+      "textColor": "#9a7200",
+      "borderColor": "#9a7200"
+    },
+    {
+      "name": "W-GREEN",
+      "displayName": "W Green",
+      "backgroundColor": "#e8f5e9",
+      "textColor": "#2e7d32",
+      "borderColor": "#2e7d32"
+    },
+    {
+      "name": "NUDE",
+      "displayName": "Nude",
+      "backgroundColor": "#fbe9d7",
+      "textColor": "#a66b45",
+      "borderColor": "#a66b45"
+    },
+    {
+      "name": "PIYAZI",
+      "displayName": "Piyazi",
+      "backgroundColor": "#fce4ec",
+      "textColor": "#c2185b",
+      "borderColor": "#c2185b"
+    },
+    {
+      "name": "CAMEL",
+      "displayName": "Camel",
+      "backgroundColor": "#fbe9d7",
+      "textColor": "#a66b45",
+      "borderColor": "#a66b45"
+    },
+    {
+      "name": "MOOV",
+      "displayName": "Moov",
+      "backgroundColor": "#fff3e0",
+      "textColor": "#e65100",
+      "borderColor": "#e65100"
     },
     {
       "name": "BLACK",
@@ -36,41 +594,6 @@
       "borderColor": "#cccccc"
     },
     {
-      "name": "PINK",
-      "displayName": "Pink",
-      "backgroundColor": "#fce4ec",
-      "textColor": "#e91e63",
-      "borderColor": "#e91e63"
-    },
-    {
-      "name": "JAMINI",
-      "displayName": "Jamini",
-      "backgroundColor": "#f3e5f5",
-      "textColor": "#9c27b0", 
-      "borderColor": "#9c27b0"
-    },
-    {
-      "name": "ORANGE",
-      "displayName": "Orange",
-      "backgroundColor": "#fff3e0",
-      "textColor": "#ff9800",
-      "borderColor": "#ff9800"
-    },
-    {
-      "name": "YELLOW",
-      "displayName": "Yellow",
-      "backgroundColor": "#fffde7",
-      "textColor": "#ffc107",
-      "borderColor": "#ffc107"
-    },
-    {
-      "name": "GRAY",
-      "displayName": "Gray",
-      "backgroundColor": "#f5f5f5",
-      "textColor": "#757575",
-      "borderColor": "#bdbdbd"
-    },
-    {
       "name": "BROWN",
       "displayName": "Brown",
       "backgroundColor": "#efebe9",
@@ -83,20 +606,6 @@
       "backgroundColor": "#e8eaf6",
       "textColor": "#3f51b5",
       "borderColor": "#3f51b5"
-    },
-    {
-      "name": "MAROON",
-      "displayName": "Maroon", 
-      "backgroundColor": "#fce4ec",
-      "textColor": "#c2185b",
-      "borderColor": "#c2185b"
-    },
-    {
-      "name": "WINE",
-      "displayName": "Wine",
-      "backgroundColor": "#f8e4e4",
-      "textColor": "#722f37",
-      "borderColor": "#722f37"
     },
     {
       "name": "LAVENDER",
@@ -120,27 +629,6 @@
       "borderColor": "#c0c0c0"
     },
     {
-      "name": "WOOD",
-      "displayName": "Wood",
-      "backgroundColor": "#f5e8d7",
-      "textColor": "#8b4513",
-      "borderColor": "#8b4513"
-    },
-    {
-      "name": "C_GREEN",
-      "displayName": "C Green",
-      "backgroundColor": "#e8f8ef",
-      "textColor": "#2e8b57",
-      "borderColor": "#2e8b57"
-    },
-    {
-      "name": "L_GREEN",
-      "displayName": "L Green",
-      "backgroundColor": "#f0f8e8",
-      "textColor": "#90ee90",
-      "borderColor": "#90ee90"
-    },
-    {
       "name": "REDBEAN",
       "displayName": "Red Bean",
       "backgroundColor": "#f8e8e8",
@@ -155,179 +643,11 @@
       "borderColor": "#ff69b4"
     },
     {
-      "name": "SKY",
-      "displayName": "Sky",
-      "backgroundColor": "#e6f7ff",
-      "textColor": "#87ceeb",
-      "borderColor": "#87ceeb"
-    },
-    {
-      "name": "SKIN",
-      "displayName": "Skin",
-      "backgroundColor": "#fdebd0",
-      "textColor": "#f5cba7",
-      "borderColor": "#f5cba7"
-    },
-    {
-      "name": "PISTA",
-      "displayName": "Pista",
-      "backgroundColor": "#f0f8e8",
-      "textColor": "#bef574",
-      "borderColor": "#bef574"
-    },
-    {
-      "name": "ONION",
-      "displayName": "Onion",
-      "backgroundColor": "#f8e8f0",
-      "textColor": "#dda0dd",
-      "borderColor": "#dda0dd"
-    },
-    {
-      "name": "FIROZI",
-      "displayName": "Firozi",
-      "backgroundColor": "#e0f7fa",
-      "textColor": "#00bcd4",
-      "borderColor": "#00bcd4"
-    },
-    {
-      "name": "KAI_RANI",
-      "displayName": "Kai Rani",
-      "backgroundColor": "#fff0f5",
-      "textColor": "#ff1493",
-      "borderColor": "#ff1493"
-    },
-    {
-      "name": "COFFEE",
-      "displayName": "Coffee",
-      "backgroundColor": "#f5e8d7",
-      "textColor": "#6f4e37",
-      "borderColor": "#6f4e37"
-    },
-    {
-      "name": "DARK_BLUE",
-      "displayName": "Dark Blue",
-      "backgroundColor": "#1a237e",
-      "textColor": "#bbdefb",
-      "borderColor": "#bbdefb"
-    },
-    {
-      "name": "BABY_PINK",
-      "displayName": "Baby Pink",
-      "backgroundColor": "#fce4ec",
-      "textColor": "#f8bbd9",
-      "borderColor": "#f8bbd9"
-    },
-    {
-      "name": "PEACE",
-      "displayName": "Peace",
-      "backgroundColor": "#e8f5e9",
-      "textColor": "#81c784",
-      "borderColor": "#81c784"
-    },
-    {
       "name": "ROYAL_BLUE",
       "displayName": "Royal Blue",
       "backgroundColor": "#e3f2fd",
       "textColor": "#1565c0",
       "borderColor": "#1565c0"
-    },
-    {
-      "name": "ALMOND",
-      "displayName": "Almond",
-      "backgroundColor": "#fff3e0",
-      "textColor": "#efd5b7",
-      "borderColor": "#efd5b7"
-    },
-    {
-      "name": "RANI",
-      "displayName": "Rani",
-      "backgroundColor": "#f3e5f5",
-      "textColor": "#ba68c8",
-      "borderColor": "#ba68c8"
-    },
-    {
-  "name": "MAHNDI",
-  "displayName": "Mahndi", 
-  "backgroundColor": "#e8f5e9",
-  "textColor": "#2e7d32",
-  "borderColor": "#2e7d32"
-},
-    {
-      "name": "D_GRAY",
-      "displayName": "D Gray",
-      "backgroundColor": "#616161",
-      "textColor": "#f5f5f5",
-      "borderColor": "#f5f5f5"
-    },
-    {
-      "name": "CREAM",
-      "displayName": "Cream",
-      "backgroundColor": "#fffdd0",
-      "textColor": "#d4af37",
-      "borderColor": "#d4af37"
-    },
-    {
-      "name": "L_CARROT",
-      "displayName": "L Carrot",
-      "backgroundColor": "#fff3e0",
-      "textColor": "#ffb74d",
-      "borderColor": "#ffb74d"
-    },
-    {
-      "name": "ROST_PINK",
-      "displayName": "Rost Pink",
-      "backgroundColor": "#fce4ec",
-      "textColor": "#f48fb1",
-      "borderColor": "#f48fb1"
-    },
-    {
-      "name": "DUST_PINK",
-      "displayName": "Dust Pink",
-      "backgroundColor": "#fce4ec",
-      "textColor": "#e8b4c9",
-      "borderColor": "#e8b4c9"
-    },
-    {
-      "name": "L_WOOD",
-      "displayName": "L Wood",
-      "backgroundColor": "#fdf5e6",
-      "textColor": "#deb887",
-      "borderColor": "#deb887"
-    },
-    {
-      "name": "D_PINK",
-      "displayName": "D Pink",
-      "backgroundColor": "#f8bbd9",
-      "textColor": "#ad1457",
-      "borderColor": "#ad1457"
-    },
-    {
-      "name": "MOUSE",
-      "displayName": "Mouse",
-      "backgroundColor": "#f5f5f5",
-      "textColor": "#9e9e9e",
-      "borderColor": "#9e9e9e"
-    },
-    {
-      "name": "COPPER",
-      "displayName": "Copper",
-      "backgroundColor": "#fff3e0",
-      "textColor": "#b87333",
-      "borderColor": "#b87333"
-    },
-    {
-      "name": "L_COFFEE",
-      "displayName": "L Coffee",
-      "backgroundColor": "#fdf5e6",
-      "textColor": "#a1887f",
-      "borderColor": "#a1887f"
-    },
-    {
-      "name": "CARROT",
-      "displayName": "Carrot",
-      "backgroundColor": "#fff3e0",
-      "textColor": "#ff8c00",
-      "borderColor": "#ff8c00"
     },
     {
       "name": "TIGER",

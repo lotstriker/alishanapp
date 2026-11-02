@@ -1,0 +1,19 @@
+/* Dedicated Add Entry page; scoped styles only. */
+.add-entry-main{max-width:1100px;margin:0 auto;padding:18px 14px 96px;min-height:calc(100vh - 150px)}
+.add-entry-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 18px;padding:18px 20px;border:1px solid var(--light-gray);border-radius:14px;background:var(--white);box-shadow:var(--card-shadow)}
+.add-entry-eyebrow{font-size:.72rem;font-weight:800;letter-spacing:.13em;color:var(--primary);margin-bottom:4px}
+.add-entry-heading h1{font-size:clamp(1.25rem,3vw,1.8rem);line-height:1.25;margin:0 0 6px;color:var(--dark)}
+.add-entry-heading p:last-child{font-size:.92rem;color:var(--gray);margin:0}
+.add-entry-back{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--light-gray);border-radius:9px;text-decoration:none;color:var(--dark);font-weight:700;white-space:nowrap}
+.add-entry-main>.form-section{margin:0}
+.add-entry-main .form-section>h2{display:none}
+.add-entry-main .tabbar{position:fixed}
+.home-summary-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:4px 0 18px}
+.home-summary-card{display:flex;align-items:center;gap:12px;min-width:0;padding:15px;background:var(--white);border:1px solid var(--light-gray);border-radius:12px;box-shadow:var(--card-shadow)}
+.home-summary-icon{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:11px;background:rgba(67,97,238,.11);color:var(--accent-text,var(--primary));font-size:18px}
+.home-summary-card>div{display:flex;flex-direction:column;min-width:0}
+.home-summary-card strong{font-size:clamp(1.1rem,2vw,1.45rem);line-height:1.25;overflow-wrap:anywhere;color:var(--dark)}
+.home-summary-card span:last-child{font-size:.8rem;color:var(--gray);line-height:1.3}
+.inv-tools-compact{margin-top:12px}
+@media(max-width:800px){.home-summary-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.home-summary-card{padding:12px;gap:9px}.home-summary-icon{width:36px;height:36px;flex-basis:36px;font-size:16px}}
+@media(max-width:480px){.add-entry-main{padding:12px 9px 90px}.add-entry-heading{padding:14px;align-items:flex-start}.add-entry-back{padding:8px 10px;font-size:.82rem}.home-summary-card span:last-child{font-size:.72rem}}

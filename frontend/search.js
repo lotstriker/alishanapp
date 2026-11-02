@@ -87,6 +87,8 @@ var AlishanSearch = (() => {
         root.querySelector('.as-top').addEventListener('click', showTopSearches);
         document.addEventListener('mousedown', (e) => { if (root && !root.contains(e.target)) close(); });
 
+        if (opts.enableAdvanced !== false && typeof AlishanAdvancedSearch !== 'undefined') AlishanAdvancedSearch.init(root, () => opts.onSearch(term, { type: 'advanced' }));
+
         AlishanStore.getSearchHistory().then(h => { historyCache = h; });
     }
 

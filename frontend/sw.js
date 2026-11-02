@@ -7,12 +7,13 @@
      downloaded and used from then on. Put them in the vendor/ folder to have them from the very first start.
    * Your data (entries, payments, backups) is not touched: it lives in the browser database, not here.
    ============================================================ */
-const VERSION = 'v1';                       // change this only if files are renamed or removed
+const VERSION = 'v4';                       // change this only if files are renamed or removed
 const APP_CACHE = 'alishan-app-' + VERSION;
 const LIB_CACHE = 'alishan-libs-v1';        // the library URLs contain their version, so this never goes stale
 
 const APP_FILES = [
     "aging.css",
+    "advanced-search.js",
     "bulk-import.css",
     "bulk-import.js",
     "calc.js",
@@ -22,8 +23,14 @@ const APP_FILES = [
     "db.js",
     "icons.js",
     "index.html",
+    "audit-pages.js",
+    "quality-history.html",
+    "missing-lot.html",
+    "pending-amount.html",
     "inventory.css",
+    "add-entry.css",
     "inventory.html",
+    "add-entry.html",
     "inventory.js",
     "item-card.css",
     "item-card.js",

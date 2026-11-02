@@ -51,105 +51,10 @@
     <div class="container">
         <h2><i class="fas fa-database"></i> Complete Inventory</h2>
         
-        <div class="dashboard-cards">
-            <div class="card">
-                <div class="card-icon">
-                    <i class="fas fa-boxes"></i>
-                </div>
-                <div class="card-content">
-                    <h3 id="totalItems">0</h3>
-                    <p>Total Items</p>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-icon">
-                    <i class="fas fa-money-bill-wave"></i>
-                </div>
-                <div class="card-content">
-                    <h3 id="totalValue">₹0</h3>
-                    <p>Total Inventory Value</p>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <div class="card-content">
-                    <h3 id="inStockItems">0</h3>
-                    <p>In Stock Items</p>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="card-content">
-                    <h3 id="agingItems">0</h3>
-                    <p id="agingLabel">Aging Stock</p>
-                    <div class="aging-breakdown" id="agingBreakdown"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="inv-tools">
-            <button type="button" class="tool-filters" data-open-filters><i class="fas fa-filter"></i> Filters</button>
-            <button type="button" onclick="showExportModal()"><i class="fas fa-file-export"></i> Export</button>
-            <button type="button" onclick="showImportModal()"><i class="fas fa-file-import"></i> Import</button>
-            <button type="button" onclick="openBulkImport()"><i class="fas fa-magic"></i> Bulk import</button>
-        </div>
-        <div class="sheet-scrim"></div>
-
-        <div class="filters">
-            <div class="filter-group">
-                <label for="productTypeFilter">Product Type</label>
-                <select id="productTypeFilter">
-                    <option value="all">All Products</option>
-                    <option value="bra">Bra</option>
-                    <option value="panty">Panty</option>
-                    <option value="set">Set</option>
-                    <option value="blouse">Blouse</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="qualityFilter">Quality</label>
-                <select id="qualityFilter">
-                    <option value="all">All Qualities</option>
-                    <!-- Options will be populated by JavaScript -->
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label for="stockFilter">Stock Status</label>
-                <select id="stockFilter">
-                    <option value="all">All Status</option>
-                    <option value="inStock">In Stock</option>
-                    <option value="outOfStock">Out of Stock</option>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label for="dateFilter">Date Added</label>
-                <select id="dateFilter">
-                    <option value="all">All Dates</option>
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                </select>
-            </div>
-            
-            <button class="btn" onclick="applyFilters()">Apply Filters</button>
-            <button class="btn btn-secondary" onclick="clearFilters()">Clear Filters</button>
-            <button class="btn btn-success" onclick="showExportModal()"><i class="fas fa-file-export"></i> Export</button>
-            <button class="btn btn-info" onclick="showImportModal()"><i class="fas fa-file-import"></i> Import</button>
-            <button class="btn btn-info" onclick="openBulkImport()" title="Add many old entries from an AI-made JSON, with review"><i class="fas fa-magic"></i> Bulk Import</button>
-        </div>
-
         <!-- Search (search.js): the same search box on every page -->
         <div id="alishan-search"></div>
+
+        <div class="sheet-scrim"></div>
 
         <div class="section">
             <div class="section-header">
@@ -161,7 +66,7 @@
                     <button type="button" class="ic-collapse-btn" data-collapse-all onclick="ItemCard.collapseAll()" disabled>
                         <i class="fas fa-compress-alt"></i> Collapse all<span class="ic-open-count"></span>
                     </button>
-                    <button class="btn" onclick="location.href='index.html'">
+                    <button class="btn" onclick="location.href='add-entry.html'">
                         <i class="fas fa-plus"></i> Add New Item
                     </button>
                 </div>
@@ -476,6 +381,7 @@
     <script src="calc.js"></script>
     <script src="store.js"></script>
     <script src="search.js"></script>
+    <script src="advanced-search.js"></script>
     <script src="item-form.js"></script>
     <script src="item-card.js"></script>
     <script src="item-modal.js"></script>
@@ -488,7 +394,7 @@
     <nav class="tabbar" aria-label="Main">
         <a href="index.html"><i class="fas fa-home"></i>Home</a>
         <a href="inventory.html" class="active"><i class="fas fa-database"></i>Inventory</a>
-        <a href="index.html#add" class="tab-add" aria-label="New entry"><i class="fas fa-plus"></i></a>
+        <a href="add-entry.html" class="tab-add" aria-label="New entry"><i class="fas fa-plus"></i></a>
         <a href="reports.html"><i class="fas fa-chart-bar"></i>Reports</a>
         <a href="setting.html"><i class="fas fa-cog"></i>Settings</a>
     </nav>

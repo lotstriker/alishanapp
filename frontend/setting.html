@@ -66,6 +66,10 @@
                         <i class="fas fa-th-large nav-icon"></i>
                         Dashboard
                     </a></li>
+                    <li><a href="#" class="nav-link" data-section="user-guide">
+                        <i class="fas fa-book-open nav-icon"></i>
+                        User Guide
+                    </a></li>
                     <li><a href="#" class="nav-link" data-section="general">
                         <i class="fas fa-cog nav-icon"></i>
                         General
@@ -271,6 +275,105 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- User Guide Section: expandable, searchable help centre -->
+            <div id="user-guide" class="settings-section">
+                <div class="guide-header">
+                    <div>
+                        <span class="guide-eyebrow"><i class="fas fa-book-open"></i> HELP CENTRE</span>
+                        <h1>User Guide</h1>
+                        <p>Alishan App ko step-by-step samajhne ke liye yahan guide padhein. Naye features ke saath is guide mein aur topics add kiye jayenge.</p>
+                    </div>
+                </div>
+                <div class="guide-search-box">
+                    <i class="fas fa-search"></i>
+                    <input id="guideSearchInput" type="search" placeholder="Guide mein search karein — quality, colour, filter, payment..." aria-label="Search user guide">
+                    <button type="button" id="guideSearchClear" aria-label="Clear guide search" hidden>&times;</button>
+                </div>
+                <div class="guide-search-status" id="guideSearchStatus" aria-live="polite">Saare guide topics neeche diye gaye hain.</div>
+
+                <div class="guide-topic-grid" id="guideTopics">
+                    <details class="guide-topic" open data-guide-topic>
+                        <summary><span class="guide-topic-icon"><i class="fas fa-house"></i></span><span><strong>1. Dashboard ko samjhein</strong><small>Home screen aur records ka overview</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+                        <div class="guide-topic-body">
+                            <p>Dashboard app kholne par aane wali main screen hai. Yahan se aap apne records dekh sakte hain, search kar sakte hain aur nayi quality entry shuru kar sakte hain.</p>
+                            <ul><li>Overview cards par tap karke us category ke records dekhein, agar card par click/filter available ho.</li><li>Latest Qualities mein recent entries dekhein.</li><li>Record ki poori details dekhne ke liye us record ko expand karein.</li></ul>
+                        </div>
+                    </details>
+
+                    <details class="guide-topic" data-guide-topic>
+                        <summary><span class="guide-topic-icon"><i class="fas fa-circle-plus"></i></span><span><strong>2. Nayi Quality kaise add karein</strong><small>Quality type, quality, cup, colour aur size quantity</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+                        <div class="guide-topic-body">
+                            <ol><li><b>Add Quality</b> kholein.</li><li>Quality Type select karein.</li><li>Quality select karein. Quality ke saath uska price pehle se attached hota hai; alag se price enter karne ki zaroorat nahi hoti.</li><li>Applicable Cup aur Colour select karein.</li><li>Har size ke saamne quantity enter karein. Quantity pieces mein enter hoti hai aur total Dozen mein calculate/display hota hai.</li><li>Weight/Meter aur Notes optional hain.</li><li>Entry save karein aur Latest Qualities mein check karein.</li></ol>
+                            <p><b>Tip:</b> Size ke saamne quantity bharte waqt sahi colour/size row ka dhyan rakhein.</p>
+                        </div>
+                    </details>
+
+                    <details class="guide-topic" data-guide-topic>
+                        <summary><span class="guide-topic-icon"><i class="fas fa-pen-to-square"></i></span><span><strong>3. Record edit, Lot Number aur Maal Gaya</strong><small>Entry save hone ke baad details update karna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+                        <div class="guide-topic-body">
+                            <ul><li>Record par <b>Edit</b> dabakar uski editable details update karein.</li><li>Lot Number quality complete/clear hone ke baad Edit mein add karein; nayi entry banate waqt Lot Number zaroori nahi hai.</li><li><b>Maal Gaya</b> field mein zaroorat ke mutabik naam ya simple text likhein. Ye note/search ke liye hai, alag tracking system nahi.</li><li>Changes save karne ke baad record dobara check karein.</li></ul>
+                        </div>
+                    </details>
+
+                    <details class="guide-topic" data-guide-topic>
+                        <summary><span class="guide-topic-icon"><i class="fas fa-check-circle"></i></span><span><strong>4. Complete aur Incomplete status</strong><small>Kaam ki current condition dikhana</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+                        <div class="guide-topic-body">
+                            <p><b>Complete</b> ka matlab quality ka kaam complete/clear ho gaya. <b>Incomplete</b> ka matlab kaam abhi baaki hai. Record par Complete action use karein. Complete record ko wapas Incomplete karna ho to Edit flow se status badlein, agar option diya gaya ho.</p>
+                            <p>Complete karne se Lot Number ya Maal Gaya ki value apne aap delete ya change nahi hoti.</p>
+                        </div>
+                    </details>
+
+                    <details class="guide-topic" data-guide-topic>
+                        <summary><span class="guide-topic-icon"><i class="fas fa-magnifying-glass"></i></span><span><strong>5. Search kaise karein</strong><small>Ek hi search box se record dhoondhna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+                        <div class="guide-topic-body">
+                            <p>Search box mein record se judi koi pehchaan likhein. Jaise Quality Name, Quality ID/Code, Lot Number, Colour, Quality Type, Cup, Size, Notes, Date, Price ya quantity. Search suggestions mein matching values bhi aa sakti hain.</p>
+                            <ul><li>Ek ya zyada words type karke Search dabayein ya suggestion select karein.</li><li>Search suggestions ko keyboard se bhi use kar sakte hain: Up/Down se move, Enter se select, Escape se close.</li><li>Search clear karne ke liye search box ka clear (×) button use karein.</li><li>Recent searches aur Top Searches se pehle ki searches dobara khol sakte hain.</li></ul>
+                            <p><b>Note:</b> Normal search words ko record ke searchable text mein match karti hai. Specific field, range ya multiple conditions ke liye Advanced Filter ka use karein.</p>
+                        </div>
+                    </details>
+
+                    <details class="guide-topic" data-guide-topic>
+                        <summary><span class="guide-topic-icon"><i class="fas fa-sliders"></i></span><span><strong>6. Advanced Filter kaise use karein</strong><small>Ek saath kai conditions lagana</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+                        <div class="guide-topic-body">
+                            <ol><li>Search area mein <b>Advanced Filter</b> card kholein.</li><li>Quality Type, Colour, Cup, Size, Status, Payment Status ya Date select/enter karein.</li><li>Amount, Price, Dozen, Weight/Meter aur size-wise quantity ke Min/Max values de sakte hain.</li><li>Lot Number, Notes aur Maal Gaya ke text se bhi filter kar sakte hain.</li><li>Condition logic mein <b>AND</b> rakhen to sabhi conditions match honi chahiye; <b>OR</b> mein koi ek condition match ho to record aa sakta hai.</li><li>Exclude Colour mein woh colour likhein jise results se hatana hai.</li><li><b>Apply Filters</b> dabayein. Sirf filter hatane ke liye Reset Filters use karein.</li></ol>
+                            <p><b>Example:</b> Colour Black + Cup C + Status Incomplete lagane par in conditions se match hone wale records dikhenge.</p>
+                        </div>
+                    </details>
+
+                    <details class="guide-topic" data-guide-topic>
+                        <summary><span class="guide-topic-icon"><i class="fas fa-arrow-down-wide-short"></i></span><span><strong>7. Advanced Sort kaise use karein</strong><small>Records ko apni zaroorat ke hisaab se arrange karna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+                        <div class="guide-topic-body">
+                            <ol><li><b>Advanced Sort</b> card kholein.</li><li>Sort first by mein pehla field select karein, jaise Entry Date, Total Dozen ya Total Amount.</li><li>Ascending/Low to High ya Descending/High to Low chunein.</li><li>Chahein to Then by mein second sorting field select karein.</li><li><b>Apply Sort</b> dabayein.</li></ol>
+                            <p><b>Example:</b> Pehle Total Amount ko Highest to Lowest aur phir Entry Date ko Newest First rakh sakte hain.</p>
+                        </div>
+                    </details>
+
+                    <details class="guide-topic" data-guide-topic>
+                        <summary><span class="guide-topic-icon"><i class="fas fa-bookmark"></i></span><span><strong>8. Saved Searches, result count aur Clear All</strong><small>Apni search setting dobara use karna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+                        <div class="guide-topic-body">
+                            <ul><li>Search + Filter + Sort ka current combination rakhne ke liye <b>Save current</b> dabayein aur naam dein.</li><li>Saved searches dropdown se pehle save kiya hua combination load karein.</li><li>Matching records ka count batata hai ki current search/filter se kitne records mile.</li><li>Active filter chip par tap karke sirf us condition ko hata sakte hain.</li><li><b>Clear All</b> search, filters aur sorting ko reset karta hai.</li></ul>
+                        </div>
+                    </details>
+
+                    <details class="guide-topic" data-guide-topic>
+                        <summary><span class="guide-topic-icon"><i class="fas fa-cloud-arrow-up"></i></span><span><strong>9. Backup aur Restore</strong><small>Apne records ki backup copy rakhna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+                        <div class="guide-topic-body">
+                            <p>Settings ke Backup &amp; Restore section mein available backup options dekhein. Backup banane ke baad uska status/date check karein. Restore karne se pehle sahi backup file/account confirm karein, kyunki restore data ko replace ya update kar sakta hai.</p>
+                            <p><b>Important:</b> Backup complete hone ka confirmation dekhe bina ye assume na karein ki data backup ho gaya hai.</p>
+                        </div>
+                    </details>
+
+                    <details class="guide-topic" data-guide-topic>
+                        <summary><span class="guide-topic-icon"><i class="fas fa-palette"></i></span><span><strong>10. Appearance aur theme</strong><small>App ka look badalna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+                        <div class="guide-topic-body"><p>Settings ke Appearance section mein available theme aur display preferences dekhein. Theme change karne ke baad app ke alag pages par bhi check karein ki text aur controls clearly dikh rahe hain.</p></div>
+                    </details>
+                </div>
+                <div class="guide-no-results" id="guideNoResults" hidden>
+                    <i class="fas fa-book-open"></i><strong>Koi guide topic nahi mila</strong><span>Doosra word try karein, jaise “search”, “colour”, “payment” ya “backup”.</span>
+                </div>
+                <div class="guide-footer-note"><i class="fas fa-lightbulb"></i><span><b>Guide update hoti rahegi.</b> Aage chal kar Payments, Reports, Manager features, Inventory aur naye app features ke liye yahin naye step-by-step topics add kiye jayenge.</span></div>
             </div>
 
             <!-- General Settings Section -->
@@ -1254,11 +1357,12 @@
     <script src="theme-manager.js"></script>
     <script src="script.js"></script>
     <script src="nav.js"></script>
+    <script src="user-guide.js"></script>
 
     <nav class="tabbar" aria-label="Main">
         <a href="index.html"><i class="fas fa-home"></i>Home</a>
         <a href="inventory.html"><i class="fas fa-database"></i>Inventory</a>
-        <a href="index.html#add" class="tab-add" aria-label="New entry"><i class="fas fa-plus"></i></a>
+        <a href="add-entry.html" class="tab-add" aria-label="New entry"><i class="fas fa-plus"></i></a>
         <a href="reports.html"><i class="fas fa-chart-bar"></i>Reports</a>
         <a href="setting.html" class="active"><i class="fas fa-cog"></i>Settings</a>
     </nav>

@@ -274,6 +274,17 @@ var AlishanDB = (() => {
             return all.sort((a, b) => b.id - a.id).slice(0, limit);
         },
 
+        // ---- Quality change history (important changes only; read-only UI) ----
+        async logQualityHistory(entry) {
+            const row = { ...entry, id: `qh-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, at: new Date().toISOString() };
+            await put('auditLog', row);
+            return row;
+        },
+        async getQualityHistory() {
+            const rows = await getAll('auditLog');
+            return rows.sort((a, b) => new Date(b.at) - new Date(a.at));
+        },
+
         // ---- Cross-tab change notifications: AlishanDB.onChange('inventory', cb) ----
         onChange(store, cb) {
             (listeners[store] = listeners[store] || []).push(cb);

@@ -31,7 +31,10 @@ function readFilters() {
 
 // the items that match the filter boxes + search box (the store does the filtering)
 function currentList() {
-    return AlishanStore.query(readFilters());
+    let list = AlishanStore.query(readFilters());
+    if (typeof AlishanAdvancedSearch !== 'undefined') list = AlishanAdvancedSearch.apply(list);
+    if (typeof AlishanAdvancedSearch !== 'undefined') AlishanAdvancedSearch.setCount(list.length);
+    return list;
 }
 
 // ================= DRAWING THE PAGE =================
@@ -571,6 +574,17 @@ async function initPage() {
 
     if (typeof AlishanSearch !== 'undefined') AlishanSearch.init({ onSearch });   // the shared search box (search.js)
     refreshUI();
+    const hashParams = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+    const editQualityId = hashParams.get('edit');
+    if (editQualityId) {
+        // Missing Lot Number and every other entry point use this exact shared Inventory edit module.
+        ItemModal.open(editQualityId);
+        history.replaceState(null, '', location.pathname + location.search);
+    }
+    const action = (location.hash || '').slice(1).toLowerCase();
+    if (action === 'export') showExportModal();
+    else if (action === 'import') showImportModal();
+    else if (action === 'bulk-import') openBulkImport();
     // redraw whenever the store changes (this page, another page, another tab)
     AlishanStore.subscribe(refreshUI);
 }

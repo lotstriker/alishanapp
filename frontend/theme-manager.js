@@ -3,14 +3,14 @@ class GlobalThemeManager {
   constructor() {
     this.currentTheme = 'light-default'; // fast fallback until AlishanDB resolves
     this.availableThemes = [
-      'light-default', 'light-warm', 'dark-deep',
+      'light-default', 'light-warm', 'dark-deep', 'dark-blue',
       'gold', 'purple', 'mint',
       'midnight-slate', 'forest-night',
       'carbon-flame', 'ash-orange', 'ember-forge', 'deep-teal', 'arctic-teal',
       'red-inferno', 'royal-teal', 'github-dark', 'material-dark', 'teal-finance'
     ];
     this.darkThemes = [
-      'dark-deep', 'gold',
+      'dark-deep', 'dark-blue', 'gold',
       'midnight-slate', 'forest-night',
       'carbon-flame', 'ash-orange', 'ember-forge', 'deep-teal', 'arctic-teal',
       'red-inferno', 'royal-teal', 'github-dark', 'material-dark', 'teal-finance'

@@ -4,7 +4,7 @@
 // the real saved value is the one in AlishanDB.
 (function () {
     var THEMES = [
-        'light-default', 'light-warm', 'dark-deep', 'gold', 'purple', 'mint',
+        'light-default', 'light-warm', 'dark-deep', 'dark-blue', 'gold', 'purple', 'mint',
         'midnight-slate', 'forest-night', 'carbon-flame', 'ash-orange', 'ember-forge', 'deep-teal', 'arctic-teal',
         'red-inferno', 'royal-teal', 'github-dark', 'material-dark', 'teal-finance'
     ];

@@ -35,6 +35,7 @@ class CompleteSettingsManager {
             { id: 'light-default', name: 'Light Default' },
             { id: 'light-warm', name: 'Warm Light' },
             { id: 'dark-deep', name: 'Deep Dark' },
+            { id: 'dark-blue', name: 'Dark Blue' },
             { id: 'gold', name: 'Gold Dark' },
             { id: 'purple', name: 'Purple Light' },
             { id: 'mint', name: 'Mint Light' },

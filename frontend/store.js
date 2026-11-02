@@ -63,7 +63,10 @@ var AlishanStore = (() => {
     }
     function getColorStyle(name) {
         if (!name) return null;
-        return (colorData.colors || []).find(c => c.name.toUpperCase() === String(name).toUpperCase()) || null;
+        const key = String(name).toUpperCase();
+        return (colorData.colors || []).find(c =>
+            c.name.toUpperCase() === key || (Array.isArray(c.aliases) && c.aliases.some(a => String(a).toUpperCase() === key))
+        ) || null;
     }
     // a colour that is not in colors.json yet: neutral grey, so it can still be shown and edited
     function getColorStyleSafe(name) {
@@ -210,6 +213,33 @@ var AlishanStore = (() => {
         try { return await AlishanDB.getRecentActivity(limit); } catch (e) { return []; }
     }
 
+    function qualitySnapshot(item) {
+        const snap = {
+            'Quality': item.quality || '', 'Product Type': item.productType || '',
+            'Cup': item.cupSize || '', 'Lot Number': item.lotNumber || '',
+            'Maal Gaya': item.maalGaya || item.maalGayaTo || '',
+            'Material / Meter': item.material || '', 'Weight': item.weight || '',
+            'Notes': item.notes || '', 'Status': item.inStock === false ? 'Incomplete' : 'Complete',
+            'Colours': (item.colors || []).map(c => typeof c === 'object' ? c.name : c).join(', ')
+        };
+        const sizeParts = [];
+        const addSizes = (label, sizes) => Object.keys(sizes || {}).filter(k => /^size\d+$/.test(k)).sort((a,b)=>Number(a.slice(4))-Number(b.slice(4))).forEach(k => {
+            const d = Number(sizes[k]) || 0, pcs = Number(sizes[k + '_pieces']) || 0;
+            if (d || pcs) sizeParts.push(`${label} ${k.slice(4)}: ${d} dozen ${pcs} pcs`);
+        });
+        if (item.sizeOption === 'different') (item.colors || []).forEach(c => addSizes(c.name || 'Colour', c.sizes));
+        else addSizes('All colours', item);
+        snap['Size Quantities'] = sizeParts.join('; ');
+        return snap;
+    }
+    async function writeQualityHistory(item, action, before, after) {
+        try {
+            await AlishanDB.logQualityHistory({ qualityId: item.id, qualityCode: item.code || '', qualityName: item.quality || '', productType: item.productType || '', action, actor: 'Current user', changes: before && after ? Object.keys(after).filter(k => String(before[k] ?? '') !== String(after[k] ?? '')).map(field => ({ field, oldValue: String(before[field] ?? '—'), newValue: String(after[field] ?? '—') })) : Object.entries(after || before || {}).map(([field, value]) => ({ field, oldValue: before ? String(value ?? '—') : '—', newValue: after ? String(value ?? '—') : 'Deleted' })) });
+        } catch (e) { console.error('Could not save quality history:', e); }
+    }
+    async function getQualityHistory() { try { return await AlishanDB.getQualityHistory(); } catch (e) { return []; } }
+    const missingLotItems = () => items.filter(i => !String(i.lotNumber || '').trim()).sort((a,b)=>new Date(b.dateTime)-new Date(a.dateTime));
+
     async function addItem(input) {
         const built = C.buildNewItem(input, ctx());
         if (!built.ok) return built;
@@ -224,6 +254,7 @@ var AlishanStore = (() => {
             items.splice(items.indexOf(item), 1);
             return fail('Could not save your changes! Please try again.');
         }
+        await writeQualityHistory(item, 'New Quality Added', null, qualitySnapshot(item));
         const oldNote = item.isManualEntry ? ` — old entry dated ${C.fmtDate(item.dateTime)}` : '';
         logActivity('add', `Added ${item.quality} ${item.productType} (${item.code})${oldNote}`);
         emit('add');
@@ -234,6 +265,7 @@ var AlishanStore = (() => {
         const idx = items.findIndex(i => String(i.id) === String(id));
         if (idx < 0) return fail('Item not found');
 
+        const beforeSnapshot = qualitySnapshot(items[idx]);
         const built = C.buildUpdatedItem(items[idx], input, ctx());
         if (!built.ok) return built;
 
@@ -247,6 +279,9 @@ var AlishanStore = (() => {
             items = backup;
             return fail('Could not save your changes! Please try again.');
         }
+        const afterSnapshot = qualitySnapshot(built.item);
+        const importantChanges = Object.keys(afterSnapshot).some(k => String(beforeSnapshot[k] ?? '') !== String(afterSnapshot[k] ?? ''));
+        if (importantChanges) await writeQualityHistory(built.item, 'Quality Updated', beforeSnapshot, afterSnapshot);
         logActivity('edit', `Edited ${built.item.quality} ${built.item.productType} (${built.item.code})`);
         emit('edit');
         return built;
@@ -265,6 +300,7 @@ var AlishanStore = (() => {
             items = backup;
             return fail('Could not save your changes! Please try again.');
         }
+        await writeQualityHistory(removed, 'Quality Deleted', qualitySnapshot(removed), null);
         // its payments are kept (not shown) — they were never deleted from storage
         const moved = payments.filter(p => String(p.inventoryId) === String(removed.id));
         payments = payments.filter(p => String(p.inventoryId) !== String(removed.id));
@@ -279,14 +315,17 @@ var AlishanStore = (() => {
     async function toggleStock(id) {
         const item = getItem(id);
         if (!item) return fail('Item not found');
+        const beforeSnapshot = qualitySnapshot(item);
         item.inStock = !item.inStock;
         try {
             await AlishanDB.saveInventoryItem(item);          // only this entry is written
         } catch (err) {
             console.error('Failed to save inventory:', err);
-            item.inStock = !item.inStock;
+            const beforeSnapshot = qualitySnapshot(item);
+        item.inStock = !item.inStock;
             return fail('Could not save your changes! Please try again.');
         }
+        await writeQualityHistory(item, item.inStock ? 'Quality Completed' : 'Quality Marked Incomplete', beforeSnapshot, qualitySnapshot(item));
         logActivity('stock', `${item.quality} ${item.productType} marked ${item.inStock ? 'In Stock' : 'Out of Stock'}`);
         emit('stock');
         return { ok: true, item, message: `Item marked as ${item.inStock ? 'In Stock' : 'Out of Stock'}` };
@@ -594,7 +633,7 @@ var AlishanStore = (() => {
         getQualityData, getColors, getColorStyle, getColorStyleSafe, colorDisplayName, getPrice,
         // read
         getItems, getItem, hasItems, itemCount, getPayments, query, summary, paginate, typeStats,
-        qualityOptions, lowStockItems, itemPayment, getRecentActivity,
+        qualityOptions, lowStockItems, itemPayment, getRecentActivity, getQualityHistory, missingLotItems,
         // change entries
         addItem, updateItem, deleteItem, toggleStock,
         // payments
