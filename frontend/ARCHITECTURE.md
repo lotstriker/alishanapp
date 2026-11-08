@@ -14,7 +14,9 @@
 | `store.js` | the link: takes what a page typed, asks calc.js to build/check it, saves it with db.js, tells every page (and other tabs) it changed | calculate anything |
 | `bulk-import.js` + `bulk-import.css` | the Bulk Import window (Inventory page): paste AI JSON, review entries one by one, edit anything, approve, import | check, calculate or save (calc.js checks, store.js saves) |
 | `search.js` + `search.css` | the search box: live suggestions, history, search anything, top searches | decide what to do with the result (the page does) |
-| `dashboard.js`, `inventory.js`, `reports.html` | take input, show data | keep their own copy of the data, calculate, save |
+| `dashboard.js`, `inventory.js`, `reports.html`, `report-views.js` | take input, show data | keep their own copy of the data, calculate, save |
+| `export-center.js` + `export-center.css` | Home Export Center (v74): shows data sets, filters, preview, formats, presets, history and ZIP restore; makes Excel / CSV / PDF / JSON / ZIP files. Rules come from `calc.js` (`exportFilterItems`, `exportSizeRows`, `exportTotals`, `exportInRange`) through `AlishanStore` | calculate, change quality or payment records (only ZIP restore changes data, after a safety backup) |
+| `settings-data-backup.js` | Settings > Data & Backup controls: save backup interval, create local safety backup, restore latest local backup | calculate business amounts or bypass IndexedDB |
 | `item-form.js`, `item-card.js`, `item-modal.js` | shared UI pieces (pickers, card, edit window) | calculate, save |
 
 ## Adding a search to a page
@@ -128,3 +130,40 @@ quality, the examples inside the AI prompt) all come from `qualities.json` and `
 - To teach the importer a local name, add `"aliases": ["gajri", "gajar"]` to a colour (or a quality) in the json file.
 - Every replacement you make in the review window ("Gajri" -> CARROT) is also remembered in the db, so the next import already knows it.
 - Half dozens are kept: 2.5 dozens = 2 dozens + 6 pieces (`AlishanCalc.splitPieces`).
+
+
+### Export Center filter options
+- Export filters are populated from the live `AlishanStore.getItems()` records after Store initialization.
+- Quality Type, Quality, Colour, Cup, Quality ID, Lot Number, Maal Gaya, and Notes are multi-select lists; Quality and Colour lists narrow when their parent filters are selected.
+- Date presets fill the existing date range controls; Clear all filters resets every selection.
+- The result count is a live estimate for matching quality records. Export rows are still filtered at export time.
+
+### Export Center (v74)
+- Dialog classes are `xc-*` in `export-center.css`, built only from the app's theme variables and the `.btn` / `.form-group` styles of `dashboard.css`. Markup is in `index.html`, everything inside is filled by `export-center.js`.
+- Filters are kept in one object (`state.filters`); `AlishanStore.exportFilterItems(filters, byDate)` (calc.js) applies them with exact matching. Data sets are listed in `DATASETS` in `export-center.js` (id, group, title, rows function). To add a data set add one entry there.
+- Presets and the recent-export list are saved with `AlishanDB.setSetting('exportPresets' | 'exportHistory')`.
+- `completeBackup` / `restoreZip` and the stored-ZIP reader/writer are unchanged from v73.
+
+### Completion date (v75)
+- A quality that is Complete (`inStock === false`) may have `completedAt` (ISO time = the day the goods went). It is set only by `AlishanStore.toggleStock` (pressing Complete) and by the Edit rule in `AlishanCalc.buildUpdatedItem`; it is removed when the quality goes back in stock. `AlishanCalc.completionInfo(item)` gives the label and days ago for screens.
+- `backfillCompletionDates` (store.js) fills older Complete qualities from Quality History when the app loads. It never guesses.
+
+### Report Page (v76)
+- `report-engine.js` (`ReportEngine`) = read-only view models for the eight reports. It has no formula of its own: amounts, quantities, received / pending, valuation and aging come from `AlishanCalc` / `AlishanStore`; it only chooses records (filters, weeks, months), adds those numbers up and shapes them. `report-views.js` (`ReportViews`) = the screens (cards, filters, tiles, charts, tables, read-only quality window, exports); `reports.css` = styles.
+- The page address carries the open report (`reports.html#pending`). The old sections stay in `reports.html` inside `#rpExistingStore` and are moved into the open report; while a report is open `applyScope()` uses `ReportViews.scopeItems()` so the old sections follow the report's filters.
+- To add a report: add an entry to `REPORTS` / `ORDER` in `report-views.js` and a builder in `report-engine.js` that returns `{ summary, charts, columns, rows, notes }`.
+
+### v77 additions
+- `AlishanStore.colorChoices(name, taken)` = the one list of colour choices for "replace this colour" (Edit swap row and Bulk Import). `AlishanStore.setCompletionDate(id, day)` / `missingCompletionItems()` feed `missing-completion.html` (page code in `audit-pages.js`).
+- Export Center filters now include a completion date range and an amount range; the `completed` data set (Completed Work) is the export form of the Weekly Report. A data set takes part in the amount range by naming its numeric column in `amountKey` (`DATASETS` in `export-center.js`).
+
+### Phone layout rules (v78)
+- Check every screen change at 390 / 360 / 320 px in a real browser. A grid holding a table needs `grid-template-columns: minmax(0, 1fr)`; its children need `min-width: 0`.
+- Do not use `<header>` / `<footer>` tags inside dialogs (`dashboard.css` styles them as the app's top bar). Full-screen dialogs use z-index 1200 (the bottom navigation is 1000–1100).
+- Wide tables on a phone: add class `rp-stack` and `data-label` on each cell (`reports.css`).
+
+
+
+### Shared Pagination (v79)
+- `common-pagination.js` + `common-pagination.css` provide the shared Previous / Next / page-count / page-size UI. Inventory and Reports both call the same renderer.
+- Each page/report owns its own `page` and `pageSize` values; the module does not store data or pagination state. Page-size options remain 10, 20, 50 and 100, matching Inventory.

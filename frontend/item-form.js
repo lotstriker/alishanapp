@@ -464,6 +464,7 @@ var ItemForm = (() => {
         const arr = colorSelections[prefix] || [];
         const container = document.getElementById(ids.selectedContainer);
         if (!container) return;
+        closeColorSwap(prefix);
 
         container.querySelectorAll('.selected-color-tag').forEach(tag => tag.remove());
 
@@ -484,14 +485,90 @@ var ItemForm = (() => {
             tag.style.backgroundColor = color.backgroundColor;
             tag.style.color = color.textColor;
             tag.style.borderColor = color.borderColor;
+            const swapButton = COLOR_SWAP_PREFIXES.includes(prefix)
+                ? `<button type="button" class="swap-color" title="Replace this colour with another one (keeps its sizes)" aria-label="Replace ${color.displayName}" onclick="ItemForm.openColorSwap('${colorName}', '${prefix}', event)"><i class="fas fa-exchange-alt"></i></button>`
+                : '';
             tag.innerHTML = `
                 ${color.displayName}
+                ${swapButton}
                 <button type="button" class="remove-color" onclick="ItemForm.removeColor('${colorName}', '${prefix}', event)">
                     <i class="fas fa-times"></i>
                 </button>
             `;
             container.appendChild(tag);
         });
+    }
+
+    // ================= CHANGE ONE PICKED COLOUR INTO ANOTHER (keeps its place and its sizes) =================
+    // Used by the Edit form. Same idea and same colour lists as the colour fix in Bulk Import
+    // (AlishanStore.closeColors = suggestions, AlishanStore.getColors = every colour).
+    const COLOR_SWAP_PREFIXES = ['edit'];
+    const colorRenameListeners = {};
+
+    // The page that owns the size cards says here how to move a colour's sizes to the new name
+    // (called BEFORE the picker changes, so the card is renamed instead of being removed and re-created).
+    function onColorRename(prefix, fn) {
+        (colorRenameListeners[prefix] = colorRenameListeners[prefix] || []).push(fn);
+    }
+
+    function swapColor(prefix, oldName, newName) {
+        const arr = colorSelections[prefix] || [];
+        const index = arr.indexOf(oldName);
+        if (index === -1) return { ok: false, error: 'That colour is not selected any more.' };
+        if (!newName || newName === oldName) return { ok: false, error: 'Choose a different colour.' };
+        const style = getColorStyle(newName);
+        if (!style) return { ok: false, error: 'That colour is not in the app colour list.' };
+        if (arr.includes(newName)) return { ok: false, error: `${style.displayName} is already selected.` };
+
+        (colorRenameListeners[prefix] || []).forEach(fn => { try { fn(oldName, newName); } catch (e) { console.error(e); } });
+        arr[index] = newName;                                   // same position in the list
+        updateSelectedColorsDisplay(prefix);
+        updateColorOptionsDisplay(prefix);
+        updateColorHiddenInput(prefix);
+        return { ok: true, from: oldName, to: newName };
+    }
+
+    function closeColorSwap(prefix) {
+        const row = document.getElementById(`${prefix}ColorSwapRow`);
+        if (row) row.remove();
+    }
+
+    // shows "Replace X with: [choose a colour]" under the colour picker
+    function openColorSwap(colorName, prefix = 'edit', event) {
+        if (event) event.stopPropagation();
+        closeColorSwap(prefix);
+        const selector = document.getElementById(colorIds(prefix).selector);
+        const anchor = selector ? (selector.closest('.color-selector-container') || selector) : null;
+        if (!anchor) return;
+
+        const taken = new Set(colorSelections[prefix] || []);          // a colour already picked would be merged: not offered
+        const option = c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.displayName)}</option>`;
+        const { suggestions, all } = AlishanStore.colorChoices(colorName, taken);
+        const shownName = getColorStyleSafe(colorName).displayName;
+
+        const row = document.createElement('div');
+        row.id = `${prefix}ColorSwapRow`;
+        row.className = 'color-swaprow';
+        row.innerHTML = `
+            <span>Replace <b>${escapeHtml(shownName)}</b> with:</span>
+            <select class="color-swapselect">
+                <option value="">Choose a colour …</option>
+                ${suggestions.length ? `<optgroup label="Suggestions">${suggestions.map(option).join('')}</optgroup>` : ''}
+                <optgroup label="All colours">${all.map(option).join('')}</optgroup>
+            </select>
+            <button type="button" class="color-swapcancel" aria-label="Cancel">&times;</button>`;
+        anchor.insertAdjacentElement('afterend', row);
+
+        row.querySelector('.color-swapselect').addEventListener('change', e => {
+            if (!e.target.value) return;
+            const result = swapColor(prefix, colorName, e.target.value);
+            if (typeof showNotification === 'function') {
+                showNotification(result.ok ? `${shownName} → ${getColorStyleSafe(result.to).displayName} (sizes kept)` : result.error, result.ok ? 'success' : 'error');
+            }
+            if (!result.ok) e.target.value = '';
+        });
+        row.querySelector('.color-swapcancel').addEventListener('click', () => closeColorSwap(prefix));
+        if (row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
     }
 
     function removeColor(colorName, prefix, event) {
@@ -688,6 +765,7 @@ var ItemForm = (() => {
         populateColorDropdowns,
         toggleColorSelection,
         removeColor,
+        onColorRename, swapColor, openColorSwap, closeColorSwap,
         filterColorOptions,
         selectAllColors,
         clearAllColors,

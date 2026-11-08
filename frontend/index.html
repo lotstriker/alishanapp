@@ -1,154 +1,244 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <script src="theme-boot.js"></script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALISHAN - Inventory Management</title>
-    <!-- icons: local SVG set (icons.js), no CDN -->
-    <script src="icons.js"></script>
-    <link rel="stylesheet" href="dashboard.css">
-    <link rel="stylesheet" href="item-form.css">
-    <link rel="stylesheet" href="item-card.css">
-    <link rel="stylesheet" href="item-modal.css">
-    <link rel="stylesheet" href="aging.css">
-    <link rel="stylesheet" href="search.css">
-    <link rel="stylesheet" href="nav.css">
-    <link rel="stylesheet" href="themes.css">
-    <link rel="stylesheet" href="mobile.css">
-    <link rel="manifest" href="manifest.webmanifest">
-    <meta name="theme-color" content="#121214">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
-</head>
+<script src="theme-boot.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ALISHAN - Inventory Management</title>
+<!-- icons: local SVG set (icons.js), no CDN -->
+<script src="icons.js"></script>
+<link href="dashboard.css" rel="stylesheet"/>
+<link href="item-form.css" rel="stylesheet"/>
+<link href="item-card.css" rel="stylesheet"/>
+<link href="item-modal.css" rel="stylesheet"/>
+<link href="aging.css" rel="stylesheet"/>
+<link href="search.css" rel="stylesheet"/>
+<link href="nav.css" rel="stylesheet"/>
+<link href="themes.css" rel="stylesheet"/>
+<link href="mobile.css" rel="stylesheet"/>
+<link href="manifest.webmanifest" rel="manifest"/>
+<meta content="#121214" name="theme-color"/>
+<link href="icons/icon-192.png" rel="apple-touch-icon"/>
+<link href="export-center.css" rel="stylesheet"/></head>
 <body>
-    <header class="site-topbar">
-        <div class="site-topbar-inner">
-            <a href="index.html" class="logo"><i class="fas fa-tshirt"></i> ALISHAN</a>
-            <div class="site-topbar-right">
-                <nav class="site-nav-links">
-                    <ul>
-                        <li><a href="index.html" class="active"><i class="fas fa-home"></i> DASHBOARD</a></li>
-                        <li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
-                        <li><a href="reports.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
-                        <li><a href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
-                    </ul>
-                </nav>
-                <button class="site-menu-toggle" id="siteMenuToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
-        </div>
-        <ul class="site-mobile-nav" id="siteMobileNav">
-            <li><a href="index.html" class="active"><i class="fas fa-home"></i> DASHBOARD</a></li>
-            <li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
-            <li><a href="reports.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
-            <li><a href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
-        </ul>
-    </header>
-
-    <div class="main-content">
-        <div class="container">
-            <section class="home-summary-cards" aria-label="Inventory summary">
-                <article class="home-summary-card"><span class="home-summary-icon"><i class="fas fa-boxes"></i></span><div><strong id="homeTotalItems">0</strong><span>Total Items</span></div></article>
-                <article class="home-summary-card"><span class="home-summary-icon"><i class="fas fa-money-bill-wave"></i></span><div><strong id="homeTotalValue">₹0</strong><span>Total Inventory Value</span></div></article>
-                <article class="home-summary-card" data-summary-kind="in-stock"><span class="home-summary-icon"><i class="fas fa-check-circle"></i></span><div><strong id="homeInStockItems">0</strong><span>In Stock Items</span></div></article>
-                <article class="home-summary-card" data-summary-kind="aging"><span class="home-summary-icon"><i class="fas fa-clock"></i></span><div><strong id="homeAgingItems">0</strong><span id="homeAgingLabel">Aging Stock</span></div></article>
-                <article class="home-summary-card" data-summary-kind="added-week"><span class="home-summary-icon"><i class="fas fa-calendar-week"></i></span><div><strong id="homeAddedThisWeek">0</strong><span>Added This Week</span></div></article>
-                <article class="home-summary-card" data-summary-kind="pending"><span class="home-summary-icon"><i class="fas fa-exclamation-triangle"></i></span><div><strong id="homePendingAmount">₹0</strong><span>Pending Amount</span></div></article>
-            </section>
-            <section class="home-search-section" aria-label="Search inventory">
-                <div id="alishan-search"></div>
-            </section>
-
-
-            <div class="dashboard">
-                    <section class="card product-breakdown-card" aria-labelledby="productBreakdownTitle">
-                        <div class="card-header product-breakdown-header">
-                            <button type="button" class="breakdown-title-button" id="showAllProductTypes" aria-label="View all product types">
-                                <h2 id="productBreakdownTitle"><i class="fas fa-layer-group"></i> Product Type Breakdown <i class="fas fa-arrow-right breakdown-title-arrow"></i></h2>
+<header class="site-topbar">
+<div class="site-topbar-inner">
+<a class="logo" href="index.html"><i class="fas fa-tshirt"></i> ALISHAN</a>
+<div class="site-topbar-right">
+<nav class="site-nav-links">
+<ul>
+<li><a class="active" href="index.html"><i class="fas fa-home"></i> DASHBOARD</a></li>
+<li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
+<li><a href="reports.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
+<li><a href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
+</ul>
+</nav>
+<button class="site-menu-toggle" id="siteMenuToggle">
+<i class="fas fa-bars"></i>
+</button>
+</div>
+</div>
+<ul class="site-mobile-nav" id="siteMobileNav">
+<li><a class="active" href="index.html"><i class="fas fa-home"></i> DASHBOARD</a></li>
+<li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
+<li><a href="reports.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
+<li><a href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
+</ul>
+</header>
+<div class="main-content">
+<div class="container">
+<section aria-label="Inventory summary" class="home-summary-cards">
+<article class="home-summary-card"><span class="home-summary-icon"><i class="fas fa-boxes"></i></span><div><strong id="homeTotalItems">0</strong><span>Total Items</span></div></article>
+<article class="home-summary-card"><span class="home-summary-icon"><i class="fas fa-money-bill-wave"></i></span><div><strong id="homeTotalValue">₹0</strong><span>Total Inventory Value</span></div></article>
+<article class="home-summary-card" data-summary-kind="in-stock"><span class="home-summary-icon"><i class="fas fa-check-circle"></i></span><div><strong id="homeInStockItems">0</strong><span>In Stock Items</span></div></article>
+<article class="home-summary-card" data-summary-kind="aging"><span class="home-summary-icon"><i class="fas fa-clock"></i></span><div><strong id="homeAgingItems">0</strong><span id="homeAgingLabel">Aging Stock</span></div></article>
+<article class="home-summary-card" data-summary-kind="added-week"><span class="home-summary-icon"><i class="fas fa-calendar-week"></i></span><div><strong id="homeAddedThisWeek">0</strong><span>Added This Week</span></div></article>
+<article class="home-summary-card" data-summary-kind="pending"><span class="home-summary-icon"><i class="fas fa-exclamation-triangle"></i></span><div><strong id="homePendingAmount">₹0</strong><span>Pending Amount</span></div></article>
+</section>
+<section aria-label="Search inventory" class="home-search-section">
+<div id="alishan-search"></div>
+</section>
+<div class="dashboard">
+<section aria-labelledby="productBreakdownTitle" class="card product-breakdown-card">
+<div class="card-header product-breakdown-header">
+<button aria-label="View all product types" class="breakdown-title-button" id="showAllProductTypes" type="button">
+<h2 id="productBreakdownTitle"><i class="fas fa-layer-group"></i> Product Type Breakdown <i class="fas fa-arrow-right breakdown-title-arrow"></i></h2>
+</button>
+<div class="breakdown-menu-wrap">
+<button aria-expanded="false" aria-label="Product type breakdown options" class="breakdown-menu-button" id="breakdownMenuButton" type="button"><i class="fas fa-ellipsis-v"></i></button>
+<div class="breakdown-menu" hidden="" id="breakdownMenu">
+<span class="breakdown-menu-label">TIME PERIOD</span>
+<button data-breakdown-period="all" type="button">All Time</button>
+<button data-breakdown-period="week" type="button">This Week</button>
+<button data-breakdown-period="month" type="button">This Month</button>
+</div>
+</div>
+</div>
+<div aria-live="polite" class="type-breakdown" id="productTypeBreakdown"></div>
+</section>
+<div class="breakdown-dialog-backdrop" hidden="" id="breakdownDialogBackdrop">
+<section aria-labelledby="breakdownDialogTitle" aria-modal="true" class="breakdown-dialog" role="dialog">
+<div class="breakdown-dialog-header"><div><h2 id="breakdownDialogTitle">Product Types</h2><p id="breakdownDialogSubtitle"></p></div><button aria-label="Close" class="breakdown-close-button" id="closeBreakdownDialog" type="button"><i class="fas fa-times"></i></button></div>
+<div class="breakdown-dialog-content" id="breakdownDialogContent"></div>
+</section>
+</div>
+<div class="card">
+<div class="card-header">
+<h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+</div>
+<div class="quick-actions">
+<button class="quick-action-btn" onclick="location.href='pending-amount.html'">
+<i class="fas fa-wallet"></i> Pending Amount
                             </button>
-                            <div class="breakdown-menu-wrap">
-                                <button type="button" class="breakdown-menu-button" id="breakdownMenuButton" aria-label="Product type breakdown options" aria-expanded="false"><i class="fas fa-ellipsis-v"></i></button>
-                                <div class="breakdown-menu" id="breakdownMenu" hidden>
-                                    <span class="breakdown-menu-label">TIME PERIOD</span>
-                                    <button type="button" data-breakdown-period="all">All Time</button>
-                                    <button type="button" data-breakdown-period="week">This Week</button>
-                                    <button type="button" data-breakdown-period="month">This Month</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="type-breakdown" id="productTypeBreakdown" aria-live="polite"></div>
-                    </section>
-                    <div class="breakdown-dialog-backdrop" id="breakdownDialogBackdrop" hidden>
-                        <section class="breakdown-dialog" role="dialog" aria-modal="true" aria-labelledby="breakdownDialogTitle">
-                            <div class="breakdown-dialog-header"><div><h2 id="breakdownDialogTitle">Product Types</h2><p id="breakdownDialogSubtitle"></p></div><button type="button" id="closeBreakdownDialog" class="breakdown-close-button" aria-label="Close"><i class="fas fa-times"></i></button></div>
-                            <div id="breakdownDialogContent" class="breakdown-dialog-content"></div>
-                        </section>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
-                        </div>
-                        <div class="quick-actions">
-                            <button class="quick-action-btn" onclick="location.href='pending-amount.html'">
-                                <i class="fas fa-wallet"></i> Pending Amount
+<!-- CHANGE YEH LINE -->
+<button class="quick-action-btn" id="openAdvancedExportCenter" type="button">
+<i class="fas fa-file-export"></i> Export Data
                             </button>
-                            <!-- CHANGE YEH LINE -->
-                            <button class="quick-action-btn" onclick="location.href='inventory.html#export'">
-                                <i class="fas fa-file-export"></i> Export Data
+<button class="quick-action-btn" onclick="location.href='inventory.html#import'">
+<i class="fas fa-file-import"></i> Import Data
                             </button>
-                            <button class="quick-action-btn" onclick="location.href='inventory.html#import'">
-                                <i class="fas fa-file-import"></i> Import Data
+<button class="quick-action-btn" onclick="location.href='inventory.html#bulk-import'">
+<i class="fas fa-magic"></i> Bulk Import
                             </button>
-                            <button class="quick-action-btn" onclick="location.href='inventory.html#bulk-import'">
-                                <i class="fas fa-magic"></i> Bulk Import
+<button class="quick-action-btn" onclick="location.href='quality-history.html'">
+<i class="fas fa-history"></i> Quality History
                             </button>
-                            <button class="quick-action-btn" onclick="location.href='quality-history.html'">
-                                <i class="fas fa-history"></i> Quality History
+<button class="quick-action-btn" onclick="location.href='missing-lot.html'">
+<i class="fas fa-tag"></i> Missing Lot Number
                             </button>
-                            <button class="quick-action-btn" onclick="location.href='missing-lot.html'">
-                                <i class="fas fa-tag"></i> Missing Lot Number
+<button class="quick-action-btn" onclick="location.href='missing-completion.html'">
+<i class="fas fa-calendar-check"></i> Missing Completion Date
                             </button>
-                        </div>
-                    </div>
-
-                </div>
-
-            <section class="home-latest-section">
-                <div class="home-latest-heading">
-                    <h2><i class="fas fa-clock"></i> Latest Added Qualities</h2>
-                    <a href="inventory.html">View all <i class="fas fa-arrow-right"></i></a>
-                </div>
-                <div class="home-latest-cards inventory-cards" id="homeLatestQualities">
-                    <div class="empty-state"><p>Loading latest qualities…</p></div>
-                </div>
-            </section>
-
-    <div class="notification-container" id="notificationContainer"></div>
-    
-
-    <script src="db.js"></script>
-    <script src="loader.js"></script>
-    <script src="calc.js"></script>
-    <script src="store.js"></script>
-    <script src="search.js"></script>
-    <script src="advanced-search.js"></script>
-    <script src="item-form.js"></script>
-    <script src="item-card.js"></script>
-    <script src="item-modal.js"></script>
-    <script src="dashboard.js"></script>
-    <!-- Excel Export ke liye (reports.html se copy karien) -->
-    <script src="nav.js"></script>
-
-    <nav class="tabbar" aria-label="Main">
-        <a href="index.html" class="active"><i class="fas fa-home"></i>Home</a>
-        <a href="inventory.html"><i class="fas fa-database"></i>Inventory</a>
-        <a href="add-entry.html" class="tab-add" aria-label="New entry"><i class="fas fa-plus"></i></a>
-        <a href="reports.html"><i class="fas fa-chart-bar"></i>Reports</a>
-        <a href="setting.html"><i class="fas fa-cog"></i>Settings</a>
-    </nav>
-    <script src="ui.js"></script>
-    <script src="pwa.js"></script>
-</body>
+</div>
+</div>
+</div>
+<section class="home-latest-section">
+<div class="home-latest-heading">
+<h2><i class="fas fa-clock"></i> Latest Added Qualities</h2>
+<a href="inventory.html">View all <i class="fas fa-arrow-right"></i></a>
+</div>
+<div class="home-latest-cards inventory-cards" id="homeLatestQualities">
+<div class="empty-state"><p>Loading latest qualities…</p></div>
+</div>
+</section>
+<div class="xc-backdrop" hidden id="exportCenterBackdrop">
+<section aria-labelledby="exportCenterTitle" aria-modal="true" class="xc-dialog" role="dialog">
+<div class="xc-header">
+<div>
+<h2 id="exportCenterTitle" tabindex="-1"><i class="fas fa-file-export"></i> Export Center</h2>
+<p>Choose the data, filter it, check the preview and download it in the format you need.</p>
+</div>
+<button aria-label="Close Export Center" class="xc-close" id="closeExportCenter" type="button"><i class="fas fa-times"></i></button>
+</div>
+<nav aria-label="Export Center sections" class="xc-tabs" role="tablist">
+<button aria-selected="true" class="xc-tab active" data-xc-tab="export" role="tab" type="button"><i class="fas fa-download"></i> Export</button>
+<button aria-selected="false" class="xc-tab" data-xc-tab="presets" role="tab" type="button"><i class="fas fa-bookmark"></i> Presets &amp; History</button>
+<button aria-selected="false" class="xc-tab" data-xc-tab="restore" role="tab" type="button"><i class="fas fa-undo"></i> Restore Backup</button>
+</nav>
+<div class="xc-body">
+<div class="xc-pane" data-xc-pane="export">
+<section class="xc-card">
+<div class="xc-card-head"><h3><span class="xc-step">1</span> Select data</h3><div class="xc-mini-actions"><button class="xc-link" data-xc-select="all" type="button">Select all</button><button class="xc-link" data-xc-select="none" type="button">Clear</button></div></div>
+<div id="xcDatasets"></div>
+</section>
+<section class="xc-card" id="xcFilterCard">
+<div class="xc-card-head"><h3><span class="xc-step">2</span> Filters</h3><button class="xc-link" id="clearExportFilters" type="button">Clear all filters</button></div>
+<div class="xc-field-label">Date range</div>
+<div class="xc-chips" id="xcDatePresets"></div>
+<div class="xc-date-row">
+<div class="form-group"><label for="exportDateFrom">From date</label><input id="exportDateFrom" type="date"/></div>
+<div class="form-group"><label for="exportDateTo">To date</label><input id="exportDateTo" type="date"/></div>
+</div>
+<div class="xc-date-row">
+<div class="form-group"><label for="exportDoneFrom">Completion date — from</label><input id="exportDoneFrom" type="date"/></div>
+<div class="form-group"><label for="exportDoneTo">Completion date — to</label><input id="exportDoneTo" type="date"/></div>
+</div>
+<div class="xc-date-row">
+<div class="form-group"><label for="exportMin">Amount — min (₹)</label><input id="exportMin" inputmode="decimal" min="0" placeholder="0" type="number"/></div>
+<div class="form-group"><label for="exportMax">Amount — max (₹)</label><input id="exportMax" inputmode="decimal" min="0" placeholder="No limit" type="number"/></div>
+</div>
+<div class="xc-filter-grid" id="xcFilters"></div>
+<div class="xc-two">
+<div><div class="xc-field-label">Stock status</div><div class="xc-chips" id="xcStatusChips"></div></div>
+<div><div class="xc-field-label">Payment status</div><div class="xc-chips" id="xcPaymentChips"></div></div>
+</div>
+<div class="form-group xc-search"><label for="exportSearch">Search inside the selected data</label><input id="exportSearch" placeholder="Type any word or number" type="search"/></div>
+<div class="xc-active" id="xcActiveFilters"></div>
+<p class="xc-note" id="exportFilterCount">Loading your saved records…</p>
+</section>
+<section class="xc-card">
+<div class="xc-card-head"><h3><span class="xc-step">3</span> Preview</h3><span class="xc-note" id="xcPreviewInfo"></span></div>
+<div class="xc-sheet-tabs" id="xcPreviewTabs"></div>
+<div id="xcTotals"></div>
+<div class="xc-table-wrap" id="xcPreviewTable"></div>
+<details class="xc-columns" id="xcColumnsBox"><summary id="xcColumnsSummary">Columns</summary><div class="xc-chips" id="xcColumns"></div></details>
+</section>
+<section class="xc-card">
+<div class="xc-card-head"><h3><span class="xc-step">4</span> File format</h3></div>
+<div class="xc-format-grid" id="xcFormats"></div>
+<div class="xc-two xc-options">
+<div class="form-group"><label for="xcFileName">File name (optional)</label><input id="xcFileName" maxlength="60" placeholder="ALISHAN_Export" type="text"/></div>
+<label class="xc-check" for="xcSummaryOption"><input checked id="xcSummaryOption" type="checkbox"/><span><b>Add a summary</b><small>Filters used, record counts and totals (Excel, PDF and JSON)</small></span></label>
+</div>
+<p class="xc-note" id="xcFormatNote"></p>
+</section>
+</div>
+<div class="xc-pane" data-xc-pane="presets" hidden>
+<section class="xc-card">
+<div class="xc-card-head"><h3><i class="fas fa-bolt"></i> Quick presets</h3></div>
+<div class="xc-list" id="xcBuiltinPresets"></div>
+</section>
+<section class="xc-card">
+<div class="xc-card-head"><h3><i class="fas fa-bookmark"></i> My presets</h3></div>
+<p class="xc-note">A preset remembers what you selected in the Export tab: data, filters, columns and format.</p>
+<div class="xc-inline">
+<div class="form-group"><label for="xcPresetName">Preset name</label><input id="xcPresetName" maxlength="40" placeholder="Example: Weekly pending report" type="text"/></div>
+<button class="btn" id="xcSavePreset" type="button"><i class="fas fa-save"></i> Save current</button>
+</div>
+<div class="xc-list" id="xcMyPresets"></div>
+</section>
+<section class="xc-card">
+<div class="xc-card-head"><h3><i class="fas fa-history"></i> Recent exports</h3><button class="xc-link" id="xcClearHistory" type="button">Clear list</button></div>
+<div class="xc-list" id="xcHistory"></div>
+</section>
+</div>
+<div class="xc-pane" data-xc-pane="restore" hidden>
+<section class="xc-card">
+<div class="xc-card-head"><h3><i class="fas fa-undo"></i> Restore a ZIP backup</h3></div>
+<p class="xc-note">Only complete ZIP backups made by this Export Center are accepted (choose “Complete backup” in the file format step). The file is checked first, and a safety copy of your current data is made before anything is replaced.</p>
+<div class="form-group"><label for="restoreAlishanZip">Choose Alishan ZIP backup</label><input accept=".zip,application/zip" id="restoreAlishanZip" type="file"/></div>
+<button class="btn" id="restoreAlishanZipButton" type="button"><i class="fas fa-undo"></i> Validate &amp; restore</button>
+</section>
+</div>
+</div>
+<div class="xc-footer" id="xcFooter">
+<span id="exportCenterStatus" role="status">Exports do not change your saved quality or payment records.</span>
+<div class="xc-footer-buttons"><button class="btn btn-secondary" id="cancelExportCenter" type="button">Cancel</button><button class="btn" id="runAdvancedExport" type="button"><i class="fas fa-download"></i> Export</button></div>
+</div>
+</section>
+</div>
+<div class="notification-container" id="notificationContainer"></div>
+<script src="db.js"></script>
+<script src="loader.js"></script>
+<script src="calc.js"></script>
+<script src="store.js"></script>
+<script src="search.js"></script>
+<script src="advanced-search.js"></script>
+<script src="item-form.js"></script>
+<script src="item-card.js"></script>
+<script src="item-modal.js"></script>
+<script src="dashboard.js"></script><script src="export-center.js"></script>
+<!-- Excel Export ke liye (reports.html se copy karien) -->
+<script src="nav.js"></script>
+<nav aria-label="Main" class="tabbar">
+<a class="active" href="index.html"><i class="fas fa-home"></i>Home</a>
+<a href="inventory.html"><i class="fas fa-database"></i>Inventory</a>
+<a aria-label="New entry" class="tab-add" href="add-entry.html"><i class="fas fa-plus"></i></a>
+<a href="reports.html"><i class="fas fa-chart-bar"></i>Reports</a>
+<a href="setting.html"><i class="fas fa-cog"></i>Settings</a>
+</nav>
+<script src="ui.js"></script>
+<script src="pwa.js"></script>
+</div></div></body>
 </html>

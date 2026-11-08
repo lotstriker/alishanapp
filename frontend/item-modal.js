@@ -102,6 +102,11 @@ var ItemModal = (() => {
                                 <label for="editEntryTime">Entry Time</label>
                                 <input type="time" id="editEntryTime" oninput="ItemModal.updateEntryPreview()">
                             </div>
+
+                            <div class="edit-field" id="editCompletedField" style="display:none">
+                                <label for="editCompletedDate">Maal Gaya (Completion Date)</label>
+                                <input type="date" id="editCompletedDate">
+                            </div>
                         </div>
                         <div class="entry-preview" id="editEntryPreview"></div>
                     </section>
@@ -221,6 +226,7 @@ var ItemModal = (() => {
             });
         }
         ItemForm.onColorsChange('edit', syncEditCards);      // size cards follow the one colour picker
+        ItemForm.onColorRename('edit', renameEditCard);      // a changed colour keeps its size card (and the sizes in it)
 
         const modal = document.getElementById('editModal');
         if (modal) {
@@ -265,7 +271,10 @@ var ItemModal = (() => {
             <div class="color-size-item" data-color="${safeName}">
                 <div class="color-size-header" style="background-color: ${color.backgroundColor}; color: ${color.textColor}; border-color: ${color.borderColor}">
                     <h4><i class="fas fa-palette"></i> ${escapeHtml(color.displayName)}</h4>
-                    <button type="button" class="remove-color-btn" onclick="ItemModal.removeColorSizeItem(this)">Remove</button>
+                    <span class="color-card-actions">
+                        <button type="button" class="remove-color-btn" onclick="ItemModal.changeColorSizeItem(this)">Change</button>
+                        <button type="button" class="remove-color-btn" onclick="ItemModal.removeColorSizeItem(this)">Remove</button>
+                    </span>
                 </div>
                 <div class="size-grid">${cells}</div>
             </div>`;
@@ -312,6 +321,34 @@ var ItemModal = (() => {
         }
         toggleSizeOption();
         syncEditCards();
+    }
+
+    // the card's Change button opens the same "replace colour" row as the colour picker's swap button
+    function changeColorSizeItem(button) {
+        const card = button.closest('.color-size-item');
+        if (card) ItemForm.openColorSwap(card.getAttribute('data-color'), 'edit');
+    }
+
+    // The colour was changed in the picker: the card (and every size typed in it) stays, only its colour changes.
+    function renameEditCard(oldName, newName) {
+        const container = document.getElementById('editColorSizeItems');
+        if (!container) return;
+        const card = Array.from(container.querySelectorAll(':scope > .color-size-item'))
+            .find(c => c.getAttribute('data-color') === oldName);
+        if (!card) return;
+        card.setAttribute('data-color', newName);
+        card.querySelectorAll('[data-color]').forEach(el => {
+            if (el.getAttribute('data-color') === oldName) el.setAttribute('data-color', newName);
+        });
+        const color = ItemForm.getColorStyleSafe(newName);
+        const header = card.querySelector('.color-size-header');
+        if (header) {
+            header.style.backgroundColor = color.backgroundColor;
+            header.style.color = color.textColor;
+            header.style.borderColor = color.borderColor;
+        }
+        const title = card.querySelector('.color-size-header h4');
+        if (title) title.innerHTML = `<i class="fas fa-palette"></i> ${escapeHtml(color.displayName)}`;
     }
 
     // the card's Remove button un-picks the colour in the one colour picker
@@ -385,6 +422,14 @@ var ItemModal = (() => {
         document.getElementById('editEntryTime').value = isNaN(entryWhen) ? '' : AlishanCalc.localTime(entryWhen);
         updateEntryPreview();
 
+        // the completion date box exists only for a Complete (out of stock) quality
+        const doneField = document.getElementById('editCompletedField');
+        const doneInput = document.getElementById('editCompletedDate');
+        doneField.style.display = item.inStock === false ? '' : 'none';
+        doneInput.max = AlishanCalc.localDate(new Date());
+        const doneWhen = item.completedAt ? AlishanCalc.parseDate(item.completedAt) : null;
+        doneInput.value = doneWhen && !isNaN(doneWhen) ? AlishanCalc.localDate(doneWhen) : '';
+
         const cardBox = document.getElementById('editColorSizeItems');
         if (cardBox) cardBox.innerHTML = '';          // never show the previous item's cards
 
@@ -444,7 +489,10 @@ var ItemModal = (() => {
             entry: {
                 date: document.getElementById('editEntryDate').value,
                 time: document.getElementById('editEntryTime').value
-            }
+            },
+            // undefined = the entry is not Complete, so there is no completion date to change
+            completedDate: document.getElementById('editCompletedField').style.display === 'none'
+                ? undefined : document.getElementById('editCompletedDate').value
         };
 
         if (sizeOption === 'same') {
@@ -503,6 +551,7 @@ var ItemModal = (() => {
         updateEntryPreview,
         handleSizeOptionChange,
         removeColorSizeItem,
+        changeColorSizeItem,
         convertSameToDifferentSizes
     };
 })();

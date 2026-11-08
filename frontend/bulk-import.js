@@ -300,8 +300,7 @@ var BulkImport = (() => {
         box.innerHTML = `<div class="bi-colorfix-title"><i class="fas fa-palette"></i> Colors that are not in the app (${unknown.size}) — choose the app's colour for each:</div>
             <div class="bi-colorfix-list">${[...unknown.entries()].map(([name, count]) => {
                 const blocked = blockedFor(name);
-                const sug = AlishanStore.closeColors(name).filter(c => !blocked.has(c.name));
-                const all = AlishanStore.getColors().filter(c => !blocked.has(c.name));
+                const { suggestions: sug, all } = AlishanStore.colorChoices(name, blocked);
                 return `<label class="bi-colorfix-item"><span><b>${esc(name)}</b> <small>(${count} ${count === 1 ? 'entry' : 'entries'})</small></span>
                     <select data-fixold="${esc(name)}"><option value="">Choose …</option>
                         ${sug.length ? `<optgroup label="Suggestions">${sug.map(c => `<option value="${esc(c.name)}">${esc(c.displayName)}</option>`).join('')}</optgroup>` : ''}
@@ -347,8 +346,7 @@ var BulkImport = (() => {
     function swapRowHTML(d, name) {
         const known = !!ItemForm.getColorStyle(name);
         const taken = new Set(d.chips);
-        const suggestions = AlishanStore.closeColors(name).filter(c => !taken.has(c.name));
-        const all = AlishanStore.getColors().filter(c => !taken.has(c.name));
+        const { suggestions, all } = AlishanStore.colorChoices(name, taken);
         return `<div class="bi-swaprow" data-for="${esc(name)}">
             <span>${known ? `Replace <b>${esc(name)}</b>` : `<b>${esc(name)}</b> is not in the app's colour list.`} Replace with:</span>
             <select class="bi-swapselect" data-old="${esc(name)}">

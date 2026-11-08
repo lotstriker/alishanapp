@@ -83,13 +83,21 @@ class CompleteSettingsManager {
         this.setupEventListeners();
         this.populateAllSelectors();
         await this.updateBackupList();
-        this.updateAISuggestions();
         await this.calculateStorageUsage();
         this.showToast('Settings dashboard loaded successfully', 'success');
     }
 
     // ===== NAVIGATION & LAYOUT =====
     setupNavigation() {
+        document.querySelectorAll('[data-open-section]').forEach(card => {
+            card.addEventListener('click', () => {
+                const section = card.dataset.openSection;
+                this.showSection(section);
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.toggle('active', link.dataset.section === section);
+                });
+            });
+        });
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -489,48 +497,15 @@ class CompleteSettingsManager {
     }
 
     // ===== BACKUP & STORAGE =====
-    updateBackupList() {
-        const backups = [
-            { date: '2024-01-15 14:30:00', size: '2.1 MB', type: 'Auto' },
-            { date: '2024-01-14 10:15:00', size: '2.0 MB', type: 'Manual' },
-            { date: '2024-01-13 02:00:00', size: '1.9 MB', type: 'Auto' }
-        ];
-
+    async updateBackupList() {
         const timeline = document.getElementById('backupTimeline');
         if (!timeline) return;
-
-        timeline.innerHTML = '';
-
-        backups.forEach(backup => {
-            const formattedDate = new Date(backup.date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            const formattedTime = new Date(backup.date).toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            
-            const item = document.createElement('div');
-            item.className = 'timeline-item';
-            item.innerHTML = `
-                <div class="timeline-date">${formattedDate}, ${formattedTime}</div>
-                <div class="timeline-content">
-                    <strong>${backup.type} Backup</strong>
-                    <div>${backup.size} • Completed successfully</div>
-                    <div style="margin-top: 0.5rem;">
-                        <button class="btn btn-secondary btn-sm" onclick="settingsManager.downloadBackup('${backup.date}')">
-                            <i class="fas fa-download"></i> Download
-                        </button>
-                        <button class="btn btn-sm" onclick="settingsManager.restoreBackup('${backup.date}')">
-                            <i class="fas fa-undo"></i> Restore
-                        </button>
-                    </div>
-                </div>
-            `;
-            timeline.appendChild(item);
-        });
+        const backups = await AlishanDB.getSetting('autoBackups', []);
+        timeline.innerHTML = backups.length ? backups.slice().reverse().map(b => {
+            const date = b && b.metadata && b.metadata.created ? new Date(b.metadata.created).toLocaleString() : 'Unknown date';
+            const count = b && b.metadata ? Number(b.metadata.totalItems || 0) : 0;
+            return `<div class="backup-item"><strong>${date}</strong><span>${count} quality records</span></div>`;
+        }).join('') : '<p>No saved backups yet.</p>';
     }
 
     async calculateStorageUsage() {
@@ -915,7 +890,7 @@ class CompleteSettingsManager {
         const settings = {
             businessName: businessName,
             currency: document.querySelector('.currency-card.selected')?.dataset.currency || 'INR',
-            dateFormat: document.getElementById('dateFormat').value,
+            dateFormat: 'DD/MM/YYYY',
             itemsPerPage: document.getElementById('itemsPerPage').value,
             businessAddress: document.getElementById('businessAddress').value
         };

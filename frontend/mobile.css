@@ -195,7 +195,6 @@
         white-space: nowrap;
     }
     .pagination-controls {
-        display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
         justify-content: center !important;
@@ -204,8 +203,13 @@
         box-sizing: border-box;
         padding: 8px 0 !important;
         margin: 0 !important;
-        flex-wrap: wrap !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        white-space: nowrap !important;
+        -webkit-overflow-scrolling: touch;
     }
+    .pagination-controls > * { flex: 0 0 auto !important; white-space: nowrap !important; }
     .pagination-controls .btn {
         display: inline-flex !important;
         align-items: center;
@@ -698,22 +702,10 @@
     /* ============================================================
        REPORTS (phone)
        ============================================================ */
-    .container:has(#pending-tab) .dashboard-cards { grid-template-columns: 1fr 1fr !important; }
-    .container:has(#pending-tab) .dashboard-cards .card:nth-child(3) { grid-column: 1 / -1; }
-    .container:has(#pending-tab) .dashboard-cards .card:nth-child(4) { grid-column: auto; }
-    .container:has(#pending-tab) .dashboard-cards .card:nth-child(3) .card-content {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: 0 8px;
-    }
-    .container:has(#pending-tab) .dashboard-cards .card:nth-child(3) .aging-breakdown {
-        flex-basis: 100%;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0 10px;
-        margin: 2px 0 0 !important;
-    }
+    /* Reports has six overview tiles: always keep a compact two-column grid. */
+    .container:has(#reportHome) .dashboard-cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    .container:has(#reportHome) .dashboard-cards .card:nth-child(3),
+    .container:has(#reportHome) .dashboard-cards .card:nth-child(4) { grid-column: auto !important; }
     .advanced-search {
         padding: 8px 10px !important;
         margin: 0 0 8px !important;

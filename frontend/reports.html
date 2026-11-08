@@ -12,6 +12,10 @@
     <link rel="stylesheet" href="search.css">
     <link rel="stylesheet" href="themes.css">
     <link rel="stylesheet" href="mobile.css">
+    <link rel="stylesheet" href="item-card.css">
+    <link rel="stylesheet" href="export-center.css">
+    <link rel="stylesheet" href="reports.css">
+    <link rel="stylesheet" href="common-pagination.css">
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#121214">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -290,6 +294,41 @@
             gap: 9px;
             margin-bottom: 14px;
         }
+        /* Report overview: compact, equal-height cards with the label above the value. */
+        .dashboard-cards .card {
+            min-width: 0;
+            min-height: 76px;
+            padding: 8px 7px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+        }
+        .dashboard-cards .card-icon { display: none; }
+        .dashboard-cards .card-content {
+            width: 100%;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .dashboard-cards .card-content p {
+            order: 0;
+            margin: 0 0 3px;
+            text-align: center;
+            font-size: .78rem;
+            line-height: 1.2;
+        }
+        .dashboard-cards .card-content h3 {
+            order: 1;
+            margin: 0;
+            text-align: center;
+            font-size: 1.12rem;
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+        }
+        .dashboard-cards .stat-note { font-size: .65rem; text-align:center; margin:2px 0 0; }
 
         .card {
             background: var(--white);
@@ -1174,7 +1213,7 @@
             }
             
             .dashboard-cards {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
             
             .filters {
@@ -1380,9 +1419,6 @@
     <div class="container">
         <h2><i class="fas fa-chart-bar"></i> Advanced Inventory Reports & Analytics</h2>
         
-        <!-- Search (search.js): the same search box on every page; it narrows every tab below -->
-        <div id="alishan-search"></div>
-
         <!-- ================= DASHBOARD CARDS ================= -->
         <div class="dashboard-cards">
             <div class="card">
@@ -1402,17 +1438,6 @@
                 <div class="card-content">
                     <h3 id="totalItems">0</h3>
                     <p>Total Items in Stock</p>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="card-content">
-                    <h3 id="agingItems">0</h3>
-                    <p id="agingLabel">Aging Stock</p>
-                    <div class="aging-breakdown" id="agingBreakdown"></div>
                 </div>
             </div>
             
@@ -1458,6 +1483,10 @@
             </div>
         </div>
         
+
+        <!-- Search (search.js): the same search box on every page; it narrows every tab below -->
+        <div id="alishan-search"></div>
+
         <!-- ================= ADVANCED SEARCH SECTION ================= -->
         <div class="advanced-search">
             <div class="search-toggle" onclick="toggleAdvancedSearch()">
@@ -1533,11 +1562,12 @@
             </div>
         </div>
         
+
         <!-- ================= FILTERS ================= -->
-        <button type="button" class="filters-toggle" id="filtersToggle" aria-expanded="false" aria-controls="reportFilters">
+        <button type="button" class="filters-toggle rp-home-only" id="filtersToggle" aria-expanded="false" aria-controls="reportFilters">
             <i class="fas fa-filter"></i><span class="ft-title">Filters</span><span class="ft-sum" id="filtersSummary">All Time, All Products, All Qualities</span><i class="fas fa-chevron-down"></i>
         </button>
-        <div class="filters" id="reportFilters">
+        <div class="filters rp-home-only" id="reportFilters">
             <div class="filter-group">
                 <label for="timePeriod">Time Period</label>
                 <select id="timePeriod">
@@ -1548,7 +1578,6 @@
                     <option value="365">Last 365 Days</option>
                 </select>
             </div>
-            
             <div class="filter-group">
                 <label for="productType">Product Type</label>
                 <select id="productType">
@@ -1558,106 +1587,97 @@
                     <option value="set">Set</option>
                 </select>
             </div>
-            
             <div class="filter-group">
                 <label for="qualityFilter">Quality</label>
                 <select id="qualityFilter">
                     <option value="all">All Qualities</option>
-                    <!-- Options will be populated by JavaScript -->
                 </select>
             </div>
-            
             <button class="btn" onclick="applyFilters()">Apply Filters</button>
             <button class="btn btn-secondary" onclick="showExportModal()">Export Report</button>
         </div>
 
-        <!-- ================= PAGINATION CONTROLS ================= -->
-        <div class="pagination-controls" id="paginationControls" style="display: none;">
-            <button class="btn btn-secondary" onclick="prevPage()">
-                <i class="fas fa-chevron-left"></i> Previous
-            </button>
-            
-            <span id="pageInfo" class="page-info">Page 1 of 1</span>
-            
-            <button class="btn btn-secondary" onclick="nextPage()">
-                Next <i class="fas fa-chevron-right"></i>
-            </button>
-            
-            <select class="page-select" onchange="changeItemsPerPage(this.value)">
-                <option value="10">10 items</option>
-                <option value="20">20 items</option>
-                <option value="50" selected>50 items</option>
-                <option value="100">100 items</option>
-            </select>
-        </div>
+        <!-- ================= REPORT HOME: the eight report cards (ALISHAN-CHG-2026-11-06-003) ================= -->
+        <div class="rp-cards" id="reportHome"></div>
 
-        <!-- ================= TABS ================= -->
-        <div class="tabs">
-            <div class="tab active" data-tab="pending">Pending Amount Receival</div>
-            <div class="tab" data-tab="weekly">Weekly Reports</div>
-            <div class="tab" data-tab="history">Amount History</div>
-            <div class="tab" data-tab="valuation">Inventory Valuation</div>
-            <div class="tab" data-tab="aging">Stock Aging Analysis</div>
-        </div>
-
-        <!-- ================= PENDING AMOUNT TAB ================= -->
-        <div class="tab-content active" id="pending-tab">
-            <div class="section">
-                <div class="section-header">
-                    <div class="section-title">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <span>Pending Amount Receival</span>
-                    </div>
-                    <button class="btn" onclick="showAddAmountModal()">Add Amount Received</button>
-                </div>
-                
-                <div class="pending-cards-container" id="pendingCardsContainer">
-                    <!-- Cards will be populated by JavaScript -->
+        <!-- ================= ONE REPORT (opened from a card; address: reports.html#<report>) ================= -->
+        <div class="rp-view" id="reportView" hidden>
+            <div class="rp-view-head">
+                <button class="btn btn-secondary" id="rpBackToReports" type="button"><i class="fas fa-arrow-left"></i> Back to Reports</button>
+                <div class="rp-view-title"><h3 id="rpTitle"></h3><p id="rpSubtitle"></p></div>
+                <div class="rp-actions">
+                    <button class="btn" id="rpExport" type="button"><i class="fas fa-file-export"></i> Export Center</button>
+                    <button class="btn btn-secondary" id="rpExcel" type="button"><i class="fas fa-file-excel"></i> Excel</button>
                 </div>
             </div>
+            <div id="rpPeriod"></div>
+            <div id="rpFilters"></div>
+            <div id="rpSummary"></div>
+            <div id="rpNotes"></div>
+            <div id="rpCompare"></div>
+            <div id="rpBuckets"></div>
+            <div class="rp-charts" id="rpCharts"></div>
+            <div id="rpTable"></div>
+            <div class="pagination-controls" id="rpPagination" style="display:none" aria-label="Report results pagination"></div>
+            <div id="rpExtraWrap" hidden><div id="rpExtra"></div></div>
+        </div>
+
+        <!-- old section blocks wait here (hidden) and are shown inside the report that needs them -->
+        <div id="rpExistingStore" hidden>
+        <!-- ================= PENDING AMOUNT TAB ================= -->
+        <div class="tab-content" id="pending-tab">
+            <details class="rp-extra-card">
+                <summary><i class="fas fa-wallet"></i> Pending Amount Receival</summary>
+                <div class="rp-extra-card-body">
+                    <div class="section">
+                        <div class="section-header">
+                            <div class="section-title"><i class="fas fa-exclamation-triangle"></i><span>Pending Amount Receival</span></div>
+                            <button class="btn" onclick="showAddAmountModal()">Add Amount Received</button>
+                        </div>
+                        <div class="pending-cards-container" id="pendingCardsContainer"></div>
+                        <div class="pagination-controls" id="pendingExistingPagination" style="display:none" aria-label="Pending amount pagination"></div>
+                    </div>
+                </div>
+            </details>
         </div>
 
         <!-- ================= WEEKLY REPORTS TAB ================= -->
         <div class="tab-content" id="weekly-tab">
-            <div class="section">
-                <div class="section-header">
-                    <div class="section-title">
-                        <i class="fas fa-calendar-week"></i>
-                        <span>Weekly Amount Received</span>
+            <details class="rp-extra-card">
+                <summary><i class="fas fa-calendar-check"></i> Select Week</summary>
+                <div class="rp-extra-card-body">
+                    <div class="filter-group">
+                        <label for="weekSelection">Select Week</label>
+                        <select id="weekSelection" onchange="loadWeeklyData()">
+                            <!-- Options will be populated by JavaScript -->
+                        </select>
                     </div>
                 </div>
-                
-                <div class="filter-group">
-                    <label for="weekSelection">Select Week</label>
-                    <select id="weekSelection" onchange="loadWeeklyData()">
-                        <!-- Options will be populated by JavaScript -->
-                    </select>
+            </details>
+            <details class="rp-extra-card">
+                <summary><i class="fas fa-calendar-week"></i> Weekly Amount Received</summary>
+                <div class="rp-extra-card-body">
+                    <div class="weekly-cards-container" id="weeklyCardsContainer"></div>
+                    <div class="pagination-controls" id="weeklyHistoryPagination" style="display:none" aria-label="Weekly amount pagination"></div>
                 </div>
-                
-                <div class="weekly-cards-container" id="weeklyCardsContainer">
-                    <!-- Weekly cards will be populated by JavaScript -->
-                </div>
-            </div>
+            </details>
         </div>
 
         <!-- ================= AMOUNT HISTORY TAB ================= -->
         <div class="tab-content" id="history-tab">
-            <div class="section">
-                <div class="section-header">
-                    <div class="section-title">
-                        <i class="fas fa-history"></i>
-                        <span>Amount Received History</span>
-                    </div>
+            <details class="rp-extra-card">
+                <summary><i class="fas fa-history"></i> Amount Received History</summary>
+                <div class="rp-extra-card-body">
+                    <div class="amount-history" id="amountHistory"></div>
+                    <div class="pagination-controls" id="amountHistoryPagination" style="display:none" aria-label="Amount received history pagination"></div>
                 </div>
-                
-                <div class="amount-history" id="amountHistory">
-                    <!-- History items will be populated by JavaScript -->
-                </div>
-            </div>
+            </details>
         </div>
 
         <!-- ================= VALUATION TAB ================= -->
         <div class="tab-content" id="valuation-tab">
+            <details class="rp-extra-card"><summary><i class="fas fa-chart-line"></i> Inventory Valuation Details</summary>
+            <div class="rp-extra-card-body">
             <div class="section">
                 <div class="section-header">
                     <div class="section-title">
@@ -1699,10 +1719,14 @@
                     </table>
                 </div>
             </div>
+            </div>
+            </details>
         </div>
 
         <!-- ================= AGING ANALYSIS TAB ================= -->
         <div class="tab-content" id="aging-tab">
+            <details class="rp-extra-card"><summary><i class="fas fa-clock"></i> Inventory Aging Details</summary>
+            <div class="rp-extra-card-body">
             <div class="section">
                 <div class="section-header">
                     <div class="section-title">
@@ -1715,7 +1739,10 @@
                     <!-- Aging cards will be populated by JavaScript -->
                 </div>
             </div>
+            </div>
+            </details>
         </div>
+        </div><!-- /rpExistingStore -->
     </div>
 
     <!-- ================= ADD AMOUNT MODAL ================= -->
@@ -1827,9 +1854,13 @@
     <script src="loader.js"></script>
     <script src="calc.js"></script>
     <script src="store.js"></script>
+    <script src="common-pagination.js"></script>
     <script src="search.js"></script>
     <script src="item-form.js"></script>
     <script src="item-modal.js"></script>
+    <script src="item-card.js"></script>
+    <script src="report-engine.js"></script>
+    <script src="report-views.js"></script>
 <script>
         /* ============================================================
            Reports page — UI ONLY.
@@ -1863,6 +1894,9 @@
         // all drawn from that same list.
 
         function applyScope() {
+            // while a report is open its own filters choose the entries (report-views.js); on the home the old filters do
+            const viewScope = window.ReportViews ? ReportViews.scopeItems() : null;
+            if (viewScope) { scope = viewScope; return; }
             scope = AlishanStore.query({
                 period: activeFilters.timePeriod,
                 productType: activeFilters.productType,
@@ -1874,9 +1908,10 @@
         // Only the tab you are looking at is drawn. The others are marked "stale" and drawn the
         // moment you open them — so a big inventory no longer builds thousands of cards that
         // nobody is looking at (this was the main reason Reports felt slow).
-        const PAGE_STEP = 50;                       // long lists show 50 rows, then "Show more"
-        let pendingShown = PAGE_STEP;
-        let historyShown = PAGE_STEP;
+        const PAGE_STEP = 50;                       // default page size for legacy report sections
+        let pendingPage = 1, pendingPageSize = PAGE_STEP;
+        let historyPage = 1, historyPageSize = PAGE_STEP;
+        let weeklyPage = 1, weeklyPageSize = PAGE_STEP;
         let staleTabs = new Set();
 
         function drawWeeklyTab() { populateWeekSelection(); loadWeeklyData(); }
@@ -1890,6 +1925,7 @@
         };
 
         function currentTab() {
+            if (window.ReportViews) return ReportViews.currentExisting();     // '' on the home: nothing hidden is drawn
             const t = document.querySelector('.tab.active');
             return t ? t.getAttribute('data-tab') : 'pending';
         }
@@ -1903,8 +1939,7 @@
 
         function refreshAllReports(recomputeScope) {
             if (recomputeScope) applyScope();
-            pendingShown = PAGE_STEP;
-            historyShown = PAGE_STEP;
+            pendingPage = 1; historyPage = 1; weeklyPage = 1;
             staleTabs = new Set(Object.keys(TAB_DRAW));
             try { updateDashboard(); } catch (err) { console.error('Reports: cards failed', err); }
             drawTab(currentTab());
@@ -1915,9 +1950,9 @@
         async function initPage() {
             // makes sure every file is there (re-requests a file that did not load); search + loader are optional
             if (typeof AlishanRequire === 'function' && !(await AlishanRequire({
-                AlishanDB: 'db.js', AlishanCalc: 'calc.js', AlishanStore: 'store.js',
-                ItemForm: 'item-form.js', ItemModal: 'item-modal.js'
-            }, { AlishanSearch: 'search.js', AlishanLoader: 'loader.js' }))) return;
+                AlishanDB: 'db.js', AlishanCalc: 'calc.js', AlishanStore: 'store.js', CommonPagination: 'common-pagination.js',
+                ItemForm: 'item-form.js', ItemModal: 'item-modal.js', ReportEngine: 'report-engine.js', ReportViews: 'report-views.js'
+            }, { AlishanSearch: 'search.js', AlishanLoader: 'loader.js', ItemCard: 'item-card.js' }))) return;
             const info = await AlishanStore.init();         // qualities, colours, inventory, payments
             if (info.referenceError) showNotification(info.referenceError, 'error');
             if (info.damaged) showNotification(`${info.damaged} damaged item(s) were set aside and backed up.`, 'warning');
@@ -1927,12 +1962,14 @@
             if (typeof AlishanSearch !== 'undefined') AlishanSearch.init({ onSearch });   // the shared search box (search.js)
             refreshAllReports(true);
             checkLowStock();
+            if (window.ReportViews) ReportViews.init();          // the eight report cards / the open report
 
             // redraw whenever the store changes: a payment, a stock toggle (also from the
             // Aging tab button), an edit in another page or another tab ...
             AlishanStore.subscribe(() => {
                 populateFilters();
                 refreshAllReports(true);
+                if (window.ReportViews) ReportViews.onDataChanged();
             });
         }
 
@@ -2002,6 +2039,7 @@
         // called by search.js whenever a search is run (or cleared): the search narrows every tab
         function onSearch(term) {
             refreshAllReports(true);
+            if (window.ReportViews) ReportViews.onSearchChanged();
             if (term) showNotification(`Found ${scope.length} items matching "${term}"`, 'info');
         }
 
@@ -2013,9 +2051,8 @@
 
             document.getElementById('totalValue').textContent = AlishanCalc.fmtMoney(summary.totalValue);
             document.getElementById('totalItems').textContent = summary.totalItems;
-            document.getElementById('agingItems').textContent = summary.agingItems;
-            document.getElementById('agingLabel').textContent = `Aging Stock (>${C.AGING_AFTER_DAYS} Days, In Stock)`;
-            document.getElementById('agingBreakdown').innerHTML = AlishanCalc.agingBreakdownHTML(summary);
+            // Aging Stock was intentionally removed from the six-card Report overview.
+            // Keep the separate Aging Report; do not update DOM nodes that no longer exist.
             document.getElementById('weeklyAdded').textContent = summary.addedThisWeek;
             document.getElementById('receivedAmount').textContent = AlishanCalc.fmtMoney(summary.received);
             document.getElementById('pendingAmount').textContent = AlishanCalc.fmtMoney(summary.pending);
@@ -2082,23 +2119,15 @@
             return card;
         }
 
-        function moreButtonHTML(kind, shown, total) {
-            return `<div style="text-align:center; padding:14px;">
-                        <button type="button" class="btn" onclick="showMore('${kind}')">
-                            Show ${Math.min(PAGE_STEP, total - shown)} more (${total - shown} left)
-                        </button>
-                    </div>`;
-        }
-
-        function showMore(kind) {
-            if (kind === 'pending') { pendingShown += PAGE_STEP; loadPendingAmounts(); }
-            else { historyShown += PAGE_STEP; loadAmountHistory(); }
+        function renderExistingPagination(id, page, pageSize, total, onPageChange, onPageSizeChange) {
+            const host = document.getElementById(id);
+            if (!host || !window.CommonPagination) return;
+            CommonPagination.render(host, { page, pageSize, total, onPageChange, onPageSizeChange });
         }
 
         function loadPendingAmounts() {
             const container = document.getElementById('pendingCardsContainer');
             container.innerHTML = '';
-
             const pending = AlishanStore.pendingList(scope);
             if (pending.length === 0) {
                 container.innerHTML = `
@@ -2107,12 +2136,18 @@
                         <h3>No Pending Amounts</h3>
                         <p>All amounts have been received</p>
                     </div>`;
+                renderExistingPagination('pendingExistingPagination', 1, pendingPageSize, 0, () => {}, () => {});
                 return;
             }
+            const pages = Math.max(1, Math.ceil(pending.length / pendingPageSize));
+            pendingPage = Math.min(pages, Math.max(1, pendingPage));
+            const start = (pendingPage - 1) * pendingPageSize;
             const fragment = document.createDocumentFragment();
-            pending.slice(0, pendingShown).forEach(card => fragment.appendChild(createPendingCard(card)));
+            pending.slice(start, start + pendingPageSize).forEach(card => fragment.appendChild(createPendingCard(card)));
             container.appendChild(fragment);
-            if (pending.length > pendingShown) container.insertAdjacentHTML('beforeend', moreButtonHTML('pending', pendingShown, pending.length));
+            renderExistingPagination('pendingExistingPagination', pendingPage, pendingPageSize, pending.length,
+                page => { pendingPage = page; loadPendingAmounts(); },
+                size => { pendingPageSize = size; pendingPage = 1; loadPendingAmounts(); });
         }
 
         function filterResults(status, event = null) {
@@ -2216,7 +2251,9 @@
             const previous = select.value;
             select.innerHTML = '';
 
-            const weeks = AlishanStore.weekOptions(scope);
+            // inside the Payment Report only weeks that have a payment in its date / amount range are offered
+            const inRange = (p) => !window.ReportViews || ReportViews.paymentInRange(p.date, p.amount);
+            const weeks = AlishanStore.weekOptions(scope).filter(w => AlishanStore.weeklyReport(scope, w.key).days.some(d => d.entries.some(({ payment }) => inRange(payment))));
             if (weeks.length === 0) {
                 const option = document.createElement('option');
                 option.value = '';
@@ -2237,16 +2274,25 @@
             const selectedWeek = document.getElementById('weekSelection').value;
             const container = document.getElementById('weeklyCardsContainer');
             container.innerHTML = '';
-            if (!selectedWeek) return;
+            weeklyPage = 1;
+            if (!selectedWeek) {
+                renderExistingPagination('weeklyHistoryPagination', 1, weeklyPageSize, 0, () => {}, () => {});
+                return;
+            }
 
-            const report = AlishanStore.weeklyReport(scope, selectedWeek);
-            if (report.days.length === 0) {
+            const rawReport = AlishanStore.weeklyReport(scope, selectedWeek);
+            const inRange = (p) => !window.ReportViews || ReportViews.paymentInRange(p.date, p.amount);
+            const days = rawReport.days.map(d => ({ ...d, entries: d.entries.filter(({ payment }) => inRange(payment)) })).filter(d => d.entries.length);
+            const report = { ...rawReport, days, total: AlishanCalc.round2(days.reduce((t, d) => t + d.entries.reduce((x, { payment }) => x + payment.amount, 0), 0)) };
+            const entries = [...report.days].reverse().flatMap(day => day.entries.map(entry => ({ ...entry, day })));
+            if (entries.length === 0) {
                 container.innerHTML = `
                     <div style="text-align: center; padding: 40px; color: var(--gray);">
                         <i class="fas fa-calendar-times" style="font-size: 3rem; margin-bottom: 15px;"></i>
                         <h3>No Data Available</h3>
                         <p>No amount received data for selected week</p>
                     </div>`;
+                renderExistingPagination('weeklyHistoryPagination', 1, weeklyPageSize, 0, () => {}, () => {});
                 return;
             }
 
@@ -2261,37 +2307,63 @@
                 <div class="week-cards"></div>`;
             container.appendChild(section);
             const cards = section.querySelector('.week-cards');
-
-            [...report.days].reverse().forEach(day => {
-                day.entries.forEach(({ payment, item }) => {
-                    const card = document.createElement('div');
-                    card.className = 'week-card';
-                    card.innerHTML = `
-                        <div class="week-card-header">
-                            <div class="week-card-title">${escapeHtml(payment.quality)}</div>
-                            <div class="week-card-date">${AlishanCalc.fmtDate(day.date)}</div>
-                        </div>
-                        <div class="week-card-details">
-                            <div>Lot: ${item ? escapeHtml(item.lotNumber || 'N/A') : 'N/A'} <span class="unique-code">${item ? escapeHtml(item.code || '') : ''}</span></div>
-                            <div>Type: ${item ? escapeHtml(item.productType) : 'N/A'}</div>
-                            <div class="week-card-amount">${AlishanCalc.fmtMoney(payment.amount)}</div>
-                        </div>`;
-                    cards.appendChild(card);
-                });
+            const totalPages = Math.max(1, Math.ceil(entries.length / weeklyPageSize));
+            weeklyPage = Math.min(totalPages, Math.max(1, weeklyPage));
+            const pageEntries = entries.slice((weeklyPage - 1) * weeklyPageSize, weeklyPage * weeklyPageSize);
+            pageEntries.forEach(({ payment, item, day }) => {
+                const card = document.createElement('div');
+                card.className = 'week-card';
+                card.innerHTML = `
+                    <div class="week-card-header">
+                        <div class="week-card-title">${escapeHtml(payment.quality)}</div>
+                        <div class="week-card-date">${AlishanCalc.fmtDate(day.date)}</div>
+                    </div>
+                    <div class="week-card-details">
+                        <div>Lot: ${item ? escapeHtml(item.lotNumber || 'N/A') : 'N/A'} <span class="unique-code">${item ? escapeHtml(item.code || '') : ''}</span></div>
+                        <div>Type: ${item ? escapeHtml(item.productType) : 'N/A'}</div>
+                        <div class="week-card-amount">${AlishanCalc.fmtMoney(payment.amount)}</div>
+                    </div>`;
+                cards.appendChild(card);
             });
+            renderExistingPagination('weeklyHistoryPagination', weeklyPage, weeklyPageSize, entries.length,
+                page => { weeklyPage = page; renderWeeklyPage(entries, report, selectedWeek); },
+                size => { weeklyPageSize = size; weeklyPage = 1; renderWeeklyPage(entries, report, selectedWeek); });
+        }
+
+        function renderWeeklyPage(entries, report, selectedWeek) {
+            const container = document.getElementById('weeklyCardsContainer');
+            container.innerHTML = '';
+            const [weekNum, year] = selectedWeek.split('-');
+            const section = document.createElement('div');
+            section.className = 'week-section';
+            section.innerHTML = `<div class="week-header"><div class="week-title">Week ${weekNum}, ${year}</div><div class="week-total">Total: ${AlishanCalc.fmtMoney(report.total)}</div></div><div class="week-cards"></div>`;
+            container.appendChild(section);
+            const cards = section.querySelector('.week-cards');
+            const totalPages = Math.max(1, Math.ceil(entries.length / weeklyPageSize));
+            weeklyPage = Math.min(totalPages, Math.max(1, weeklyPage));
+            entries.slice((weeklyPage - 1) * weeklyPageSize, weeklyPage * weeklyPageSize).forEach(({ payment, item, day }) => {
+                const card = document.createElement('div'); card.className = 'week-card';
+                card.innerHTML = `<div class="week-card-header"><div class="week-card-title">${escapeHtml(payment.quality)}</div><div class="week-card-date">${AlishanCalc.fmtDate(day.date)}</div></div><div class="week-card-details"><div>Lot: ${item ? escapeHtml(item.lotNumber || 'N/A') : 'N/A'} <span class="unique-code">${item ? escapeHtml(item.code || '') : ''}</span></div><div>Type: ${item ? escapeHtml(item.productType) : 'N/A'}</div><div class="week-card-amount">${AlishanCalc.fmtMoney(payment.amount)}</div></div>`;
+                cards.appendChild(card);
+            });
+            renderExistingPagination('weeklyHistoryPagination', weeklyPage, weeklyPageSize, entries.length,
+                page => { weeklyPage = page; renderWeeklyPage(entries, report, selectedWeek); },
+                size => { weeklyPageSize = size; weeklyPage = 1; renderWeeklyPage(entries, report, selectedWeek); });
         }
 
         function loadAmountHistory() {
             const container = document.getElementById('amountHistory');
             container.innerHTML = '';
-
-            const history = AlishanStore.paymentHistory(scope);
+            const history = AlishanStore.paymentHistory(scope).filter(h => !window.ReportViews || ReportViews.paymentInRange(h.payment.date, h.payment.amount));
             if (history.length === 0) {
                 container.innerHTML = '<p>No amount received history</p>';
+                renderExistingPagination('amountHistoryPagination', 1, historyPageSize, 0, () => {}, () => {});
                 return;
             }
+            const totalPages = Math.max(1, Math.ceil(history.length / historyPageSize));
+            historyPage = Math.min(totalPages, Math.max(1, historyPage));
             const fragment = document.createDocumentFragment();
-            history.slice(0, historyShown).forEach(({ payment, item, weekLabel, expected }) => {
+            history.slice((historyPage - 1) * historyPageSize, historyPage * historyPageSize).forEach(({ payment, item, weekLabel, expected }) => {
                 const row = document.createElement('div');
                 row.className = 'history-item';
                 row.innerHTML = `
@@ -2299,23 +2371,15 @@
                         <div class="history-quality">${escapeHtml(payment.quality)} ${item ? `- ${escapeHtml(item.lotNumber || 'No Lot')}` : ''} <span class="unique-code">${item ? escapeHtml(item.code || '') : ''}</span></div>
                         <div class="history-date">${AlishanCalc.fmtDate(payment.date)} • ${weekLabel}</div>
                         ${payment.notes ? `<div class="history-notes">${escapeHtml(payment.notes)}</div>` : ''}
-                        ${item ? `
-                            <div class="entry-details">
-                                <div class="entry-detail"><span>Product Type:</span> <span>${escapeHtml(item.productType)}</span></div>
-                                <div class="entry-detail"><span>Quantity:</span> <span>${AlishanCalc.fmtDozens(AlishanCalc.itemDozens(item))} dozens</span></div>
-                                <div class="entry-detail"><span>Expected Amount:</span> <span>${AlishanCalc.fmtMoney(expected)}</span></div>
-                            </div>` : ''}
+                        ${item ? `<div class="entry-details"><div class="entry-detail"><span>Product Type:</span> <span>${escapeHtml(item.productType)}</span></div><div class="entry-detail"><span>Quantity:</span> <span>${AlishanCalc.fmtDozens(AlishanCalc.itemDozens(item))} dozens</span></div><div class="entry-detail"><span>Expected Amount:</span> <span>${AlishanCalc.fmtMoney(expected)}</span></div></div>` : ''}
                     </div>
-                    <div>
-                        <div class="history-amount">${AlishanCalc.fmtMoney(payment.amount)}</div>
-                        <button class="btn btn-danger btn-sm" onclick="deleteAmountEntry(${payment.id})" style="margin-top: 5px;">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </div>`;
+                    <div><div class="history-amount">${AlishanCalc.fmtMoney(payment.amount)}</div><button class="btn btn-danger btn-sm" onclick="deleteAmountEntry('${payment.id}')" style="margin-top: 5px;"><i class="fas fa-trash"></i> Delete</button></div>`;
                 fragment.appendChild(row);
             });
             container.appendChild(fragment);
-            if (history.length > historyShown) container.insertAdjacentHTML('beforeend', moreButtonHTML('history', historyShown, history.length));
+            renderExistingPagination('amountHistoryPagination', historyPage, historyPageSize, history.length,
+                page => { historyPage = page; loadAmountHistory(); },
+                size => { historyPageSize = size; historyPage = 1; loadAmountHistory(); });
         }
 
         // ================= VALUATION / QUALITY (charts) =================

@@ -1515,3 +1515,16 @@ nav ul {
 .aging-quality-row{grid-template-columns:minmax(0,1fr) auto auto}
 .aging-breakdown-empty{padding:.65rem .3rem;color:var(--gray);font-size:.78rem}
 @media(max-width:560px){.aging-quality-row{grid-template-columns:minmax(0,1fr) auto}.aging-quality-row .breakdown-quality-values{grid-column:1/-1;flex-direction:row;justify-content:space-between;text-align:left}.aging-days-count{grid-column:2;grid-row:1}}
+
+/* Home > In Stock Items: row + Complete button (ALISHAN-CHG-2026-11-02-005) */
+.breakdown-quality-item { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.5rem; align-items:stretch; }
+.breakdown-complete-btn { display:inline-flex; align-items:center; justify-content:center; gap:.4rem; padding:.5rem .95rem; border:1px solid var(--primary); border-radius:10px; background:color-mix(in srgb,var(--primary) 12%,var(--white)); color:var(--primary); font:inherit; font-weight:800; cursor:pointer; transition:filter .18s,transform .18s; }
+.breakdown-complete-btn:hover { filter:brightness(1.07); transform:translateY(-1px); }
+.breakdown-complete-btn:disabled { opacity:.6; cursor:progress; }
+@media (max-width:520px) { .breakdown-quality-item { grid-template-columns:1fr; } .breakdown-complete-btn { padding:.6rem; } }
+
+/* Product Type Breakdown: See more + full quality list (ALISHAN-CHG-2026-11-04-006) */
+.top-quality-more { display:flex; align-items:center; justify-content:center; gap:.4rem; width:100%; margin-top:.55rem; padding:.6rem .8rem; border:1px dashed var(--primary); border-radius:10px; background:transparent; color:var(--accent-text,var(--primary)); font:inherit; font-size:.82rem; font-weight:800; cursor:pointer; }
+.top-quality-more:hover { background:var(--light-gray); }
+.top-quality-more small { font-weight:700; opacity:.8; }
+.top-quality-full-list .top-quality-row + .top-quality-row { margin-top:.45rem; }

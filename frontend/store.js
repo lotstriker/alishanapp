@@ -136,6 +136,27 @@ var AlishanStore = (() => {
         }
     }
 
+    // Complete entries saved before v75 have no completion date. Where Quality History holds a real "Quality Completed"
+    // record of that quality, its time is used. Nothing is guessed: an entry without such a record stays without a date.
+    async function backfillCompletionDates() {
+        const missing = items.filter(i => i.inStock === false && !i.completedAt && i.code);
+        if (!missing.length) return;
+        let history;
+        try { history = await AlishanDB.getQualityHistory(); } catch (e) { return; }
+        const latest = new Map();
+        (history || []).map(normalizeQualityHistory).forEach(r => {
+            if (r.action !== 'Quality Completed' || !r.qualityCode) return;
+            const seen = latest.get(String(r.qualityCode));
+            if (!seen || new Date(r.at) > new Date(seen.at)) latest.set(String(r.qualityCode), r);
+        });
+        for (const item of missing) {
+            const record = latest.get(String(item.code));
+            if (!record || isNaN(new Date(record.at))) continue;
+            item.completedAt = new Date(record.at).toISOString();
+            try { await AlishanDB.saveInventoryItem(item); } catch (e) { console.error('Could not save completion date:', e); delete item.completedAt; }
+        }
+    }
+
     async function loadPayments(preloaded) {
         const all = preloaded || (await AlishanDB.getPayments()) || [];
         const ids = new Set(items.map(i => String(i.id)));
@@ -143,7 +164,7 @@ var AlishanStore = (() => {
         orphanPayments = all.filter(p => !ids.has(String(p.inventoryId)));
     }
 
-    const savePayments = () => AlishanDB.savePayments([...payments, ...orphanPayments]);
+    // payments are saved one record at a time (AlishanDB.appendPayment / removePayment), never by rewriting the whole store
 
     function init() {
         if (initPromise) return initPromise;
@@ -154,6 +175,7 @@ var AlishanStore = (() => {
                 loadReference(), AlishanDB.getInventory(), AlishanDB.getPayments()
             ]);
             await loadInventory(rawItems);
+            await backfillCompletionDates();
             await loadPayments(rawPayments);
             await loadAliases();
 
@@ -213,29 +235,92 @@ var AlishanStore = (() => {
         try { return await AlishanDB.getRecentActivity(limit); } catch (e) { return []; }
     }
 
+    // Colours and size cells of an entry as lists: { colours: ['RED'], sizes: [{ colour, size, text }] }
+    function qualityDetail(item) {
+        const colours = (item.colors || []).map(c => (typeof c === 'object' ? c.name : c));
+        const sizes = [];
+        const addSizes = (label, source) => Object.keys(source || {})
+            .filter(k => /^size\d+$/.test(k))
+            .sort((a, b) => Number(a.slice(4)) - Number(b.slice(4)))
+            .forEach(k => {
+                const dozens = Number(source[k]) || 0, pcs = Number(source[k + '_pieces']) || 0;
+                if (dozens || pcs) sizes.push({ colour: label, size: k.slice(4), text: `${dozens} dozen ${pcs} pcs` });
+            });
+        if (item.sizeOption === 'different') (item.colors || []).forEach(c => addSizes(c.name || 'Colour', c.sizes));
+        else addSizes('All colours', item);
+        return { colours, sizes };
+    }
+
+    // Lists ONLY what changed between two snapshots: one row per changed field, per changed colour and per changed size
+    // cell (e.g. "Size Quantities · D-GRAY 30: 2 dozen 0 pcs -> 3 dozen 0 pcs"). A colour that was only renamed shows
+    // as one row, and its unchanged sizes are not listed again. (ALISHAN-CHG-2026-11-04-007)
+    function diffSnapshots(before, after) {
+        const show = v => (v === undefined || v === null || v === '' ? '—' : String(v));
+        const changes = [];
+        Object.keys(after).filter(f => f !== 'Colours' && f !== 'Size Quantities').forEach(field => {
+            if (String(before[field] ?? '') !== String(after[field] ?? '')) changes.push({ field, oldValue: show(before[field]), newValue: show(after[field]) });
+        });
+
+        const was = before.__detail || { colours: [], sizes: [] };
+        const now = after.__detail || { colours: [], sizes: [] };
+        const removed = was.colours.filter(c => !now.colours.includes(c));
+        const added = now.colours.filter(c => !was.colours.includes(c));
+        const renamed = {};
+        if (removed.length && removed.length === added.length) {
+            removed.forEach((name, i) => { renamed[name] = added[i]; changes.push({ field: 'Colours', oldValue: name, newValue: added[i] }); });
+        } else {
+            removed.forEach(name => changes.push({ field: 'Colours', oldValue: name, newValue: '—' }));
+            added.forEach(name => changes.push({ field: 'Colours', oldValue: '—', newValue: name }));
+        }
+
+        const keyOf = (colour, size) => `${colour}\u0001${size}`;
+        const oldCells = new Map(was.sizes.map(x => [keyOf(renamed[x.colour] || x.colour, x.size), x]));
+        const newCells = new Map(now.sizes.map(x => [keyOf(x.colour, x.size), x]));
+        const keys = [...newCells.keys(), ...[...oldCells.keys()].filter(k => !newCells.has(k))];
+        keys.forEach(key => {
+            const o = oldCells.get(key), n = newCells.get(key);
+            if ((o && o.text) === (n && n.text)) return;
+            const ref = n || o;
+            changes.push({ field: `Size Quantities · ${ref.colour} ${ref.size}`, oldValue: show(o && o.text), newValue: show(n && n.text) });
+        });
+        return changes;
+    }
+
     function qualitySnapshot(item) {
         const snap = {
             'Quality': item.quality || '', 'Product Type': item.productType || '',
             'Cup': item.cupSize || '', 'Lot Number': item.lotNumber || '',
             'Maal Gaya': item.maalGaya || item.maalGayaTo || '',
             'Material / Meter': item.material || '', 'Weight': item.weight || '',
-            'Notes': item.notes || '', 'Status': item.inStock === false ? 'Incomplete' : 'Complete',
+            'Notes': item.notes || '', 'Status': item.inStock === false ? 'Complete' : 'Incomplete', 'Completion Date': item.completedAt ? C.fmtDate(item.completedAt) : '',   // Complete = out of stock (ALISHAN-CHG-2026-11-02-005)
             'Colours': (item.colors || []).map(c => typeof c === 'object' ? c.name : c).join(', ')
         };
-        const sizeParts = [];
-        const addSizes = (label, sizes) => Object.keys(sizes || {}).filter(k => /^size\d+$/.test(k)).sort((a,b)=>Number(a.slice(4))-Number(b.slice(4))).forEach(k => {
-            const d = Number(sizes[k]) || 0, pcs = Number(sizes[k + '_pieces']) || 0;
-            if (d || pcs) sizeParts.push(`${label} ${k.slice(4)}: ${d} dozen ${pcs} pcs`);
-        });
-        if (item.sizeOption === 'different') (item.colors || []).forEach(c => addSizes(c.name || 'Colour', c.sizes));
-        else addSizes('All colours', item);
-        snap['Size Quantities'] = sizeParts.join('; ');
+        const detail = qualityDetail(item);
+        snap['Size Quantities'] = detail.sizes.map(x => `${x.colour} ${x.size}: ${x.text}`).join('; ');
+        // the structured form is kept (not listed as a field) so a change can be shown cell by cell
+        Object.defineProperty(snap, '__detail', { value: detail, enumerable: false });
         return snap;
     }
     async function writeQualityHistory(item, action, before, after) {
         try {
-            await AlishanDB.logQualityHistory({ qualityId: item.id, qualityCode: item.code || '', qualityName: item.quality || '', productType: item.productType || '', action, actor: 'Current user', changes: before && after ? Object.keys(after).filter(k => String(before[k] ?? '') !== String(after[k] ?? '')).map(field => ({ field, oldValue: String(before[field] ?? '—'), newValue: String(after[field] ?? '—') })) : Object.entries(after || before || {}).map(([field, value]) => ({ field, oldValue: before ? String(value ?? '—') : '—', newValue: after ? String(value ?? '—') : 'Deleted' })) });
+            await AlishanDB.logQualityHistory({ qualityId: item.id, qualityCode: item.code || '', qualityName: item.quality || '', productType: item.productType || '', action, statusModel: 2, actor: 'Current user', changes: before && after ? diffSnapshots(before, after) : Object.entries(after || before || {}).map(([field, value]) => ({ field, oldValue: before ? String(value ?? '—') : '—', newValue: after ? String(value ?? '—') : 'Deleted' })) });
         } catch (e) { console.error('Could not save quality history:', e); }
+    }
+    // Removes ONE history record only (never touches inventory or payments)
+    async function deleteQualityHistory(id) {
+        try { await AlishanDB.remove('auditLog', id); return { ok: true }; }
+        catch (e) { console.error('Could not delete history record:', e); return { ok: false, error: 'Could not delete this history record. Please try again.' }; }
+    }
+    // Old history records (saved before statusModel 2) had Complete / Incomplete the wrong way round. They are corrected
+    // only when shown or exported; the saved record is never changed. Used by Quality History and the Export Center.
+    function normalizeQualityHistory(record) {
+        if (record.statusModel === 2) return record;
+        const swap = v => (v === 'Complete' ? 'Incomplete' : v === 'Incomplete' ? 'Complete' : v);
+        const fixed = { ...record };
+        if (fixed.action === 'Quality Completed') fixed.action = 'Quality Marked Incomplete';
+        else if (fixed.action === 'Quality Marked Incomplete') fixed.action = 'Quality Completed';
+        fixed.changes = (record.changes || []).map(c => (c.field === 'Status' ? { ...c, oldValue: swap(c.oldValue), newValue: swap(c.newValue) } : c));
+        return fixed;
     }
     async function getQualityHistory() { try { return await AlishanDB.getQualityHistory(); } catch (e) { return []; } }
     const missingLotItems = () => items.filter(i => !String(i.lotNumber || '').trim()).sort((a,b)=>new Date(b.dateTime)-new Date(a.dateTime));
@@ -316,35 +401,70 @@ var AlishanStore = (() => {
         const item = getItem(id);
         if (!item) return fail('Item not found');
         const beforeSnapshot = qualitySnapshot(item);
+        const hadCompletedAt = item.completedAt;
         item.inStock = !item.inStock;
+        // Complete (out of stock) = the goods went: remember the moment. Back in stock = no completion date.
+        if (item.inStock) delete item.completedAt; else item.completedAt = new Date().toISOString();
         try {
             await AlishanDB.saveInventoryItem(item);          // only this entry is written
         } catch (err) {
             console.error('Failed to save inventory:', err);
-            const beforeSnapshot = qualitySnapshot(item);
-        item.inStock = !item.inStock;
+            item.inStock = !item.inStock;                    // put it back, nothing was saved
+            if (hadCompletedAt === undefined) delete item.completedAt; else item.completedAt = hadCompletedAt;
             return fail('Could not save your changes! Please try again.');
         }
-        await writeQualityHistory(item, item.inStock ? 'Quality Completed' : 'Quality Marked Incomplete', beforeSnapshot, qualitySnapshot(item));
+        await writeQualityHistory(item, item.inStock ? 'Quality Marked Incomplete' : 'Quality Completed', beforeSnapshot, qualitySnapshot(item));
         logActivity('stock', `${item.quality} ${item.productType} marked ${item.inStock ? 'In Stock' : 'Out of Stock'}`);
         emit('stock');
         return { ok: true, item, message: `Item marked as ${item.inStock ? 'In Stock' : 'Out of Stock'}` };
     }
 
+    // Missing Completion Date page: the owner types the day the goods went for an older Complete quality (v77).
+    // Same rules as the Edit box: not in the future, not before the entry day. Written to Quality History like an edit.
+    async function setCompletionDate(id, day) {
+        const item = getItem(id);
+        if (!item) return fail('Quality not found');
+        if (item.inStock !== false) return fail('Only a Complete quality has a completion date');
+        const stamp = C.completionStamp(day, item.completedAt);
+        if (!stamp.ok) return stamp;
+        if (day < C.localDate(C.parseDate(item.dateTime))) return fail('Completion date cannot be before the entry date.');
+        const beforeSnapshot = qualitySnapshot(item);
+        const had = item.completedAt;
+        item.completedAt = stamp.iso;
+        try {
+            await AlishanDB.saveInventoryItem(item);
+        } catch (err) {
+            console.error('Failed to save completion date:', err);
+            if (had === undefined) delete item.completedAt; else item.completedAt = had;
+            return fail('Could not save the completion date! Please try again.');
+        }
+        await writeQualityHistory(item, 'Quality Updated', beforeSnapshot, qualitySnapshot(item));
+        logActivity('edit', `${item.quality} ${item.productType} completion date set`);
+        emit('stock');
+        return { ok: true, item, message: 'Completion date saved' };
+    }
+
     // ================= payments =================
 
     async function addPayment(input) {
-        const built = C.buildPayment(getItem(input.inventoryId), payments, input);
+        const item = getItem(input.inventoryId);
+        const built = C.buildPayment(item, payments, input);
         if (!built.ok) return built;
 
-        payments.push(built.entry);
+        // saved as ONE record, re-checked against what is really stored (another tab may have added a payment)
+        let saved;
         try {
-            await savePayments();
+            saved = await AlishanDB.appendPayment(built.entry, C.paymentStatus(item, payments).expected);
         } catch (err) {
-            console.error('Failed to save payments:', err);
-            payments.pop();
+            console.error('Failed to save payment:', err);
             return fail('Could not save the payment! Please try again.');
         }
+        if (!saved.ok) {
+            await loadPayments();                      // show the latest saved payments
+            emit('external');
+            return fail(`Amount exceeds the pending value! Already received: ${C.fmtMoney(saved.received)}, pending: ${C.fmtMoney(saved.pending)}. Another tab may have saved a payment for this quality.`);
+        }
+        if (!payments.some(p => String(p.id) === String(built.entry.id))) payments.push(built.entry);
         emit('payment');
         return { ok: true, payment: built.entry, message: built.message };
     }
@@ -352,14 +472,14 @@ var AlishanStore = (() => {
     async function deletePayment(id) {
         const idx = payments.findIndex(p => String(p.id) === String(id));
         if (idx < 0) return fail('Payment not found');
-        const removed = payments.splice(idx, 1)[0];
+        const removed = payments[idx];
         try {
-            await savePayments();
+            await AlishanDB.removePayment(removed.id);   // only this record is removed
         } catch (err) {
-            console.error('Failed to save payments:', err);
-            payments.splice(idx, 0, removed);
+            console.error('Failed to delete payment:', err);
             return fail('Could not save the payment! Please try again.');
         }
+        payments = payments.filter(p => String(p.id) !== String(removed.id));
         emit('payment');
         return { ok: true, message: 'Amount entry deleted successfully!' };
     }
@@ -423,6 +543,12 @@ var AlishanStore = (() => {
     const parseBulk = (text, defaults) => C.parseBulkJson(text, defaults, importRef());
     // colours of the app that could replace an unknown colour: [{ name, displayName }]
     const closeColors = (name) => { const ref = importRef(); return C.nameSuggestions(name, ref.colorNames, ref.colorAliases).map(n => ({ name: n, displayName: colorDisplayName(n) })); };
+    // ONE list of colour choices for "replace this colour with ..." (Edit form AND Bulk Import use it):
+    // close suggestions first, then every colour, leaving out the colours that are already taken.
+    const colorChoices = (name, taken) => {
+        const blocked = taken instanceof Set ? taken : new Set(taken || []);
+        return { suggestions: closeColors(name).filter(c => !blocked.has(c.name)), all: getColors().filter(c => !blocked.has(c.name)) };
+    };
     const typeOfQuality = (name) => importRef().typeOfQuality(name);
     // [{ name, price, type }] for "Did you mean ...?" buttons
     const closeQualities = (name) => {
@@ -633,7 +759,7 @@ var AlishanStore = (() => {
         getQualityData, getColors, getColorStyle, getColorStyleSafe, colorDisplayName, getPrice,
         // read
         getItems, getItem, hasItems, itemCount, getPayments, query, summary, paginate, typeStats,
-        qualityOptions, lowStockItems, itemPayment, getRecentActivity, getQualityHistory, missingLotItems,
+        qualityOptions, lowStockItems, itemPayment, getRecentActivity, getQualityHistory, deleteQualityHistory, missingLotItems,
         // change entries
         addItem, updateItem, deleteItem, toggleStock,
         // payments
@@ -641,10 +767,20 @@ var AlishanStore = (() => {
         // report data
         pendingList, paymentCards, advancedPaymentSearch, weekOptions, weeklyReport, paymentHistory,
         valuationTrend, qualitySummary, agingReport, exportRows,
+        // export center
+        exportFilterItems: (f, byDate) => C.exportFilterItems(items, payments, f, byDate),
+        exportSizeRows: scope => C.exportSizeRows(scope),
+        exportTotals: rows => C.exportTotals(rows),
+        exportInRange: (value, from, to) => C.exportInRange(value, from, to),
+        exportParseDate: value => C.exportParseDate(value),
+        normalizeQualityHistory,
+        completionInfo: item => C.completionInfo(item),
+        setCompletionDate,
+        missingCompletionItems: () => items.filter(i => i.inStock === false && !i.completedAt).sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime)),
         // search data
         suggest, getSearchHistory, getSearchAnalytics, recordSearch, clearSearchHistory,
         // bulk import (AI JSON) with review
-        parseBulk, getProductTypes, rememberAlias, typeOfQuality, closeQualities, closeColors, checkImportDraft, batchDuplicateIds, importTotals, aiPrompt, importEntries, undoImport, listImportBatches,
+        parseBulk, getProductTypes, rememberAlias, typeOfQuality, closeQualities, closeColors, colorChoices, checkImportDraft, batchDuplicateIds, importTotals, aiPrompt, importEntries, undoImport, listImportBatches,
         // backups
         backupFile, createBackup, listBackups, getBackupSettings, saveBackupSettings,
         inspectBackup, importBackup, restoreBackup

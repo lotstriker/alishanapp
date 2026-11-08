@@ -9,6 +9,7 @@
     <script src="icons.js"></script>
     
     <link rel="stylesheet" href="inventory.css">
+    <link rel="stylesheet" href="common-pagination.css">
     <link rel="stylesheet" href="item-form.css">
     <link rel="stylesheet" href="item-card.css">
     <link rel="stylesheet" href="item-modal.css">
@@ -76,24 +77,7 @@
                 <!-- Inventory cards will be added here dynamically -->
             </div>
 
-            <div class="pagination-controls" id="paginationControls" style="display: none;">
-                <button class="btn btn-secondary" onclick="prevPage()">
-                    <i class="fas fa-chevron-left"></i> Previous
-                </button>
-                
-                <span id="pageInfo" class="page-info">Page 1 of 1</span>
-                
-                <button class="btn btn-secondary" onclick="nextPage()">
-                    Next <i class="fas fa-chevron-right"></i>
-                </button>
-                
-                <select class="page-select" onchange="changeItemsPerPage(this.value)">
-                    <option value="10">10 items</option>
-                    <option value="20">20 items</option>
-                    <option value="50" selected>50 items</option>
-                    <option value="100">100 items</option>
-                </select>
-            </div>
+            <div class="pagination-controls" id="paginationControls" style="display:none" aria-label="Inventory pagination"></div>
         </div>
     </div>
 
@@ -380,6 +364,7 @@
     <script src="loader.js"></script>
     <script src="calc.js"></script>
     <script src="store.js"></script>
+    <script src="common-pagination.js"></script>
     <script src="search.js"></script>
     <script src="advanced-search.js"></script>
     <script src="item-form.js"></script>

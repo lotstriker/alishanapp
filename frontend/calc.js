@@ -402,7 +402,7 @@ var AlishanCalc = (() => {
             item.quality, item.lotNumber, item.notes, item.source, item.productType,
             item.cupSize && item.cupSize !== 'N/A' ? `${item.cupSize} cup ${item.cupSize}` : '',
             item.code, colors, extra.join(' '),
-            item.inStock !== false ? 'complete in stock' : 'incomplete out of stock',
+            item.inStock !== false ? 'incomplete in stock' : 'complete out of stock',
             level ? AGING_LEVELS[level].label : '',
             item.isManualEntry ? 'old entry manual' : 'new entry',
             item.sizeOption === 'same' ? 'same sizes' : 'different sizes',
@@ -423,7 +423,7 @@ var AlishanCalc = (() => {
             qt: (item.sizeOption === 'different' ? (item.colors || []).map(c => c && c.sizes || {}) : [item]).flatMap(o => SIZES.map(sz => `${Number(o[`size${sz}`]) || 0} ${Number(o[`size${sz}_pieces`]) || 0} ${round2((Number(o[`size${sz}`]) || 0) + (Number(o[`size${sz}_pieces`]) || 0) / 12)}`)).join(' '),
             n: String(item.notes || ''), m: Object.entries(item).filter(([k]) => /maal/i.test(k)).map(([,v]) => v).join(' '),
             w: String(item.weight || ''), mt: String(item.weight || ''), d: String(item.dateTime || '') + ' ' + allText,
-            p: String(item.price || ''), a: String(item.totalAmount || itemAmount(item)), st: item.inStock === false ? 'incomplete out of stock' : 'complete in stock'
+            p: String(item.price || ''), a: String(item.totalAmount || itemAmount(item)), st: item.inStock === false ? 'complete out of stock' : 'incomplete in stock'
         };
         const groups = raw.split(/\s+or\s+/i).map(group => group.replace(/\s+and\s+/gi, ' ').split(/\s+/).filter(Boolean));
         const test = token => {
@@ -780,6 +780,29 @@ var AlishanCalc = (() => {
     }
 
     // an EDITED entry -> { ok, item, dateChanged, message }  (nothing is saved here)
+    // 'YYYY-MM-DD' typed in the Edit form -> the stored completion time. Today = now; the day already saved = unchanged;
+    // any other day = noon of that day (so no time zone can move it to another day).
+    function completionStamp(day, existingIso) {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(day || ''));
+        if (!m) return fail('Please enter a valid completion date');
+        const picked = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0);
+        if (isNaN(picked)) return fail('Please enter a valid completion date');
+        const now = new Date();
+        if (day > localDate(now)) return fail('Completion date cannot be in the future!');
+        const old = existingIso ? parseDate(existingIso) : null;
+        if (old && !isNaN(old) && localDate(old) === day) return { ok: true, iso: new Date(old).toISOString() };
+        return { ok: true, iso: (day === localDate(now) ? now : picked).toISOString() };
+    }
+
+    // For a Complete (out of stock) entry: when the goods went and how many days ago. Null for an entry still in stock.
+    function completionInfo(item, now = new Date()) {
+        if (!item || item.inStock !== false) return null;
+        const when = item.completedAt ? parseDate(item.completedAt) : null;
+        if (!when || isNaN(when)) return { hasDate: false };
+        const midnight = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        return { hasDate: true, date: when, days: Math.max(0, Math.round((midnight(now) - midnight(when)) / 86400000)), label: fmtDateLong(when) };
+    }
+
     function buildUpdatedItem(current, input, ctx) {
         const productType = String(input.productType || '').trim().toUpperCase();
         const quality = String(input.quality || '').trim().toUpperCase();
@@ -822,6 +845,18 @@ var AlishanCalc = (() => {
             if (!updated.addedDateTime) updated.addedDateTime = current.dateTime;
             updated.dateTime = newWhen.toISOString();
             updated.isManualEntry = localDate(newWhen) !== localDate(parseDate(updated.addedDateTime));
+        }
+        // Completion date ("Maal Gaya") — only for a Complete (out of stock) entry. An empty box removes the date,
+        // a chosen day sets it (not in the future, not before the entry day). (ALISHAN-CHG-2026-11-06-002)
+        if (current.inStock === false && input.completedDate !== undefined) {
+            const day = String(input.completedDate || '').trim();
+            if (!day) delete updated.completedAt;
+            else {
+                const stamp = completionStamp(day, current.completedAt);
+                if (!stamp.ok) return stamp;
+                if (day < localDate(parseDate(updated.dateTime))) return fail('Completion date cannot be before the entry date.');
+                updated.completedAt = stamp.iso;
+            }
         }
         applyTotals(updated);
 
@@ -944,6 +979,12 @@ var AlishanCalc = (() => {
     // ---------- payments ----------
 
     // checks ONE new payment against the item's pending amount -> { ok, error | entry }
+    // unique payment id (Date.now() alone could repeat when two tabs save in the same millisecond)
+    function newPaymentId() {
+        try { if (typeof crypto !== 'undefined' && crypto.randomUUID) return 'pay-' + crypto.randomUUID(); } catch (e) { /* fall through */ }
+        return 'pay-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    }
+
     function buildPayment(item, payments, { amount, date, notes }) {
         if (!item) return fail('Inventory item not found!');
         const amt = round2(parseFloat(amount));
@@ -955,7 +996,7 @@ var AlishanCalc = (() => {
             return fail(`Amount exceeds the pending value! Expected: ${fmtMoney(pay.expected)}, already received: ${fmtMoney(pay.received)}, pending: ${fmtMoney(pay.pending)}`);
         }
         return ok({
-            entry: { id: Date.now(), inventoryId: item.id, quality: item.quality, amount: amt, date, notes: notes || '', week: weekInfo(date).week },
+            entry: { id: newPaymentId(), inventoryId: item.id, quality: item.quality, amount: amt, date, notes: notes || '', week: weekInfo(date).week },
             message: 'Amount received saved successfully!'
         });
     }
@@ -1251,6 +1292,114 @@ var AlishanCalc = (() => {
             }));
         });
         return rows;
+    }
+
+    // ================= EXPORT CENTER (Home) — rules only; the page just shows and downloads =================
+    // (ALISHAN-CHG-2026-11-06-001)
+    const EXPORT_SUM_COLUMNS = [
+        'Quantity (Dozens)', 'Total Pieces', 'Total Amount (₹)', 'Expected Amount (₹)', 'Received Amount (₹)',
+        'Pending Amount (₹)', 'Amount Received (₹)', 'Amount (₹)', 'Value (₹)'
+    ];
+
+    // a date typed as 2026-11-06, a Date, or the app's own 6/11/2026 text -> Date (or null)
+    function exportParseDate(value) {
+        if (!value) return null;
+        if (value instanceof Date) return isNaN(value) ? null : value;
+        const text = String(value).trim();
+        const dmy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(text);
+        if (dmy) return new Date(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]));
+        const d = parseDate(text);
+        return isNaN(d) ? null : d;
+    }
+
+    // is `value` inside the chosen days? from / to are 'YYYY-MM-DD' text (empty = open end). No date = not inside.
+    function exportInRange(value, from, to) {
+        if (!from && !to) return true;
+        const d = exportParseDate(value);
+        if (!d) return false;
+        const start = from ? exportParseDate(from) : null;
+        const end = to ? exportParseDate(to) : null;
+        if (start && d < start) return false;
+        if (end) { const last = new Date(end); last.setHours(23, 59, 59, 999); if (d > last) return false; }
+        return true;
+    }
+
+    // THE export filter for quality entries. Every chosen list must match EXACTLY (not "contains": lot 5 never
+    // matches lot 55). Lists inside one filter are OR, different filters are AND.
+    // f = { types, qualities, ids, lots, colours, cups, maals, notes: [..], status, payment, search, from, to }
+    // `byDate: true` also applies the date range to the entry's own date.
+    function exportFilterItems(items, payments, f, byDate) {
+        const low = v => String(v === undefined || v === null ? '' : v).trim().toLowerCase();
+        const set = list => new Set((list || []).map(low));
+        const types = set(f.types), qualities = set(f.qualities), ids = set(f.ids), lots = set(f.lots);
+        const colours = set(f.colours), cups = set(f.cups), maals = set(f.maals), notes = set(f.notes);
+        const query = low(f.search);
+        return items.filter(item => {
+            if (types.size && !types.has(low(item.productType))) return false;
+            if (qualities.size && !qualities.has(low(item.quality))) return false;
+            if (ids.size && !ids.has(low(item.code || item.id))) return false;
+            if (lots.size && !lots.has(low(item.lotNumber))) return false;
+            if (colours.size && !(item.colors || []).some(c => colours.has(low(colorName(c))))) return false;
+            if (cups.size && !cups.has(low(item.cupSize))) return false;
+            if (maals.size && !maals.has(low(item.maalGaya || item.maalGayaTo))) return false;
+            if (notes.size && !notes.has(low(item.notes))) return false;
+            if (f.status && (f.status === 'In Stock') !== (item.inStock !== false)) return false;
+            if (f.payment) {
+                const st = paymentStatus(item, payments).status;
+                const label = st === 'paid' ? 'Received' : st === 'partial' ? 'Partially Received' : 'Pending';
+                if (label !== f.payment) return false;
+            }
+            if (query) {
+                const hay = [item.quality, item.code, item.id, item.lotNumber, item.productType, item.cupSize, item.notes,
+                    item.maalGaya, item.maalGayaTo, (item.colors || []).map(colorName).join(' ')].map(low).join(' ');
+                if (!hay.includes(query)) return false;
+            }
+            if (byDate && !exportInRange(item.dateTime, f.from, f.to)) return false;
+            return true;
+        });
+    }
+
+    // One row per quality + colour + size (what is really in stock, size by size)
+    function exportSizeRows(items) {
+        const rows = [];
+        items.forEach(item => {
+            const price = itemPrice(item);
+            const cells = source => Object.keys(source || {})
+                .filter(k => /^size\d+$/.test(k))
+                .sort((a, b) => Number(a.slice(4)) - Number(b.slice(4)))
+                .map(k => ({ size: k.slice(4), dozens: Number(source[k]) || 0, pcs: Number(source[k + '_pieces']) || 0 }))
+                .filter(c => c.dozens || c.pcs);
+            const push = (colour, cell) => {
+                const pieces = cell.dozens * 12 + cell.pcs;
+                rows.push({
+                    'Code': item.code || 'N/A', 'Quality': item.quality || 'N/A', 'Product Type': item.productType || 'N/A',
+                    'Lot Number': item.lotNumber || 'N/A', 'Colour': colour, 'Size': cell.size,
+                    'Dozens': cell.dozens, 'Loose Pieces': cell.pcs, 'Total Pieces': pieces,
+                    'Quantity (Dozens)': round2(pieces / 12), 'Price/Dozen (₹)': price, 'Amount (₹)': round2(pieces / 12 * price),
+                    'Status': item.inStock !== false ? 'In Stock' : 'Out of Stock'
+                });
+            };
+            const colors = item.colors || [];
+            if (item.sizeOption === 'different') colors.forEach(c => cells(c.sizes).forEach(cell => push(colorName(c), cell)));
+            else {
+                const shared = cells(item);
+                (colors.length ? colors.map(colorName) : ['N/A']).forEach(name => shared.forEach(cell => push(name, cell)));
+            }
+        });
+        return rows;
+    }
+
+    // Column totals of an export sheet (only the amount / quantity columns that exist in it)
+    function exportTotals(rows) {
+        const totals = {};
+        (rows || []).forEach(row => {
+            if (row.Quality === 'TOTAL') return;
+            EXPORT_SUM_COLUMNS.forEach(col => {
+                const v = row[col];
+                if (typeof v === 'number' && isFinite(v)) totals[col] = round2((totals[col] || 0) + v);
+            });
+        });
+        return totals;
     }
 
     // kind: inventory | pending | weekly | history | valuation | aging
@@ -1988,7 +2137,8 @@ Return exactly: { "entries": [ ...one object per block... ] }`;
         summarize, scopePayments, weeklyAverage, cardData, pendingList, paymentCards, weekOptions, weeklyReport,
         paymentHistory, valuationTrend, qualitySummary, agingReport, advancedPaymentSearch,
         // Excel rows + backups
-        exportRows, makeBackup, inspectBackup, mergeBackup,
+        completionInfo, completionStamp,
+        exportRows, exportParseDate, exportInRange, exportFilterItems, exportSizeRows, exportTotals, makeBackup, inspectBackup, mergeBackup,
         // bulk import (AI JSON) with review
         PRODUCT_TYPES, parseLooseJson, normalizeDateText, parseBulkJson, checkImportDraft,
         batchDuplicateIds, importTotals, buildImportEntries, bulkPrompt, normKey, matchExact, closeMatches, nameSuggestions, inferTypeFromNames,

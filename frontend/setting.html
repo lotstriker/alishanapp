@@ -1,1372 +1,378 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <script src="theme-boot.js"></script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALISHAN - Advanced Settings Dashboard</title>
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <!-- icons: local SVG set (icons.js), no CDN -->
-    <script src="icons.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-    <link rel="stylesheet" href="setting.css">
-    <link rel="stylesheet" href="nav.css">
-    <link rel="stylesheet" href="themes.css">
-    <link rel="stylesheet" href="mobile.css">
-    <link rel="manifest" href="manifest.webmanifest">
-    <meta name="theme-color" content="#121214">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
-</head>
+<script src="theme-boot.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ALISHAN - Settings</title>
+<link crossorigin="" href="https://cdnjs.cloudflare.com" rel="preconnect"/>
+<!-- icons: local SVG set (icons.js), no CDN -->
+<script src="icons.js"></script>
+<link href="setting.css" rel="stylesheet"/>
+<link href="nav.css" rel="stylesheet"/>
+<link href="themes.css" rel="stylesheet"/>
+<link href="mobile.css" rel="stylesheet"/>
+<link href="manifest.webmanifest" rel="manifest"/>
+<meta content="#121214" name="theme-color"/>
+<link href="icons/icon-192.png" rel="apple-touch-icon"/>
+<link href="export-center.css" rel="stylesheet"/></head>
 <body class="theme-light-default">
-    <header class="site-topbar">
-        <div class="site-topbar-inner">
-            <a href="index.html" class="logo"><i class="fas fa-tshirt"></i> ALISHAN</a>
-            <div class="site-topbar-right">
-                <nav class="site-nav-links">
-                    <ul>
-                        <li><a href="index.html"><i class="fas fa-home"></i> DASHBOARD</a></li>
-                        <li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
-                        <li><a href="reports.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
-                        <li><a href="setting.html" class="active"><i class="fas fa-cog"></i> SETTINGS</a></li>
-                    </ul>
-                </nav>
-                <div class="site-topbar-utility">
-                    <div class="search-container">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" class="search-input" id="globalSearch" placeholder="Search settings...">
-                    </div>
-                    <button class="theme-toggle" id="themeToggle" title="Toggle theme">
-                        <i class="fas fa-moon"></i>
-                    </button>
-                    <div class="profile-section" title="Admin User — Administrator">
-                        <div class="user-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                    </div>
-                </div>
-                <button class="site-menu-toggle" id="siteMenuToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
-        </div>
-        <ul class="site-mobile-nav" id="siteMobileNav">
-            <li><a href="index.html"><i class="fas fa-home"></i> DASHBOARD</a></li>
-            <li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
-            <li><a href="reports.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
-            <li><a href="setting.html" class="active"><i class="fas fa-cog"></i> SETTINGS</a></li>
-        </ul>
-    </header>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <nav class="nav-section">
-                <div class="nav-title">Main Settings</div>
-                <ul class="nav-links">
-                    <li><a href="#" class="nav-link active" data-section="dashboard">
-                        <i class="fas fa-th-large nav-icon"></i>
-                        Dashboard
-                    </a></li>
-                    <li><a href="#" class="nav-link" data-section="user-guide">
-                        <i class="fas fa-book-open nav-icon"></i>
-                        User Guide
-                    </a></li>
-                    <li><a href="#" class="nav-link" data-section="general">
-                        <i class="fas fa-cog nav-icon"></i>
-                        General
-                    </a></li>
-                    <li><a href="#" class="nav-link" data-section="appearance">
-                        <i class="fas fa-paint-brush nav-icon"></i>
-                        Appearance
-                    </a></li>
-                    <li><a href="#" class="nav-link" data-section="users">
-                        <i class="fas fa-users nav-icon"></i>
-                        Users
-                    </a></li>
-                </ul>
-            </nav>
+<header class="site-topbar">
+<div class="site-topbar-inner">
+<a class="logo" href="index.html"><i class="fas fa-tshirt"></i> ALISHAN</a>
+<div class="site-topbar-right">
+<nav class="site-nav-links">
+<ul>
+<li><a href="index.html"><i class="fas fa-home"></i> DASHBOARD</a></li>
+<li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
+<li><a href="reports.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
+<li><a class="active" href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
+</ul>
+</nav>
+<div class="site-topbar-utility">
+<div class="search-container">
+<i class="fas fa-search search-icon"></i>
+</div>
+<button class="theme-toggle" id="themeToggle" title="Toggle theme">
+<i class="fas fa-moon"></i>
+</button>
+</div>
+<button class="site-menu-toggle" id="siteMenuToggle">
+<i class="fas fa-bars"></i>
+</button>
+</div>
+</div>
+<ul class="site-mobile-nav" id="siteMobileNav">
+<li><a href="index.html"><i class="fas fa-home"></i> DASHBOARD</a></li>
+<li><a href="inventory.html"><i class="fas fa-database"></i> INVENTORY</a></li>
+<li><a href="reports.html"><i class="fas fa-chart-bar"></i> REPORTS</a></li>
+<li><a class="active" href="setting.html"><i class="fas fa-cog"></i> SETTINGS</a></li>
+</ul>
+</header>
+<div class="app-container">
+<!-- Sidebar -->
+<aside class="sidebar"><nav class="nav-section"><div class="nav-title">SETTINGS</div><ul class="nav-links"><li><a class="nav-link active" data-section="dashboard" href="#"><i class="fas fa-th-large nav-icon"></i> Overview</a></li><li><a class="nav-link" data-section="general" href="#"><i class="fas fa-building nav-icon"></i> Business Preferences</a></li><li><a class="nav-link" data-section="appearance" href="#"><i class="fas fa-palette nav-icon"></i> Appearance</a></li><li><a class="nav-link" data-section="backup" href="#"><i class="fas fa-database nav-icon"></i> Data &amp; Backup</a></li><li><a class="nav-link" data-section="user-guide" href="#"><i class="fas fa-book-open nav-icon"></i> Help &amp; User Guide</a></li></ul></nav></aside>
+<!-- Main Content -->
+<main class="main-content">
+<!-- Dashboard Section -->
+<div class="settings-section active" id="dashboard">
+<div class="dashboard-header" style="margin-bottom:1.5rem">
+<h1>Settings Overview</h1>
+<p style="color:var(--text-secondary)">Manage the business details, appearance and data safety settings used by Alishan.</p>
+</div>
+<div class="settings-overview-grid">
+<button class="settings-overview-card" data-open-section="general" type="button"><i class="fas fa-building"></i><b>Business Preferences</b><span>Business name, address and business preferences</span></button>
+<button class="settings-overview-card" data-open-section="appearance" type="button"><i class="fas fa-palette"></i><b>Appearance</b><span>Choose the application theme and display preferences</span></button>
+<button class="settings-overview-card" data-open-section="backup" type="button"><i class="fas fa-database"></i><b>Data &amp; Backup</b><span>Automatic backup settings and stored backup history</span></button>
+<button class="settings-overview-card" data-open-section="user-guide" type="button"><i class="fas fa-book-open"></i><b>Help &amp; User Guide</b><span>Read instructions for using Alishan</span></button>
+</div>
+</div>
+<!-- User Guide Section: expandable, searchable help centre -->
+<div class="settings-section" id="user-guide">
+<div class="guide-header">
+<div>
+<span class="guide-eyebrow"><i class="fas fa-book-open"></i> HELP CENTRE</span>
+<h1>User Guide</h1>
+<p>Alishan ke latest version ke Dashboard, Inventory, Reports, Payments, Search, History, Export aur Backup features ko step-by-step samajhne ke liye topics kholein ya search karein.</p>
+</div>
+</div>
+<div class="guide-search-box">
+<i class="fas fa-search"></i>
+<input aria-label="Search user guide" id="guideSearchInput" placeholder="Guide mein search karein — quality, colour, filter, payment..." type="search"/>
+<button aria-label="Clear guide search" hidden="" id="guideSearchClear" type="button">×</button>
+</div>
+<div aria-live="polite" class="guide-search-status" id="guideSearchStatus">Saare guide topics neeche diye gaye hain.</div>
+<div class="guide-topic-grid" id="guideTopics">
+<details class="guide-topic" data-guide-topic="" open="">
+<summary><span class="guide-topic-icon"><i class="fas fa-house"></i></span><span><strong>1. Dashboard ko samjhein</strong><small>Home screen aur records ka overview</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<p>Dashboard app kholne par aane wali main screen hai. Yahan se aap apne records dekh sakte hain, search kar sakte hain aur nayi quality entry shuru kar sakte hain.</p>
+<ul><li>Overview cards par tap karke us category ke records dekhein, agar card par click/filter available ho.</li><li>Latest Qualities mein recent entries dekhein.</li><li>Record ki poori details dekhne ke liye us record ko expand karein.</li></ul>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-circle-plus"></i></span><span><strong>2. Nayi Quality kaise add karein</strong><small>Quality type, quality, cup, colour aur size quantity</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<ol><li><b>Add Quality</b> kholein.</li><li>Quality Type select karein.</li><li>Quality select karein. Quality ke saath uska price pehle se attached hota hai; alag se price enter karne ki zaroorat nahi hoti.</li><li>Applicable Cup aur Colour select karein.</li><li>Har size ke saamne quantity enter karein. App 12 pieces ko 1 dozen mein convert karti hai; saved calculation nahi badalti. Quantity display compact dozen/pieces format mein ho sakta hai.</li><li>Weight/Meter aur Notes optional hain.</li><li>Entry save karein aur Latest Qualities mein check karein.</li></ol>
+<p><b>Tip:</b> Size ke saamne quantity bharte waqt sahi colour/size row ka dhyan rakhein.</p>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-pen-to-square"></i></span><span><strong>3. Record edit, Lot Number aur Maal Gaya</strong><small>Entry save hone ke baad details update karna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<ul><li>Record par <b>Edit</b> dabakar uski editable details update karein.</li><li>Lot Number quality complete/clear hone ke baad Edit mein add karein; nayi entry banate waqt Lot Number zaroori nahi hai.</li><li><b>Maal Gaya</b> field mein zaroorat ke mutabik naam ya simple text likhein. Ye note/search ke liye hai, alag tracking system nahi.</li><li>Changes save karne ke baad record dobara check karein.</li></ul>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-check-circle"></i></span><span><strong>4. Complete aur Incomplete status</strong><small>Kaam ki current condition dikhana</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<p><b>Complete</b> ka matlab quality ka kaam complete/clear ho gaya. <b>Incomplete</b> ka matlab kaam abhi baaki hai. Complete karne par quality out of stock ho jati hai (In Stock aur Aging se hat jati hai); Incomplete quality in stock rehti hai. Record par Complete action use karein. Complete record ko wapas Incomplete karna ho to Edit flow se status badlein, agar option diya gaya ho.</p>
+<p>Complete karne se Lot Number ya Maal Gaya ki value apne aap delete ya change nahi hoti.</p>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-magnifying-glass"></i></span><span><strong>5. Search kaise karein</strong><small>Ek hi search box se record dhoondhna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<p>Search box mein record se judi koi pehchaan likhein. Jaise Quality Name, Quality ID/Code, Lot Number, Colour, Quality Type, Cup, Size, Notes, Date, Price ya quantity. Search suggestions mein matching values bhi aa sakti hain.</p>
+<ul><li>Ek ya zyada words type karke Search dabayein ya suggestion select karein.</li><li>Search suggestions ko keyboard se bhi use kar sakte hain: Up/Down se move, Enter se select, Escape se close.</li><li>Search clear karne ke liye search box ka clear (×) button use karein.</li><li>Recent searches aur Top Searches se pehle ki searches dobara khol sakte hain.</li></ul>
+<p><b>Note:</b> Normal search words ko record ke searchable text mein match karti hai. Specific field, range ya multiple conditions ke liye Advanced Filter ka use karein.</p>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-sliders"></i></span><span><strong>6. Advanced Filter kaise use karein</strong><small>Ek saath kai conditions lagana</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<ol><li>Search area mein <b>Advanced Filter</b> card kholein.</li><li>Quality Type, Colour, Cup, Size, Status, Payment Status ya Date select/enter karein.</li><li>Amount, Price, Dozen, Weight/Meter aur size-wise quantity ke Min/Max values de sakte hain.</li><li>Lot Number, Notes aur Maal Gaya ke text se bhi filter kar sakte hain.</li><li>Condition logic mein <b>AND</b> rakhen to sabhi conditions match honi chahiye; <b>OR</b> mein koi ek condition match ho to record aa sakta hai.</li><li>Exclude Colour mein woh colour likhein jise results se hatana hai.</li><li><b>Apply Filters</b> dabayein. Sirf filter hatane ke liye Reset Filters use karein.</li></ol>
+<p><b>Example:</b> Colour Black + Cup C + Status Incomplete lagane par in conditions se match hone wale records dikhenge.</p>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-arrow-down-wide-short"></i></span><span><strong>7. Advanced Sort kaise use karein</strong><small>Records ko apni zaroorat ke hisaab se arrange karna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<ol><li><b>Advanced Sort</b> card kholein.</li><li>Sort first by mein pehla field select karein, jaise Entry Date, Total Dozen ya Total Amount.</li><li>Ascending/Low to High ya Descending/High to Low chunein.</li><li>Chahein to Then by mein second sorting field select karein.</li><li><b>Apply Sort</b> dabayein.</li></ol>
+<p><b>Example:</b> Pehle Total Amount ko Highest to Lowest aur phir Entry Date ko Newest First rakh sakte hain.</p>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-bookmark"></i></span><span><strong>8. Saved Searches, result count aur Clear All</strong><small>Apni search setting dobara use karna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<ul><li>Search + Filter + Sort ka current combination rakhne ke liye <b>Save current</b> dabayein aur naam dein.</li><li>Saved searches dropdown se pehle save kiya hua combination load karein.</li><li>Matching records ka count batata hai ki current search/filter se kitne records mile.</li><li>Active filter chip par tap karke sirf us condition ko hata sakte hain.</li><li><b>Clear All</b> search, filters aur sorting ko reset karta hai.</li></ul>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-cloud-arrow-up"></i></span><span><strong>9. Backup aur Restore</strong><small>Apne records ki backup copy rakhna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<ol><li>Settings → Data &amp; Backup kholein.</li><li><b>Automatic Backup</b> mein Enable automatic backup chunein, interval 1–720 hours set karein aur Save Backup Settings dabayein. Scheduled check app ke khule rehne par ya agle app/store initialization par hota hai; app band hone par background mein chalne ki guarantee nahi hai.</li><li><b>Create Backup Now</b> se current quality aur payment records ki local backup copy banayein. Backup History mein date aur record counts check karein.</li><li><b>Restore Latest Local Backup</b> se sabse latest local copy restore karein. Restore se pehle current quality/payment data ki safety copy banane ke liye confirmation diya jata hai. Restore current quality/payment records ko backup se replace karta hai.</li><li>Browser Storage area mein browser ki reported storage usage dekhein; ye poore device ka free space nahi hota.</li><li>Portable complete backup ke liye Home → Quick Actions → Export Data kholein, ZIP format select karein aur complete ZIP backup banayein. ZIP mein qualities, payments, history, activity aur settings shamil hote hain. ZIP restore bhi isi Export Center se hota hai.</li></ol>
+<p><b>Important:</b> Local backup aur portable ZIP alag hain. Local backup isi browser ke IndexedDB settings mein rakha jata hai; ZIP ko device par alag file ke roop mein save karke doosre device par le ja sakte hain. Restore se pehle file/date/contents dhyan se check karein.</p>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-palette"></i></span><span><strong>10. Appearance aur theme</strong><small>App ka look badalna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body"><p>Settings ke Appearance section mein available theme aur display preferences dekhein. Theme change karne ke baad app ke alag pages par bhi check karein ki text aur controls clearly dikh rahe hain.</p></div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-boxes"></i></span><span><strong>11. Inventory page aur quality cards</strong><small>Records dekhna, sort karna aur details kholna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body"><ol><li>Inventory page par saved quality records ki list dekhein.</li><li>Search box se Quality Name/ID, Lot Number, Quality Type, Colour, Cup, Size, Notes ya doosri saved details dhoondhein.</li><li>Advanced Filter se multiple conditions lagayein aur Sort se latest/oldest, quality name, dozen ya amount ke hisaab se arrange karein.</li><li>Inventory card par Edit se record update karein. Complete action ka matlab quality ka kaam clear/out of stock mark karna hai; Incomplete ka matlab wapas in stock.</li><li>Pagination mein page size 10, 20, 50 ya 100 select karke list ke pages badlein.</li></ol><p>Inventory aur Reports ek hi saved records se data dikhate hain; alag duplicate record create nahi hota.</p></div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-filter"></i></span><span><strong>12. Dashboard cards, Quick Actions aur Aging</strong><small>Summary se related records tak pahunchna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body"><ul><li>Dashboard ke summary cards par tap karke unse related records ki list khol sakte hain; Total Items aur Total Inventory Value summary-only cards hain.</li><li>Quick Actions se Pending Amount, Missing Lot Number, Quality History aur Export Data jaise pages/actions kholein.</li><li>Aging Stock mein Fresh 0–7, Aging 8–15, Warning 16–30 aur Critical 31+ days ke groups dekhein. Aging card kholne par us group ki qualities aur aging days milte hain.</li><li>Product Type Breakdown mein top qualities dekhein; See more se baaki quality names aur kisi quality par tap karke usi quality ki entries kholein.</li></ul></div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-wallet"></i></span><span><strong>13. Pending Amount aur Missing Lot Number</strong><small>Payment baaki aur lot number baaki records</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body"><ul><li>Pending Amount page par completed aur incomplete dono tarah ki qualities aa sakti hain, jab unka kuch amount receive hona baaki ho.</li><li>Quality card mein lot, dozen, colours, dates, expected/received/pending amount aur pending days dekhein.</li><li><b>Received Amount</b> card par tap karne se us quality ka poora remaining pending amount aaj ki date ke saath receive mark hota hai; partial payment ke liye Reports ka Add Amount Received use karein.</li><li>Missing Lot Number page par lot number ke bina records dekhein. Record ko Edit karke Lot Number save karein.</li></ul></div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-chart-bar"></i></span><span><strong>14. Reports page — report select karna</strong><small>Har report ka focused detail view</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body"><p>Reports page par Weekly Report, Payment Report, Pending Report, Quality Report, Valuation Report, Aging Report, History Report aur Business Analysis cards hain.</p><ol><li>Report kholne se pehle home filters mein Time Period, Product Type aur Quality select kar sakte hain.</li><li>Jis report ko dekhna hai usi card par tap karein. Detail view mein sirf selected report khulti hai.</li><li>Report ke andar Filters kholkar us report ke supported date, quality, ID, type, lot, colour, cup, status ya amount filters use karein.</li><li>Sort dropdown se sirf relevant sorting option chunein. Back to Reports se report cards par laut jaayein.</li><li>Result card par tap karne se us record ki read-only details popup mein khulti hain. Report ka Excel ya Export Center action data export karne ke liye hai.</li></ol></div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-money-bill-wave"></i></span><span><strong>15. Payment Report, Amount History aur Weekly Amount</strong><small>Payment entry aur received amount ka record samajhna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body"><ul><li>Payment Report mein received payments ka summary aur individual payment records dekhein.</li><li><b>Amount Received History</b> card ko kholkar har payment ki date, quality, lot, week, amount aur available notes dekhein. Delete sirf tab use karein jab galat payment entry ko hatana ho; delete karne se pending amount dobara badh sakta hai.</li><li><b>Select Week</b> card kholkar Monday–Sunday week chunein.</li><li><b>Weekly Amount Received</b> card kholkar us week ki payment entries aur week total dekhein.</li><li>History aur weekly lists ki pagination se Previous/Next aur 10/20/50/100 items per page use karein. Har section ki pagination alag state rakhti hai.</li><li>Partial ya full payment add karne ke liye Pending quality ke Add Amount Received action se amount, date aur notes bharein. Amount pending se zyada nahi ho sakta.</li></ul></div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-clock-rotate-left"></i></span><span><strong>16. Quality History aur Activity Log</strong><small>Record mein hue changes dekhna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body"><p>Quality History page par important quality changes newest first dekhein. Update records mein Previous Value aur New Value compare karein. New Quality Added, Quality Updated, Deleted aur Complete/Incomplete jaise events aa sakte hain. Delete button sirf selected history record ko delete karta hai; ye quality record ko delete nahi karta. Report Page ka History Report Quality History aur Activity Log ko ek report view mein dikhata hai.</p></div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-file-export"></i></span><span><strong>17. Export Center — data export aur complete ZIP</strong><small>JSON, Excel, CSV, PDF aur ZIP</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body"><ol><li>Dashboard → Quick Actions → Export Data kholein.</li><li>Quality/Inventory, Payments, Quality History, Activity Log, Settings, Master Data aur Backup History jaise categories select karein.</li><li>Available date range, quality, ID, lot, type, colour, cup, Maal Gaya, Notes, status aur search filters lagayein.</li><li>JSON selected categories/rows export karta hai; Excel multiple sheets bana sakta hai; CSV first available selected sheet export karta hai; PDF printable summary/preview hai.</li><li><b>ZIP</b> complete backup ke liye hai: manifest aur data payload ke saath qualities, payments, history, activity aur settings rakhta hai.</li><li>ZIP restore se pehle file structure/checksum validate hota hai aur current data ki safety snapshot banayi jaati hai. Sirf Export Center ke supported generated ZIP format ko restore karein.</li></ol><p>Export data ko read karta hai; normal export se saved quality/payment records change nahi hote.</p></div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-database"></i></span><span><strong>18. Data &amp; Backup — local backup, restore aur storage</strong><small>Settings ke har control ka istemal</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body"><ol><li><b>Enable automatic backup:</b> checkbox on/off karein. Off karne par automatic scheduled backup band rahega.</li><li><b>Backup interval:</b> 1 se 720 hours ke beech integer set karein; Save Backup Settings dabayein. App ko scheduled checks ke liye khula hona zaroori hai; closed app mein background execution guaranteed nahi hai.</li><li><b>Create Backup Now:</b> current quality aur payment records ki local copy banayein. Confirmation/status aur Backup History mein date/count check karein.</li><li><b>Restore Latest Local Backup:</b> latest local copy choose karta hai. Confirm karne se pehle current records ki safety copy banayi jaati hai; restore ke baad current quality/payment records selected backup se replace hote hain.</li><li><b>Backup History:</b> local copies ki date, quality count, payment count aur backup type dekhein. Local history limited hai; ise portable off-device backup na samjhein.</li><li><b>Browser Storage:</b> browser ke estimate API se usage/quota dikhata hai. Browser support na kare to usage unavailable ho sakta hai.</li><li><b>Complete ZIP:</b> poore app data ke liye Home → Quick Actions → Export Data → ZIP use karein. ZIP file ko device se bahar alag jagah save rakhein.</li></ol><p><b>Safety:</b> Restore current data ko replace kar sakta hai. Restore se pehle backup date aur record counts verify karein. Kam se kam ek portable ZIP ko app/browser se alag jagah rakhna behtar hai.</p></div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-mobile-alt"></i></span><span><strong>19. Mobile layout aur pagination</strong><small>Phone par lists aur cards use karna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body"><ul><li>Reports ke result cards phone par do columns mein compact layout mein dikhte hain; card ke top par Quality Name aur neeche essential details hoti hain.</li><li>Card par tap karne se read-only detail popup khulta hai; popup band karne ke liye Close, backdrop ya Escape (supported keyboard device par) use karein.</li><li>Pagination controls ek line mein rehte hain. Bahut narrow screen par pagination row ko horizontally scroll kiya ja sakta hai; controls next line mein nahi tootne chahiye.</li><li>Page size 10, 20, 50 ya 100 select karein. Filter/search badalne par report result page wapas first page par aata hai.</li></ul></div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-magic"></i></span><span><strong>20. Bulk Import — purane records ek saath lana</strong><small>AI JSON ko check, review aur import karna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body"><ol><li>Dashboard ke Quick Actions mein <b>Bulk Import</b> kholein.</li><li>Bulk Import window mein <b>Copy AI prompt</b> dabayein. Apne purane handwritten/typed records ki information AI ko dein aur copied prompt ke format mein JSON banwayein.</li><li>Purane records ki stock aur payment defaults set karein, JSON file choose karein aur <b>Check JSON &amp; start review</b> dabayein.</li><li>Review list mein har entry ko alag check karein. Quality Type, Quality, Cup, Lot Number, price, stock, colours, sizes, payment aur notes ko verify/correct karein.</li><li>App ke master colour list mein na hone wale colours ke liye matching app colour choose karein. Size mode (same sizes/different sizes) aur quantity bhi verify karein.</li><li>Problems wali entries ko fix karein; clean entries ke liye Approve all without problems use kar sakte hain. Har record review/approve hone ke baad Import dabayein.</li><li>Import batch history se imported batch ko identify karein. Undo this import sirf tab use karein jab us batch ko reverse karna ho; confirmation aur result check karein.</li></ol><p><b>Important:</b> Import se pehle JSON values ko original records/paper se match karein. Galat date, price, quantity, stock ya payment values aage Reports aur totals ko affect kar sakti hain.</p></div>
+</details>
+<details class="guide-topic" data-guide-topic="">
+<summary><span class="guide-topic-icon"><i class="fas fa-eye"></i></span><span><strong>21. Quality card ka Large View (Eye icon)</strong><small>Size aur colour quantities ko bade view mein dekhna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body"><ul><li>Quality card ke size/colour section mein <b>Large view</b> ya eye icon dabayein.</li><li>Same-size mode mein size aur quantity values bade full-screen view mein dekhein.</li><li>Different-size mode mein jis colour ke header ka eye icon dabaya hai, us colour ke filled sizes aur uska total dozen dekhein.</li><li>View band karne ke liye Close/Escape use karein. Phone ko jis orientation mein padhna aasan ho, manually us tarah ghumayein; view ko kholne par automatic screen rotation zaroori nahi hai.</li></ul></div>
+</details>
+</div>
+<div class="guide-no-results" hidden="" id="guideNoResults">
+<i class="fas fa-book-open"></i><strong>Koi guide topic nahi mila</strong><span>Doosra word try karein, jaise “search”, “colour”, “payment” ya “backup”.</span>
+</div>
+<div class="guide-footer-note"><i class="fas fa-lightbulb"></i><span><b>Guide version:</b> v81. Is guide mein maujooda single-user AlishanApp ke implemented features cover kiye gaye hain. Jo feature abhi available nahi hai, uska use karne ka jhootha step yahan nahi diya gaya.</span></div>
+</div>
+<!-- General Settings Section -->
+<div class="settings-section" id="general">
+<div class="card">
+<div class="card-header">
+<h2 class="card-title">Business Preferences</h2>
+</div>
+<div class="card-body"><p class="settings-help">Currency used for Alishan calculations: INR (₹).</p>
+<!-- Logo Upload -->
+<div class="form-group">
+<label class="form-label">Business Name</label>
+<input class="form-control" id="businessName" oninput="validateBusinessName(this.value)" type="text" value="ALISHAN Garments"/>
+<div class="form-text">Your business name as it appears to customers</div>
+<div id="businessNameError" style="color: var(--danger); font-size: 0.875rem; margin-top: 0.25rem; display: none;"></div>
+</div>
+<!-- Currency Selector -->
 
-            <nav class="nav-section">
-                <div class="nav-title">Advanced</div>
-                <ul class="nav-links">
-                    <li><a href="#" class="nav-link" data-section="backup">
-                        <i class="fas fa-database nav-icon"></i>
-                        Backup & Restore
-                    </a></li>
-                    <li><a href="#" class="nav-link" data-section="notifications">
-                        <i class="fas fa-bell nav-icon"></i>
-                        Notifications
-                    </a></li>
-                    <li><a href="#" class="nav-link" data-section="import-export">
-                        <i class="fas fa-file-export nav-icon"></i>
-                        Import/Export
-                    </a></li>
-                    <li><a href="#" class="nav-link" data-section="security">
-                        <i class="fas fa-shield-alt nav-icon"></i>
-                        Security
-                    </a></li>
-                    <li><a href="#" class="nav-link" data-section="audit">
-                        <i class="fas fa-history nav-icon"></i>
-                        Audit Log
-                    </a></li>
-                </ul>
-            </nav>
-        </aside>
+<div class="form-group">
+<label class="form-label">Business Address</label>
+<textarea class="form-control" id="businessAddress" rows="3">123 Garment Street, Fashion District, Mumbai, India</textarea>
+</div>
+</div>
+</div>
+<div class="card">
+<div class="card-header">
+<h2 class="card-title"><i class="fas fa-table"></i> Display Preferences</h2>
+</div>
+<div class="card-body">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Dashboard Section -->
-            <div id="dashboard" class="settings-section active">
-                <div class="dashboard-header" style="margin-bottom: 2rem;">
-                    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Settings Dashboard</h1>
-                    <p style="color: var(--text-secondary);">Manage your store settings and preferences</p>
-                </div>
-
-                <!-- AI Suggestions -->
-                <div class="ai-suggestions">
-                    <div class="suggestion-title">
-                        <i class="fas fa-robot"></i>
-                        AI Suggestions
-                    </div>
-                    <div class="suggestion-text" id="aiSuggestionText">
-                        Based on your usage patterns, we recommend optimizing your backup schedule and enabling two-factor authentication for enhanced security.
-                    </div>
-                    <button class="btn btn-sm" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);" onclick="applyAISuggestions()">
-                        <i class="fas fa-magic"></i>
-                        Apply Suggestions
-                    </button>
-                </div>
-
-                <!-- Undo/Redo Controls -->
-                <div class="undo-redo-controls">
-                    <button class="btn btn-secondary btn-sm" onclick="settingsManager.undo()" id="undoBtn">
-                        <i class="fas fa-undo"></i> Undo
-                    </button>
-                    <button class="btn btn-secondary btn-sm" onclick="settingsManager.redo()" id="redoBtn">
-                        <i class="fas fa-redo"></i> Redo
-                    </button>
-                    <button class="btn btn-success btn-sm" onclick="settingsManager.saveSettings()">
-                        <i class="fas fa-save"></i> Save All
-                    </button>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="card" style="margin-bottom: 2rem;">
-                    <div class="card-header">
-                        <h2 class="card-title"><i class="fas fa-bolt"></i> Quick Actions</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="quick-actions">
-                            <div class="action-btn" onclick="createBackup()">
-                                <div class="action-icon" style="background: var(--gradient-success);">
-                                    <i class="fas fa-database"></i>
-                                </div>
-                                <span class="action-text">Backup Now</span>
-                            </div>
-                            <div class="action-btn" onclick="exportData()">
-                                <div class="action-icon" style="background: var(--gradient-warning);">
-                                    <i class="fas fa-file-export"></i>
-                                </div>
-                                <span class="action-text">Export Data</span>
-                            </div>
-                            <div class="action-btn" onclick="showAddUserModal()">
-                                <div class="action-icon" style="background: var(--gradient-primary);">
-                                    <i class="fas fa-user-plus"></i>
-                                </div>
-                                <span class="action-text">Add User</span>
-                            </div>
-                            <div class="action-btn" onclick="toggleTheme()">
-                                <div class="action-icon" style="background: var(--gradient-dark);">
-                                    <i class="fas fa-palette"></i>
-                                </div>
-                                <span class="action-text">Change Theme</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- System Health -->
-                <div class="dashboard-grid">
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title"><i class="fas fa-heart-pulse"></i> System Health</h2>
-                        </div>
-                        <div class="card-body">
-                            <div class="stats-grid">
-                                <div class="stat-card">
-                                    <div class="stat-value">95%</div>
-                                    <div class="stat-label">System Uptime</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-value">2.1GB</div>
-                                    <div class="stat-label">Storage Used</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-value">3</div>
-                                    <div class="stat-label">Active Users</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-value">24h</div>
-                                    <div class="stat-label">Last Backup</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title"><i class="fas fa-history"></i> Recent Activity</h2>
-                        </div>
-                        <div class="card-body">
-                            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                                <div style="display: flex; align-items: center; gap: 1rem; padding: 0.5rem 0;">
-                                    <div style="width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></div>
-                                    <div style="flex: 1;">
-                                        <div style="font-weight: 500;">Settings updated</div>
-                                        <div style="font-size: 0.875rem; color: var(--text-secondary);">2 hours ago</div>
-                                    </div>
-                                </div>
-                                <div style="display: flex; align-items: center; gap: 1rem; padding: 0.5rem 0;">
-                                    <div style="width: 8px; height: 8px; background: var(--info); border-radius: 50%;"></div>
-                                    <div style="flex: 1;">
-                                        <div style="font-weight: 500;">New user added</div>
-                                        <div style="font-size: 0.875rem; color: var(--text-secondary);">5 hours ago</div>
-                                    </div>
-                                </div>
-                                <div style="display: flex; align-items: center; gap: 1rem; padding: 0.5rem 0;">
-                                    <div style="width: 8px; height: 8px; background: var(--warning); border-radius: 50%;"></div>
-                                    <div style="flex: 1;">
-                                        <div style="font-weight: 500;">Backup completed</div>
-                                        <div style="font-size: 0.875rem; color: var(--text-secondary);">1 day ago</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Settings Profiles -->
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title"><i class="fas fa-user-cog"></i> Settings Profiles</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="profile-cards">
-                            <div class="profile-card active" onclick="applyProfile('beginner')">
-                                <div class="profile-icon">
-                                    <i class="fas fa-user-graduate"></i>
-                                </div>
-                                <h3 style="margin-bottom: 0.5rem;">Beginner Mode</h3>
-                                <p style="color: var(--text-secondary); font-size: 0.875rem;">Simplified interface with basic features</p>
-                            </div>
-                            <div class="profile-card" onclick="applyProfile('advanced')">
-                                <div class="profile-icon">
-                                    <i class="fas fa-user-cog"></i>
-                                </div>
-                                <h3 style="margin-bottom: 0.5rem;">Advanced Mode</h3>
-                                <p style="color: var(--text-secondary); font-size: 0.875rem;">Full access to all features</p>
-                            </div>
-                            <div class="profile-card" onclick="applyProfile('performance')">
-                                <div class="profile-icon">
-                                    <i class="fas fa-tachometer-alt"></i>
-                                </div>
-                                <h3 style="margin-bottom: 0.5rem;">Performance Mode</h3>
-                                <p style="color: var(--text-secondary); font-size: 0.875rem;">Optimized for speed</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- User Guide Section: expandable, searchable help centre -->
-            <div id="user-guide" class="settings-section">
-                <div class="guide-header">
-                    <div>
-                        <span class="guide-eyebrow"><i class="fas fa-book-open"></i> HELP CENTRE</span>
-                        <h1>User Guide</h1>
-                        <p>Alishan App ko step-by-step samajhne ke liye yahan guide padhein. Naye features ke saath is guide mein aur topics add kiye jayenge.</p>
-                    </div>
-                </div>
-                <div class="guide-search-box">
-                    <i class="fas fa-search"></i>
-                    <input id="guideSearchInput" type="search" placeholder="Guide mein search karein — quality, colour, filter, payment..." aria-label="Search user guide">
-                    <button type="button" id="guideSearchClear" aria-label="Clear guide search" hidden>&times;</button>
-                </div>
-                <div class="guide-search-status" id="guideSearchStatus" aria-live="polite">Saare guide topics neeche diye gaye hain.</div>
-
-                <div class="guide-topic-grid" id="guideTopics">
-                    <details class="guide-topic" open data-guide-topic>
-                        <summary><span class="guide-topic-icon"><i class="fas fa-house"></i></span><span><strong>1. Dashboard ko samjhein</strong><small>Home screen aur records ka overview</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
-                        <div class="guide-topic-body">
-                            <p>Dashboard app kholne par aane wali main screen hai. Yahan se aap apne records dekh sakte hain, search kar sakte hain aur nayi quality entry shuru kar sakte hain.</p>
-                            <ul><li>Overview cards par tap karke us category ke records dekhein, agar card par click/filter available ho.</li><li>Latest Qualities mein recent entries dekhein.</li><li>Record ki poori details dekhne ke liye us record ko expand karein.</li></ul>
-                        </div>
-                    </details>
-
-                    <details class="guide-topic" data-guide-topic>
-                        <summary><span class="guide-topic-icon"><i class="fas fa-circle-plus"></i></span><span><strong>2. Nayi Quality kaise add karein</strong><small>Quality type, quality, cup, colour aur size quantity</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
-                        <div class="guide-topic-body">
-                            <ol><li><b>Add Quality</b> kholein.</li><li>Quality Type select karein.</li><li>Quality select karein. Quality ke saath uska price pehle se attached hota hai; alag se price enter karne ki zaroorat nahi hoti.</li><li>Applicable Cup aur Colour select karein.</li><li>Har size ke saamne quantity enter karein. Quantity pieces mein enter hoti hai aur total Dozen mein calculate/display hota hai.</li><li>Weight/Meter aur Notes optional hain.</li><li>Entry save karein aur Latest Qualities mein check karein.</li></ol>
-                            <p><b>Tip:</b> Size ke saamne quantity bharte waqt sahi colour/size row ka dhyan rakhein.</p>
-                        </div>
-                    </details>
-
-                    <details class="guide-topic" data-guide-topic>
-                        <summary><span class="guide-topic-icon"><i class="fas fa-pen-to-square"></i></span><span><strong>3. Record edit, Lot Number aur Maal Gaya</strong><small>Entry save hone ke baad details update karna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
-                        <div class="guide-topic-body">
-                            <ul><li>Record par <b>Edit</b> dabakar uski editable details update karein.</li><li>Lot Number quality complete/clear hone ke baad Edit mein add karein; nayi entry banate waqt Lot Number zaroori nahi hai.</li><li><b>Maal Gaya</b> field mein zaroorat ke mutabik naam ya simple text likhein. Ye note/search ke liye hai, alag tracking system nahi.</li><li>Changes save karne ke baad record dobara check karein.</li></ul>
-                        </div>
-                    </details>
-
-                    <details class="guide-topic" data-guide-topic>
-                        <summary><span class="guide-topic-icon"><i class="fas fa-check-circle"></i></span><span><strong>4. Complete aur Incomplete status</strong><small>Kaam ki current condition dikhana</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
-                        <div class="guide-topic-body">
-                            <p><b>Complete</b> ka matlab quality ka kaam complete/clear ho gaya. <b>Incomplete</b> ka matlab kaam abhi baaki hai. Record par Complete action use karein. Complete record ko wapas Incomplete karna ho to Edit flow se status badlein, agar option diya gaya ho.</p>
-                            <p>Complete karne se Lot Number ya Maal Gaya ki value apne aap delete ya change nahi hoti.</p>
-                        </div>
-                    </details>
-
-                    <details class="guide-topic" data-guide-topic>
-                        <summary><span class="guide-topic-icon"><i class="fas fa-magnifying-glass"></i></span><span><strong>5. Search kaise karein</strong><small>Ek hi search box se record dhoondhna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
-                        <div class="guide-topic-body">
-                            <p>Search box mein record se judi koi pehchaan likhein. Jaise Quality Name, Quality ID/Code, Lot Number, Colour, Quality Type, Cup, Size, Notes, Date, Price ya quantity. Search suggestions mein matching values bhi aa sakti hain.</p>
-                            <ul><li>Ek ya zyada words type karke Search dabayein ya suggestion select karein.</li><li>Search suggestions ko keyboard se bhi use kar sakte hain: Up/Down se move, Enter se select, Escape se close.</li><li>Search clear karne ke liye search box ka clear (×) button use karein.</li><li>Recent searches aur Top Searches se pehle ki searches dobara khol sakte hain.</li></ul>
-                            <p><b>Note:</b> Normal search words ko record ke searchable text mein match karti hai. Specific field, range ya multiple conditions ke liye Advanced Filter ka use karein.</p>
-                        </div>
-                    </details>
-
-                    <details class="guide-topic" data-guide-topic>
-                        <summary><span class="guide-topic-icon"><i class="fas fa-sliders"></i></span><span><strong>6. Advanced Filter kaise use karein</strong><small>Ek saath kai conditions lagana</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
-                        <div class="guide-topic-body">
-                            <ol><li>Search area mein <b>Advanced Filter</b> card kholein.</li><li>Quality Type, Colour, Cup, Size, Status, Payment Status ya Date select/enter karein.</li><li>Amount, Price, Dozen, Weight/Meter aur size-wise quantity ke Min/Max values de sakte hain.</li><li>Lot Number, Notes aur Maal Gaya ke text se bhi filter kar sakte hain.</li><li>Condition logic mein <b>AND</b> rakhen to sabhi conditions match honi chahiye; <b>OR</b> mein koi ek condition match ho to record aa sakta hai.</li><li>Exclude Colour mein woh colour likhein jise results se hatana hai.</li><li><b>Apply Filters</b> dabayein. Sirf filter hatane ke liye Reset Filters use karein.</li></ol>
-                            <p><b>Example:</b> Colour Black + Cup C + Status Incomplete lagane par in conditions se match hone wale records dikhenge.</p>
-                        </div>
-                    </details>
-
-                    <details class="guide-topic" data-guide-topic>
-                        <summary><span class="guide-topic-icon"><i class="fas fa-arrow-down-wide-short"></i></span><span><strong>7. Advanced Sort kaise use karein</strong><small>Records ko apni zaroorat ke hisaab se arrange karna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
-                        <div class="guide-topic-body">
-                            <ol><li><b>Advanced Sort</b> card kholein.</li><li>Sort first by mein pehla field select karein, jaise Entry Date, Total Dozen ya Total Amount.</li><li>Ascending/Low to High ya Descending/High to Low chunein.</li><li>Chahein to Then by mein second sorting field select karein.</li><li><b>Apply Sort</b> dabayein.</li></ol>
-                            <p><b>Example:</b> Pehle Total Amount ko Highest to Lowest aur phir Entry Date ko Newest First rakh sakte hain.</p>
-                        </div>
-                    </details>
-
-                    <details class="guide-topic" data-guide-topic>
-                        <summary><span class="guide-topic-icon"><i class="fas fa-bookmark"></i></span><span><strong>8. Saved Searches, result count aur Clear All</strong><small>Apni search setting dobara use karna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
-                        <div class="guide-topic-body">
-                            <ul><li>Search + Filter + Sort ka current combination rakhne ke liye <b>Save current</b> dabayein aur naam dein.</li><li>Saved searches dropdown se pehle save kiya hua combination load karein.</li><li>Matching records ka count batata hai ki current search/filter se kitne records mile.</li><li>Active filter chip par tap karke sirf us condition ko hata sakte hain.</li><li><b>Clear All</b> search, filters aur sorting ko reset karta hai.</li></ul>
-                        </div>
-                    </details>
-
-                    <details class="guide-topic" data-guide-topic>
-                        <summary><span class="guide-topic-icon"><i class="fas fa-cloud-arrow-up"></i></span><span><strong>9. Backup aur Restore</strong><small>Apne records ki backup copy rakhna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
-                        <div class="guide-topic-body">
-                            <p>Settings ke Backup &amp; Restore section mein available backup options dekhein. Backup banane ke baad uska status/date check karein. Restore karne se pehle sahi backup file/account confirm karein, kyunki restore data ko replace ya update kar sakta hai.</p>
-                            <p><b>Important:</b> Backup complete hone ka confirmation dekhe bina ye assume na karein ki data backup ho gaya hai.</p>
-                        </div>
-                    </details>
-
-                    <details class="guide-topic" data-guide-topic>
-                        <summary><span class="guide-topic-icon"><i class="fas fa-palette"></i></span><span><strong>10. Appearance aur theme</strong><small>App ka look badalna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
-                        <div class="guide-topic-body"><p>Settings ke Appearance section mein available theme aur display preferences dekhein. Theme change karne ke baad app ke alag pages par bhi check karein ki text aur controls clearly dikh rahe hain.</p></div>
-                    </details>
-                </div>
-                <div class="guide-no-results" id="guideNoResults" hidden>
-                    <i class="fas fa-book-open"></i><strong>Koi guide topic nahi mila</strong><span>Doosra word try karein, jaise “search”, “colour”, “payment” ya “backup”.</span>
-                </div>
-                <div class="guide-footer-note"><i class="fas fa-lightbulb"></i><span><b>Guide update hoti rahegi.</b> Aage chal kar Payments, Reports, Manager features, Inventory aur naye app features ke liye yahin naye step-by-step topics add kiye jayenge.</span></div>
-            </div>
-
-            <!-- General Settings Section -->
-            <div id="general" class="settings-section">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title"><i class="fas fa-building"></i> Business Information</h2>
-                    </div>
-                    <div class="card-body">
-                        <!-- Logo Upload -->
-                        <div class="logo-upload">
-                            <div class="logo-preview">
-                                <img id="logoPreview" src="" alt="Business Logo">
-                                <div class="logo-placeholder">
-                                    <i class="fas fa-image"></i>
-                                    <p>No logo uploaded</p>
-                                    <p class="logo-dimensions">Recommended: 300×300 pixels</p>
-                                </div>
-                            </div>
-                            <div class="logo-actions">
-                                <button class="btn btn-sm" onclick="document.getElementById('logoUpload').click()">
-                                    <i class="fas fa-upload"></i> Upload Logo
-                                </button>
-                                <input type="file" id="logoUpload" accept="image/*" style="display: none;" onchange="handleLogoUpload(this.files[0])">
-                                <button class="btn btn-secondary btn-sm" id="cropLogoBtn" style="display: none;" onclick="showCropperModal()">
-                                    <i class="fas fa-crop"></i> Crop
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Business Name</label>
-                            <input type="text" class="form-control" id="businessName" value="ALISHAN Garments" oninput="validateBusinessName(this.value)">
-                            <div class="form-text">Your business name as it appears to customers</div>
-                            <div id="businessNameError" style="color: var(--danger); font-size: 0.875rem; margin-top: 0.25rem; display: none;"></div>
-                        </div>
-                        
-                        <!-- Currency Selector -->
-                        <div class="form-group">
-                            <label class="form-label">Currency</label>
-                            <div class="currency-selector" id="currencySelector">
-                                <!-- Currencies will be populated by JavaScript -->
-                            </div>
-                            <button class="btn btn-secondary btn-sm" onclick="fetchRealTimeExchangeRates()" id="refreshRatesBtn" style="margin-top: 0.5rem;">
-                                <i class="fas fa-sync-alt"></i> Refresh Exchange Rates
-                                <span id="lastUpdated" class="rate-status"></span>
-                            </button>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Business Address</label>
-                            <textarea class="form-control" id="businessAddress" rows="3">123 Garment Street, Fashion District, Mumbai, India</textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title"><i class="fas fa-table"></i> Display Preferences</h2>
-                    </div>
-                    <div class="card-body">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                            <div class="form-group">
-                                <label class="form-label">Date Format</label>
-                                <select class="form-control" id="dateFormat">
-                                    <option value="dd-mm-yyyy" selected>DD-MM-YYYY</option>
-                                    <option value="mm-dd-yyyy">MM-DD-YYYY</option>
-                                    <option value="yyyy-mm-dd">YYYY-MM-DD</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Items Per Page</label>
-                                <select class="form-control" id="itemsPerPage">
-                                    <option value="10">10 items</option>
-                                    <option value="20">20 items</option>
-                                    <option value="50" selected>50 items</option>
-                                    <option value="100">100 items</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <button class="btn" onclick="saveGeneralSettings()">
-                            <i class="fas fa-save"></i> Save Settings
+<div class="form-group">
+<label class="form-label">Items Per Page</label>
+<select class="form-control" id="itemsPerPage">
+<option value="10">10 items</option>
+<option value="20">20 items</option>
+<option selected="" value="50">50 items</option>
+<option value="100">100 items</option>
+</select>
+</div>
+</div>
+</div>
+<div class="card-footer">
+<button class="btn" onclick="saveGeneralSettings()">
+<i class="fas fa-save"></i> Save Settings
                         </button>
-                        <span id="generalSaveIndicator" class="save-indicator">
-                            <i class="fas fa-check-circle"></i> Saved
+<span class="save-indicator" id="generalSaveIndicator">
+<i class="fas fa-check-circle"></i> Saved
                         </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Appearance Settings Section -->
-            <div id="appearance" class="settings-section">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title"><i class="fas fa-paint-brush"></i> Appearance Settings</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-palette"></i> Theme & Colors
+</div>
+</div>
+</div>
+<!-- Appearance Settings Section -->
+<div class="settings-section" id="appearance">
+<div class="card">
+<div class="card-header">
+<h2 class="card-title"><i class="fas fa-paint-brush"></i> Appearance Settings</h2>
+</div>
+<div class="card-body">
+<div class="section-group">
+<h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
+<i class="fas fa-palette"></i> Theme &amp; Colors
                             </h3>
-                            
-                            <!-- Theme Selector -->
-                            <div class="theme-selector" id="themeSelector">
-                                <!-- Theme options will be populated by JavaScript -->
-                            </div>
-                            
-                            <div class="form-grid" style="margin-top: 1.5rem;">
-                                <div class="form-group">
-                                    <label class="form-label" for="primaryColor">Primary Color</label>
-                                    <input type="color" class="form-control" id="primaryColor" value="#4361ee">
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label" for="secondaryColor">Secondary Color</label>
-                                    <input type="color" class="form-control" id="secondaryColor" value="#3f37c9">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-globe"></i> Language & Display
+<!-- Theme Selector -->
+<div class="theme-selector" id="themeSelector">
+<!-- Theme options will be populated by JavaScript -->
+</div>
+<div class="form-grid" style="margin-top: 1.5rem;">
+<div class="form-group">
+<label class="form-label" for="primaryColor">Primary Color</label>
+<input class="form-control" id="primaryColor" type="color" value="#4361ee"/>
+</div>
+<div class="form-group">
+<label class="form-label" for="secondaryColor">Secondary Color</label>
+<input class="form-control" id="secondaryColor" type="color" value="#3f37c9"/>
+</div>
+</div>
+</div>
+<div class="section-group">
+<h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
+<i class="fas fa-globe"></i> Language &amp; Display
                             </h3>
-                            <div class="language-selector" id="languageSelector">
-                                <!-- Language options will be populated by JavaScript -->
-                            </div>
-                            
-                            <div class="form-grid" style="margin-top: 1.5rem;">
-                                <div class="form-group">
-                                    <label>Compact Mode</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="compactMode">
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                    <div class="form-text">Reduce padding for more content on screen</div>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label>High Contrast Mode</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="highContrastMode">
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                    <div class="form-text">Increase contrast for better readability</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <button class="btn" onclick="saveAppearanceSettings()">
-                            <i class="fas fa-save"></i> Save Settings
+<div class="form-grid" style="margin-top: 1.5rem;">
+<div class="form-group">
+<label>Compact Mode</label>
+<label class="toggle-switch">
+<input id="compactMode" type="checkbox"/>
+<span class="toggle-slider"></span>
+</label>
+<div class="form-text">Reduce padding for more content on screen</div>
+</div>
+<div class="form-group">
+<label>High Contrast Mode</label>
+<label class="toggle-switch">
+<input id="highContrastMode" type="checkbox"/>
+<span class="toggle-slider"></span>
+</label>
+<div class="form-text">Increase contrast for better readability</div>
+</div>
+</div>
+</div>
+</div>
+<div class="card-footer">
+<button class="btn" onclick="saveAppearanceSettings()">
+<i class="fas fa-save"></i> Save Settings
                         </button>
-                        <span id="appearanceSaveIndicator" class="save-indicator">
-                            <i class="fas fa-check-circle"></i> Saved
+<span class="save-indicator" id="appearanceSaveIndicator">
+<i class="fas fa-check-circle"></i> Saved
                         </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Users Section -->
-            <div id="users" class="settings-section">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title"><i class="fas fa-users"></i> User Management</h2>
-                    </div>
-                    <div class="card-body">
-                        <!-- Bulk Operations -->
-                        <div class="bulk-actions">
-                            <button class="btn btn-sm" onclick="selectAllUsers()">
-                                <i class="fas fa-check-square"></i> Select All
-                            </button>
-                            <button class="btn btn-secondary btn-sm" onclick="deleteSelectedUsers()">
-                                <i class="fas fa-trash"></i> Delete Selected
-                            </button>
-                            <button class="btn btn-secondary btn-sm" onclick="exportSelectedUsers()">
-                                <i class="fas fa-file-export"></i> Export Selected
-                            </button>
-                        </div>
-
-                        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-                            <button class="btn" onclick="showAddUserModal()">
-                                <i class="fas fa-user-plus"></i> Add User
-                            </button>
-                            <button class="btn btn-secondary" onclick="showBulkImportModal()">
-                                <i class="fas fa-file-import"></i> Bulk Import
-                            </button>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Current Users</label>
-                            <div class="user-list" id="userList">
-                                <!-- Users will be populated by JavaScript -->
-                            </div>
-                        </div>
-
-                        <!-- Permission Management -->
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-shield-alt"></i> Role Permissions
-                            </h3>
-                            <div class="permission-matrix" id="permissionMatrix">
-                                <!-- Permissions will be populated by JavaScript -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Backup & Restore Section -->
-            <div id="backup" class="settings-section">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title"><i class="fas fa-database"></i> Backup & Restore</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-history"></i> Auto Backup Settings
-                            </h3>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                                <div class="form-group">
-                                    <label style="display: block; margin-bottom: 0.5rem;">Auto Backup</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="autoBackup" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                    <div class="form-text">Automatically backup data every week</div>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label" for="backupFrequency">Backup Frequency</label>
-                                    <select class="form-control" id="backupFrequency">
-                                        <option value="daily">Daily</option>
-                                        <option value="weekly" selected>Weekly</option>
-                                        <option value="monthly">Monthly</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <!-- Backup Calendar -->
-                            <div class="form-group">
-                                <label class="form-label">Backup Schedule</label>
-                                <div class="backup-calendar" id="backupCalendar">
-                                    <div class="calendar-header">
-                                        <button class="btn btn-sm" id="prevMonth"><i class="fas fa-chevron-left"></i></button>
-                                        <span id="calendarMonth">November 2023</span>
-                                        <button class="btn btn-sm" id="nextMonth"><i class="fas fa-chevron-right"></i></button>
-                                    </div>
-                                    <div class="calendar-day">Sun</div>
-                                    <div class="calendar-day">Mon</div>
-                                    <div class="calendar-day">Tue</div>
-                                    <div class="calendar-day">Wed</div>
-                                    <div class="calendar-day">Thu</div>
-                                    <div class="calendar-day">Fri</div>
-                                    <div class="calendar-day">Sat</div>
-                                    <!-- Calendar dates will be populated by JavaScript -->
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-cogs"></i> Manual Operations
-                            </h3>
-                            <div class="form-group">
-                                <button class="btn" onclick="createBackup()"><i class="fas fa-plus"></i> Create Backup Now</button>
-                                <button class="btn btn-secondary" onclick="confirmRestoreBackup()"><i class="fas fa-undo"></i> Restore from Backup</button>
-                                <button class="btn" onclick="showCloudBackupModal()"><i class="fas fa-cloud"></i> Cloud Backup</button>
-                            </div>
-                        </div>
-                        
-                        <!-- Storage Usage -->
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-hard-drive"></i> Storage Usage
-                            </h3>
-                            <div class="storage-usage">
-                                <div class="usage-bar">
-                                    <div class="usage-progress" id="storageProgressBar" style="width: 0%;"></div>
-                                </div>
-                                <div class="usage-stats">
-                                    <span id="storageUsageText">Calculating...</span>
-                                    <span id="storagePercentage">0%</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Backup Timeline -->
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-clock"></i> Recent Backups
-                            </h3>
-                            <div class="backup-timeline" id="backupTimeline">
-                                <!-- Backup items will be populated by JavaScript -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Notifications Section -->
-            <div id="notifications" class="settings-section">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title"><i class="fas fa-bell"></i> Notification Settings</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-toggle-on"></i> Notification Preferences
-                            </h3>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label>Low Stock Alerts</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="lowStockAlerts" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                    <div class="form-text">Get notified when inventory is low</div>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label>Daily Reports</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="dailyReports" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                    <div class="form-text">Receive daily sales reports</div>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label>New Order Alerts</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="newOrderAlerts" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                    <div class="form-text">Get notified for new orders</div>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label>Backup Reminders</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="backupReminders">
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                    <div class="form-text">Remind me to backup data</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-broadcast-tower"></i> Notification Channels
-                            </h3>
-                            <div class="notification-channels">
-                                <div class="channel-card">
-                                    <i class="fas fa-envelope"></i>
-                                    <h4>Email</h4>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="emailNotifications" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="channel-card">
-                                    <i class="fas fa-sms"></i>
-                                    <h4>SMS</h4>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="smsNotifications">
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="channel-card">
-                                    <i class="fas fa-bell"></i>
-                                    <h4>Browser</h4>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="browserNotifications" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="channel-card">
-                                    <i class="fas fa-mobile-alt"></i>
-                                    <h4>Push</h4>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="pushNotifications">
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-envelope"></i> Notification Delivery
-                            </h3>
-                            <div class="form-group">
-                                <label class="form-label" for="notificationEmail">Notification Email</label>
-                                <input type="email" class="form-control" id="notificationEmail" value="admin@alishan.com">
-                                <div class="form-text error-message" id="emailError" style="color: var(--danger); display: none;">
-                                    Please enter a valid email address
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label" for="quietHours">Quiet Hours</label>
-                                <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center;">
-                                    <select class="form-control" id="quietStart">
-                                        <option value="22:00">10:00 PM</option>
-                                        <option value="23:00">11:00 PM</option>
-                                        <option value="00:00">12:00 AM</option>
-                                    </select>
-                                    <span>to</span>
-                                    <select class="form-control" id="quietEnd">
-                                        <option value="06:00">6:00 AM</option>
-                                        <option value="07:00">7:00 AM</option>
-                                        <option value="08:00">8:00 AM</option>
-                                    </select>
-                                </div>
-                                <div class="form-text">No notifications will be sent during these hours</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <button class="btn" onclick="saveNotificationSettings()">
-                            <i class="fas fa-save"></i> Save Settings
-                        </button>
-                        <span id="notificationSaveIndicator" class="save-indicator">
-                            <i class="fas fa-check-circle"></i> Saved
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Import/Export Section -->
-            <div id="import-export" class="settings-section">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title"><i class="fas fa-file-export"></i> Import/Export Data</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-file-export"></i> Export Data
-                            </h3>
-                            <p style="margin-bottom: 1rem; color: var(--text-secondary);">Export your inventory data to various formats</p>
-                            
-                            <div class="import-export-options">
-                                <div class="option-card" onclick="showExportOptions('inventory')">
-                                    <i class="fas fa-boxes"></i>
-                                    <h4>Inventory</h4>
-                                    <p>Export product catalog and stock levels</p>
-                                </div>
-                                <div class="option-card" onclick="showExportOptions('sales')">
-                                    <i class="fas fa-chart-line"></i>
-                                    <h4>Sales Data</h4>
-                                    <p>Export transaction history and reports</p>
-                                </div>
-                                <div class="option-card" onclick="showExportOptions('customers')">
-                                    <i class="fas fa-users"></i>
-                                    <h4>Customer Data</h4>
-                                    <p>Export customer information and orders</p>
-                                </div>
-                                <div class="option-card" onclick="showExportOptions('settings')">
-                                    <i class="fas fa-cog"></i>
-                                    <h4>Settings</h4>
-                                    <p>Export system configuration</p>
-                                </div>
-                            </div>
-                            
-                            <div id="exportOptions" style="display: none; margin-top: 1.5rem;">
-                                <div class="form-grid">
-                                    <div class="form-group">
-                                        <label class="form-label" for="exportDateRange">Date Range</label>
-                                        <select class="form-control" id="exportDateRange">
-                                            <option value="all">All Data</option>
-                                            <option value="last_week">Last 7 Days</option>
-                                            <option value="last_month">Last 30 Days</option>
-                                            <option value="custom">Custom Range</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label class="form-label" for="exportFormat">Format</label>
-                                        <select class="form-control" id="exportFormat">
-                                            <option value="csv">CSV</option>
-                                            <option value="excel">Excel</option>
-                                            <option value="json">JSON</option>
-                                            <option value="pdf">PDF</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <button class="btn" onclick="exportData()">
-                                        <i class="fas fa-file-export"></i> Export Data
-                                    </button>
-                                    <button class="btn btn-secondary" onclick="saveExportTemplate()">
-                                        <i class="fas fa-save"></i> Save as Template
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-file-import"></i> Import Data
-                            </h3>
-                            <p style="margin-bottom: 1rem; color: var(--text-secondary);">Import inventory data from files</p>
-                            
-                            <div class="import-export-options">
-                                <div class="option-card" onclick="showImportOptions('inventory')">
-                                    <i class="fas fa-boxes"></i>
-                                    <h4>Inventory</h4>
-                                    <p>Import product catalog and stock levels</p>
-                                </div>
-                                <div class="option-card" onclick="showImportOptions('sales')">
-                                    <i class="fas fa-chart-line"></i>
-                                    <h4>Sales Data</h4>
-                                    <p>Import transaction history</p>
-                                </div>
-                                <div class="option-card" onclick="showImportOptions('customers')">
-                                    <i class="fas fa-users"></i>
-                                    <h4>Customer Data</h4>
-                                    <p>Import customer information</p>
-                                </div>
-                                <div class="option-card" onclick="showImportOptions('settings')">
-                                    <i class="fas fa-cog"></i>
-                                    <h4>Settings</h4>
-                                    <p>Import system configuration</p>
-                                </div>
-                            </div>
-                            
-                            <div id="importOptions" style="display: none; margin-top: 1.5rem;">
-                                <div class="form-group">
-                                    <label class="form-label" for="importTemplate">Use Template</label>
-                                    <select class="form-control" id="importTemplate">
-                                        <option value="">Select Template</option>
-                                        <option value="template1">Full Inventory Import</option>
-                                        <option value="template2">Sales Data Only</option>
-                                        <option value="template3">Customer Data</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label" for="importFile">Select File</label>
-                                    <input type="file" class="form-control" id="importFile" accept=".csv,.xlsx,.json">
-                                    <button class="btn btn-sm" onclick="previewImportData()" style="margin-top: 10px;">
-                                        <i class="fas fa-eye"></i> Preview Data
-                                    </button>
-                                </div>
-                                
-                                <!-- Import Preview -->
-                                <div class="import-preview" id="importPreview" style="display: none;">
-                                    <table class="preview-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Product ID</th>
-                                                <th>Name</th>
-                                                <th>Category</th>
-                                                <th>Quantity</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>P1001</td>
-                                                <td>Men's T-Shirt</td>
-                                                <td>Clothing</td>
-                                                <td>50</td>
-                                            </tr>
-                                            <tr>
-                                                <td>P1002</td>
-                                                <td>Women's Jeans</td>
-                                                <td>Clothing</td>
-                                                <td>30</td>
-                                            </tr>
-                                            <tr>
-                                                <td>P1003</td>
-                                                <td>Kids' Jacket</td>
-                                                <td>Clothing</td>
-                                                <td>25</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label" for="importStrategy">Import Strategy</label>
-                                    <select class="form-control" id="importStrategy">
-                                        <option value="add_new">Add New Items Only</option>
-                                        <option value="update_existing">Update Existing Items</option>
-                                        <option value="replace_all">Replace All Data</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <button class="btn" onclick="importData()">
-                                        <i class="fas fa-file-import"></i> Import Data
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="toast info" style="margin-top: 1.5rem;">
-                            <i class="fas fa-info-circle"></i>
-                            <div>
-                                <strong>Note:</strong> Always backup your data before importing new data to prevent data loss.
-                            </div>
-                        </div>
-                        
-                        <!-- Import History -->
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-history"></i> Import History
-                            </h3>
-                            <div class="backup-timeline" id="importHistory">
-                                <!-- Import history will be populated by JavaScript -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Security Section -->
-            <div id="security" class="settings-section">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title"><i class="fas fa-shield-alt"></i> Security Settings</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-lock"></i> Authentication
-                            </h3>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label>Two-Factor Authentication</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="twoFactorAuth">
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                    <div class="form-text">Add an extra layer of security to your account</div>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label>Session Timeout</label>
-                                    <select class="form-control" id="sessionTimeout">
-                                        <option value="15">15 minutes</option>
-                                        <option value="30">30 minutes</option>
-                                        <option value="60" selected>1 hour</option>
-                                        <option value="120">2 hours</option>
-                                        <option value="240">4 hours</option>
-                                    </select>
-                                    <div class="form-text">Automatically log out after inactivity</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-user-shield"></i> Password Policy
-                            </h3>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label class="form-label" for="minPasswordLength">Minimum Password Length</label>
-                                    <input type="number" class="form-control" id="minPasswordLength" value="8" min="6" max="20">
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label" for="passwordExpiry">Password Expiry (days)</label>
-                                    <input type="number" class="form-control" id="passwordExpiry" value="90" min="30" max="365">
-                                </div>
-                            </div>
-                            
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label>Require Special Characters</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="requireSpecialChars" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label>Require Numbers</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="requireNumbers" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label>Require Uppercase</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="requireUppercase">
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-network-wired"></i> Network Security
-                            </h3>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label>IP Whitelisting</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="ipWhitelisting">
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                    <div class="form-text">Restrict access to specific IP addresses</div>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label>API Rate Limiting</label>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="apiRateLimiting" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                    <div class="form-text">Limit API requests to prevent abuse</div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label" for="allowedIPs">Allowed IP Addresses</label>
-                                <textarea class="form-control" id="allowedIPs" rows="3" placeholder="Enter one IP address per line&#10;Example:&#10;192.168.1.1&#10;10.0.0.50"></textarea>
-                                <div class="form-text">Leave empty to allow all IP addresses</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <button class="btn" onclick="saveSecuritySettings()">
-                            <i class="fas fa-save"></i> Save Settings
-                        </button>
-                        <span id="securitySaveIndicator" class="save-indicator">
-                            <i class="fas fa-check-circle"></i> Saved
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Audit Log Section -->
-            <div id="audit" class="settings-section">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title"><i class="fas fa-history"></i> Audit Log</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-filter"></i> Filter Logs
-                            </h3>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label class="form-label" for="auditDateRange">Date Range</label>
-                                    <select class="form-control" id="auditDateRange">
-                                        <option value="today">Today</option>
-                                        <option value="yesterday">Yesterday</option>
-                                        <option value="last_week" selected>Last 7 Days</option>
-                                        <option value="last_month">Last 30 Days</option>
-                                        <option value="custom">Custom Range</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label" for="auditUser">User</label>
-                                    <select class="form-control" id="auditUser">
-                                        <option value="">All Users</option>
-                                        <option value="admin">Admin User</option>
-                                        <option value="manager">Manager User</option>
-                                        <option value="staff">Staff User</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label" for="auditAction">Action Type</label>
-                                    <select class="form-control" id="auditAction">
-                                        <option value="">All Actions</option>
-                                        <option value="login">Login</option>
-                                        <option value="logout">Logout</option>
-                                        <option value="create">Create</option>
-                                        <option value="update">Update</option>
-                                        <option value="delete">Delete</option>
-                                        <option value="export">Export</option>
-                                        <option value="import">Import</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <button class="btn btn-sm" onclick="filterAuditLogs()">
-                                <i class="fas fa-filter"></i> Apply Filters
-                            </button>
-                            <button class="btn btn-secondary btn-sm" onclick="clearAuditFilters()">
-                                <i class="fas fa-times"></i> Clear Filters
-                            </button>
-                        </div>
-                        
-                        <div class="section-group">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-list"></i> Recent Activities
-                            </h3>
-                            <div class="audit-log" id="auditLog">
-                                <!-- Audit items will be populated by JavaScript -->
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <button class="btn btn-secondary" onclick="exportAuditLog()">
-                                <i class="fas fa-file-export"></i> Export Audit Log
-                            </button>
-                            <button class="btn btn-secondary" onclick="clearAuditLog()">
-                                <i class="fas fa-trash"></i> Clear Log
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
-
-    <!-- Add User Modal -->
-    <div class="modal-overlay" id="userModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 id="modalTitle">Add New User</h3>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label" for="userEmail">Email Address</label>
-                    <input type="email" class="form-control" id="userEmail" placeholder="user@example.com">
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="userName">Full Name</label>
-                    <input type="text" class="form-control" id="userName" placeholder="John Doe">
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="userRole">Role</label>
-                    <select class="form-control" id="userRole">
-                        <option value="admin">Administrator</option>
-                        <option value="manager">Manager</option>
-                        <option value="staff" selected>Staff</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="userPassword">Password</label>
-                    <input type="password" class="form-control" id="userPassword" placeholder="Enter password">
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="confirmPassword">Confirm Password</label>
-                    <input type="password" class="form-control" id="confirmPassword" placeholder="Confirm password">
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="userAvatar">Profile Picture</label>
-                    <input type="file" class="form-control" id="userAvatar" accept="image/*">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                <button class="btn" id="modalActionBtn" onclick="addUser()">Add User</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Cropper Modal -->
-    <div class="modal-overlay" id="cropperModal">
-        <div class="modal cropper-modal">
-            <div class="modal-header">
-                <h3>Crop Logo</h3>
-                <button class="modal-close" onclick="closeCropperModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="cropper-container">
-                    <img id="cropperImage" src="" alt="Crop Preview">
-                </div>
-                <div class="cropper-actions">
-                    <button class="btn btn-secondary" onclick="rotateImage(-90)">
-                        <i class="fas fa-undo"></i> Rotate Left
-                    </button>
-                    <button class="btn btn-secondary" onclick="rotateImage(90)">
-                        <i class="fas fa-redo"></i> Rotate Right
-                    </button>
-                    <button class="btn" onclick="cropImage()">
-                        <i class="fas fa-crop"></i> Crop Image
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Cloud Backup Modal -->
-    <div class="modal-overlay" id="cloudBackupModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>Cloud Backup Settings</h3>
-                <button class="modal-close" onclick="closeCloudBackupModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">Cloud Service</label>
-                    <select class="form-control" id="cloudService">
-                        <option value="google">Google Drive</option>
-                        <option value="dropbox">Dropbox</option>
-                        <option value="onedrive">OneDrive</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Auto Sync</label>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="autoSync">
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <div class="form-text">Automatically sync backups to cloud</div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="syncFrequency">Sync Frequency</label>
-                    <select class="form-control" id="syncFrequency">
-                        <option value="daily">Daily</option>
-                        <option value="weekly" selected>Weekly</option>
-                        <option value="monthly">Monthly</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <button class="btn">
-                        <i class="fab fa-google-drive"></i> Connect to Google Drive
-                    </button>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeCloudBackupModal()">Cancel</button>
-                <button class="btn" onclick="saveCloudBackupSettings()">Save Settings</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bulk Import Modal -->
-    <div class="modal-overlay" id="bulkImportModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>Bulk Import Users</h3>
-                <button class="modal-close" onclick="closeBulkImportModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label" for="bulkImportFile">Select CSV File</label>
-                    <input type="file" class="form-control" id="bulkImportFile" accept=".csv">
-                    <div class="form-text">Download the <a href="#" onclick="downloadUserTemplate()">template file</a> for correct format</div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="bulkImportRole">Default Role</label>
-                    <select class="form-control" id="bulkImportRole">
-                        <option value="staff">Staff</option>
-                        <option value="manager">Manager</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Send Welcome Email</label>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="sendWelcomeEmail" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <div class="form-text">Send welcome email with login instructions</div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeBulkImportModal()">Cancel</button>
-                <button class="btn" onclick="processBulkImport()">Import Users</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <script src="db.js"></script>
-    <script src="theme-manager.js"></script>
-    <script src="script.js"></script>
-    <script src="nav.js"></script>
-    <script src="user-guide.js"></script>
-
-    <nav class="tabbar" aria-label="Main">
-        <a href="index.html"><i class="fas fa-home"></i>Home</a>
-        <a href="inventory.html"><i class="fas fa-database"></i>Inventory</a>
-        <a href="add-entry.html" class="tab-add" aria-label="New entry"><i class="fas fa-plus"></i></a>
-        <a href="reports.html"><i class="fas fa-chart-bar"></i>Reports</a>
-        <a href="setting.html" class="active"><i class="fas fa-cog"></i>Settings</a>
-    </nav>
-    <script src="ui.js"></script>
-    <script src="pwa.js"></script>
+</div>
+</div>
+</div>
+<!-- Users Section -->
+<!-- Backup & Restore Section -->
+<div class="settings-section" id="backup">
+<div class="dashboard-header"><h1>Data &amp; Backup</h1><p style="color:var(--text-secondary)">Manage automatic backup frequency and protect your Alishan records.</p></div>
+<div class="card">
+<div class="card-header"><h2 class="card-title"><i class="fas fa-shield-alt"></i> Automatic Backup</h2></div>
+<div class="card-body">
+<div class="form-group">
+<label class="toggle-switch"><input id="alishanAutoBackup" type="checkbox"/><span class="toggle-slider"></span></label>
+<label for="alishanAutoBackup">Enable automatic backup</label>
+<p class="settings-help">Automatic backups are created by the app when it is opened and while it remains active. The app must be opened for scheduled checks to run.</p>
+</div>
+<div class="form-group">
+<label class="form-label" for="alishanBackupFrequency">Backup interval (hours)</label>
+<input class="form-control" id="alishanBackupFrequency" max="720" min="1" step="1" type="number" value="24"/>
+</div>
+<button class="btn" id="saveAlishanBackupSettings" type="button"><i class="fas fa-save"></i> Save Backup Settings</button>
+<span id="alishanBackupSettingsStatus" role="status"></span>
+</div>
+</div>
+<div class="card" style="margin-top:18px">
+<div class="card-header"><h2 class="card-title"><i class="fas fa-database"></i> Manual Backup &amp; Restore</h2></div>
+<div class="card-body">
+<p class="settings-help">Local backup protects quality and payment records in this browser. For a portable complete backup (qualities, payments, history, activity and settings), use the Export Center.</p>
+<p class="settings-help" id="alishanBackupSummary">Loading saved record and backup information…</p>
+<div class="form-group"><button class="btn" id="createLocalAlishanBackup" type="button"><i class="fas fa-plus"></i> Create Backup Now</button> <button class="btn btn-secondary" id="restoreLatestAlishanBackup" type="button"><i class="fas fa-undo"></i> Restore Latest Local Backup</button> <a class="btn btn-secondary" href="index.html#export"><i class="fas fa-file-export"></i> Open Home Export Center</a></div>
+<div aria-live="polite" class="alishan-backup-history" id="alishanBackupHistory">Loading backup history…</div>
+</div>
+</div>
+<div class="card" style="margin-top:18px">
+<div class="card-header"><h2 class="card-title"><i class="fas fa-hard-drive"></i> Browser Storage</h2></div>
+<div class="card-body">
+<div class="storage-usage"><div class="usage-bar"><div class="usage-progress" id="storageProgressBar" style="width:0%"></div></div><div class="usage-stats"><span id="storageUsageText">Checking storage…</span><span id="storagePercentage">—</span></div></div>
+<p class="settings-help">Storage usage is reported by the browser and may not be available in every browser.</p>
+<button class="btn btn-secondary" id="refreshAlishanStorage" type="button"><i class="fas fa-sync-alt"></i> Refresh Storage Usage</button>
+</div>
+</div>
+</div>
+<!-- Notifications Section -->
+<!-- Import/Export Section -->
+<!-- Security Section -->
+<!-- Audit Log Section -->
+</main>
+</div>
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+<!-- Add User Modal -->
+<!-- Cropper Modal -->
+<!-- Cloud Backup Modal -->
+<!-- Bulk Import Modal -->
+<script src="db.js"></script>
+<script src="theme-manager.js"></script>
+<script src="script.js"></script><script src="settings-data-backup.js"></script>
+<script src="nav.js"></script>
+<script src="user-guide.js"></script>
+<nav aria-label="Main" class="tabbar">
+<a href="index.html"><i class="fas fa-home"></i>Home</a>
+<a href="inventory.html"><i class="fas fa-database"></i>Inventory</a>
+<a aria-label="New entry" class="tab-add" href="add-entry.html"><i class="fas fa-plus"></i></a>
+<a href="reports.html"><i class="fas fa-chart-bar"></i>Reports</a>
+<a class="active" href="setting.html"><i class="fas fa-cog"></i>Settings</a>
+</nav>
+<script src="ui.js"></script>
+<script src="pwa.js"></script>
 </body>
 </html>

@@ -7,7 +7,7 @@
      downloaded and used from then on. Put them in the vendor/ folder to have them from the very first start.
    * Your data (entries, payments, backups) is not touched: it lives in the browser database, not here.
    ============================================================ */
-const VERSION = 'v4';                       // change this only if files are renamed or removed
+const VERSION = 'v13';                       // change this only if files are renamed or removed
 const APP_CACHE = 'alishan-app-' + VERSION;
 const LIB_CACHE = 'alishan-libs-v1';        // the library URLs contain their version, so this never goes stale
 
@@ -17,15 +17,20 @@ const APP_FILES = [
     "bulk-import.css",
     "bulk-import.js",
     "calc.js",
+    "common-pagination.js",
+    "common-pagination.css",
     "colors.json",
     "dashboard.css",
     "dashboard.js",
+    "export-center.js",
+    "export-center.css",
     "db.js",
     "icons.js",
     "index.html",
     "audit-pages.js",
     "quality-history.html",
     "missing-lot.html",
+    "missing-completion.html",
     "pending-amount.html",
     "inventory.css",
     "add-entry.css",
@@ -46,7 +51,11 @@ const APP_FILES = [
     "pwa.js",
     "qualities.json",
     "reports.html",
+    "reports.css",
+    "report-engine.js",
+    "report-views.js",
     "script.js",
+    "settings-data-backup.js",
     "search.css",
     "search.js",
     "setting.css",
@@ -60,12 +69,10 @@ const APP_FILES = [
     "icons/icon-512.png",
     "icons/icon-maskable-512.png"
 ];
-const OPTIONAL_FILES = ["vendor/xlsx.full.min.js", "vendor/chart.umd.js", "vendor/cropper.min.js", "vendor/cropper.min.css"];   // only used if the files exist
+const OPTIONAL_FILES = ["vendor/xlsx.full.min.js", "vendor/chart.umd.js"];   // only used if the files exist
 const LIB_URLS = [
     'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
     'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css'
 ];
 const LIB_HOSTS = ['cdn.jsdelivr.net', 'cdnjs.cloudflare.com'];
 const NETWORK_WAIT_MS = 4000;               // on a very slow connection the kept copy is used after this

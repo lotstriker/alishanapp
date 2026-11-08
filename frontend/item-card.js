@@ -368,6 +368,7 @@ var ItemCard = (() => {
                     <h4><i class="fas fa-sticky-note"></i> ADDITIONAL INFO</h4>
                     <div class="detail-item"><span class="detail-label">LOT NUMBER:</span><span class="detail-value">${escapeHtml(item.lotNumber || 'N/A')}</span></div>
                     <div class="detail-item"><span class="detail-label">ENTRY DATE:</span><span class="detail-value"><i class="fas fa-calendar"></i> ${AlishanCalc.fmtDateLong(item.addedDateTime || item.dateTime)}</span></div>
+                    ${(() => { const done = AlishanCalc.completionInfo(item); return done ? `<div class="detail-item"><span class="detail-label">MAAL GAYA:</span><span class="detail-value"><i class="fas fa-check-circle"></i> ${done.hasDate ? `${done.label} · ${done.days} ${done.days === 1 ? 'day' : 'days'} ago` : 'Date not set'}</span></div>` : ''; })()}
                     <div class="detail-item"><span class="detail-label">NOTES:</span><span class="detail-value">${escapeHtml(item.notes || 'N/A')}</span></div>
                     ${modified}
                 </div>

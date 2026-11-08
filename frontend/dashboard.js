@@ -282,18 +282,18 @@ function getBreakdownData() {
         const date = AlishanCalc.parseDate(item.dateTime || item.createdAt || item.addedDateTime || '');
         if (start && (!date || Number.isNaN(date.getTime()) || date < start)) return;
         const key = String(item.productType || 'OTHER').trim().toUpperCase();
-        if (!map.has(key)) map.set(key, { type: key, items: [], count: 0, dozens: 0, amount: 0, complete: 0, pending: 0 });
+        if (!map.has(key)) map.set(key, { type: key, items: [], count: 0, dozens: 0, amount: 0, complete: 0, incomplete: 0 });
         const bucket = map.get(key);
         const totals = AlishanCalc.itemTotals(item);
         bucket.items.push(item);
         bucket.count += 1;
         bucket.dozens += Number(totals.dozens) || 0;
         bucket.amount += Number(totals.amount) || 0;
-        if (item.inStock === false) bucket.pending += 1; else bucket.complete += 1;
+        if (item.inStock === false) bucket.complete += 1; else bucket.incomplete += 1;   // Complete = out of stock
     });
     // Keep all four supported product types visible, even when one currently has zero records.
     ['BRA', 'PANTY', 'SET', 'BLOUSE'].forEach(type => {
-        if (!map.has(type)) map.set(type, { type, items: [], count: 0, dozens: 0, amount: 0, complete: 0, pending: 0 });
+        if (!map.has(type)) map.set(type, { type, items: [], count: 0, dozens: 0, amount: 0, complete: 0, incomplete: 0 });
     });
     return Array.from(map.values()).map(x => ({ ...x, dozens: Math.round(x.dozens * 100) / 100, amount: Math.round(x.amount * 100) / 100 }))
         .sort((a, b) => {
@@ -311,7 +311,7 @@ function breakdownCardHTML(bucket, totalDozens, compact = false) {
         <span class="type-breakdown-meta">${bucket.count} ${bucket.count === 1 ? 'Quality' : 'Qualities'} <span>·</span> ${AlishanCalc.fmtDozens(bucket.dozens)} Dozen</span>
         <span class="type-breakdown-amount">${AlishanCalc.fmtMoney(bucket.amount)}</span>
         <span class="type-breakdown-progress" role="img" aria-label="${percent}% of total dozen"><span style="width:${percent}%"></span></span>
-        <span class="type-breakdown-foot"><span>${percent}% of total dozen</span><span>${bucket.complete} complete · ${bucket.pending} pending</span></span>
+        <span class="type-breakdown-foot"><span>${percent}% of total dozen</span><span>${bucket.complete} complete · ${bucket.incomplete} incomplete</span></span>
     </button>`;
 }
 
@@ -324,15 +324,76 @@ function renderProductTypeBreakdown() {
         root.innerHTML = `<div class="breakdown-empty"><i class="fas fa-layer-group"></i><strong>No product data for this period</strong><span>Add an entry or choose another time period.</span></div>`;
         return;
     }
-    const qualityCounts = new Map();
-    data.forEach(bucket => bucket.items.forEach(item => {
+    const ranking = getQualityRanking();
+    const top = ranking.slice(0, 4);
+    const rowsHTML = top.map((q, index) => qualityRankRowHTML(q, index + 1)).join('');
+    const moreButton = ranking.length > 4
+        ? `<button type="button" class="top-quality-more" data-see-more-qualities>See more <small>(${ranking.length - 4} more)</small> <i class="fas fa-chevron-right"></i></button>`
+        : '';
+    root.innerHTML = top.length ? rowsHTML + moreButton : `<div class="breakdown-empty"><strong>No qualities added yet</strong></div>`;
+}
+
+// Every quality name of the chosen period with the number of entries it has, most entries first.
+// A quality name is counted per product type (BRA "Gajri" and PANTY "Gajri" are two rows).
+function getQualityRanking() {
+    const counts = new Map();
+    getBreakdownData().forEach(bucket => bucket.items.forEach(item => {
         const name = String(item.quality || 'Unnamed Quality').trim();
-        const key = `${String(item.productType || 'OTHER').trim().toUpperCase()}::${name.toLowerCase()}`;
-        if (!qualityCounts.has(key)) qualityCounts.set(key, { name, type: String(item.productType || 'OTHER').trim().toUpperCase(), count: 0 });
-        qualityCounts.get(key).count += 1;
+        const type = String(item.productType || 'OTHER').trim().toUpperCase();
+        const key = `${type}::${name.toLowerCase()}`;
+        if (!counts.has(key)) counts.set(key, { name, type, count: 0 });
+        counts.get(key).count += 1;
     }));
-    const topQualities = Array.from(qualityCounts.values()).sort((a,b) => b.count - a.count || a.name.localeCompare(b.name)).slice(0,4);
-    root.innerHTML = topQualities.length ? topQualities.map((q, index) => `<button type="button" class="top-quality-row" data-breakdown-type="${escapeHtml(q.type)}"><span class="top-quality-rank">${index + 1}</span><span class="top-quality-info"><strong>${escapeHtml(q.name)}</strong><small>${escapeHtml(breakdownTypeLabel(q.type))}</small></span><span class="top-quality-count">${q.count} ${q.count === 1 ? 'time' : 'times'} <i class="fas fa-chevron-right"></i></span></button>`).join('') : `<div class="breakdown-empty"><strong>No qualities added yet</strong></div>`;
+    return Array.from(counts.values()).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+}
+
+function qualityRankRowHTML(q, rank) {
+    return `<button type="button" class="top-quality-row" data-quality-name="${escapeHtml(q.name)}" data-quality-type="${escapeHtml(q.type)}"><span class="top-quality-rank">${rank}</span><span class="top-quality-info"><strong>${escapeHtml(q.name)}</strong><small>${escapeHtml(breakdownTypeLabel(q.type))}</small></span><span class="top-quality-count">${q.count} ${q.count === 1 ? 'time' : 'times'} <i class="fas fa-chevron-right"></i></span></button>`;
+}
+
+// "See more": the whole quality list (same order as the top 4). Clicking a quality shows its entries.
+function showAllQualityNames() {
+    const ranking = getQualityRanking();
+    const content = ranking.length
+        ? `<div class="top-quality-full-list">${ranking.map((q, index) => qualityRankRowHTML(q, index + 1)).join('')}</div>`
+        : `<div class="breakdown-empty"><strong>No qualities added yet</strong></div>`;
+    openBreakdownDialog('All Qualities', `${ranking.length} ${ranking.length === 1 ? 'quality' : 'qualities'} · ${breakdownPeriodLabel()}`, content);
+    document.getElementById('breakdownDialogContent').dataset.summaryKind = 'all-qualities';
+}
+
+// Only the entries of ONE quality name (inside its product type), newest first.
+// `fromList` = opened from "See more", so a Back button returns to that list.
+function showQualityEntries(name, type, fromList) {
+    const bucket = getBreakdownData().find(x => x.type === type);
+    const wanted = String(name || '').trim().toLowerCase();
+    const rows = bucket
+        ? bucket.items
+            .filter(item => String(item.quality || 'Unnamed Quality').trim().toLowerCase() === wanted)
+            .sort((a, b) => new Date(b.dateTime || b.createdAt || 0) - new Date(a.dateTime || a.createdAt || 0))
+        : [];
+    const totals = rows.reduce((sum, item) => {
+        const t = AlishanCalc.itemTotals(item);
+        return { dozens: sum.dozens + (Number(t.dozens) || 0), amount: sum.amount + (Number(t.amount) || 0) };
+    }, { dozens: 0, amount: 0 });
+    const overview = `<div class="breakdown-type-overview"><div><strong>${rows.length}</strong><span>Total Entries</span></div><div><strong>${AlishanCalc.fmtDozens(totals.dozens)}</strong><span>Total Dozen</span></div><div><strong>${AlishanCalc.fmtMoney(totals.amount)}</strong><span>Total Amount</span></div></div>`;
+    const list = rows.length
+        ? `<div class="breakdown-quality-list">${rows.map(breakdownEntryRowHTML).join('')}</div>`
+        : `<div class="breakdown-empty"><strong>No entries found</strong></div>`;
+    openBreakdownDialog(name, `${breakdownTypeLabel(type)} · all entries of this quality · ${breakdownPeriodLabel()}`, overview + list);
+    const contentRoot = document.getElementById('breakdownDialogContent');
+    // remembered so that "Back" from an entry's details comes back to this list
+    contentRoot.dataset.summaryKind = 'quality-entries';
+    contentRoot.dataset.qualityName = name;
+    contentRoot.dataset.qualityType = type;
+    contentRoot.dataset.qualityFromList = fromList ? '1' : '';
+    if (fromList) {
+        const back = document.createElement('button');
+        back.type = 'button';
+        back.className = 'breakdown-detail-back';
+        back.innerHTML = '<i class="fas fa-arrow-left"></i> Back to all qualities';
+        back.addEventListener('click', showAllQualityNames);
+        contentRoot.insertBefore(back, contentRoot.firstChild);
+    }
 }
 
 function openBreakdownDialog(title, subtitle, content) {
@@ -360,20 +421,22 @@ function breakdownPeriodLabel() {
     return ({ all: 'All Time', week: 'This Week', month: 'This Month' })[breakdownState.period] || 'All Time';
 }
 
+function breakdownEntryRowHTML(item) {
+        const totals = AlishanCalc.itemTotals(item);
+        const status = item.inStock === false ? 'Complete' : 'Incomplete';
+        return `<button type="button" class="breakdown-quality-row" data-breakdown-quality-id="${escapeHtml(String(item.id))}">
+            <span class="breakdown-quality-main"><strong>${escapeHtml(item.quality || 'Unnamed Quality')}</strong><small>${escapeHtml(item.material || 'No design/material')} · ${escapeHtml(AlishanCalc.fmtDate(item.dateTime || item.createdAt || item.addedDateTime))}</small></span>
+            <span class="breakdown-quality-values"><strong>${AlishanCalc.fmtDozens(totals.dozens)} doz</strong><small>${AlishanCalc.fmtMoney(totals.amount)}</small></span>
+            <span class="breakdown-status ${item.inStock === false ? 'is-complete' : 'is-pending'}">${status}</span>
+        </button>`;
+}
+
 function showProductTypeDetails(type) {
     document.getElementById('breakdownDialogContent').dataset.summaryKind = '';
     const bucket = getBreakdownData().find(x => x.type === type);
     if (!bucket) return;
     const rows = bucket.items.slice().sort((a, b) => new Date(b.dateTime || b.createdAt || 0) - new Date(a.dateTime || a.createdAt || 0));
-    const content = `<div class="breakdown-type-overview"><div><strong>${bucket.count}</strong><span>Total Entries</span></div><div><strong>${AlishanCalc.fmtDozens(bucket.dozens)}</strong><span>Total Dozen</span></div><div><strong>${AlishanCalc.fmtMoney(bucket.amount)}</strong><span>Total Amount</span></div></div>` + (rows.length ? `<div class="breakdown-quality-list">${rows.map(item => {
-        const totals = AlishanCalc.itemTotals(item);
-        const status = item.inStock === false ? 'Pending' : 'Complete';
-        return `<button type="button" class="breakdown-quality-row" data-breakdown-quality-id="${escapeHtml(String(item.id))}">
-            <span class="breakdown-quality-main"><strong>${escapeHtml(item.quality || 'Unnamed Quality')}</strong><small>${escapeHtml(item.material || 'No design/material')} · ${escapeHtml(AlishanCalc.fmtDate(item.dateTime || item.createdAt || item.addedDateTime))}</small></span>
-            <span class="breakdown-quality-values"><strong>${AlishanCalc.fmtDozens(totals.dozens)} doz</strong><small>${AlishanCalc.fmtMoney(totals.amount)}</small></span>
-            <span class="breakdown-status ${item.inStock === false ? 'is-pending' : 'is-complete'}">${status}</span>
-        </button>`;
-    }).join('')}</div>` : `<div class="breakdown-empty"><strong>No qualities found</strong></div>`);
+    const content = `<div class="breakdown-type-overview"><div><strong>${bucket.count}</strong><span>Total Entries</span></div><div><strong>${AlishanCalc.fmtDozens(bucket.dozens)}</strong><span>Total Dozen</span></div><div><strong>${AlishanCalc.fmtMoney(bucket.amount)}</strong><span>Total Amount</span></div></div>` + (rows.length ? `<div class="breakdown-quality-list">${rows.map(breakdownEntryRowHTML).join('')}</div>` : `<div class="breakdown-empty"><strong>No qualities found</strong></div>`);
     openBreakdownDialog(breakdownTypeLabel(type), `All qualities in this product type · ${breakdownPeriodLabel()}`, content);
 }
 
@@ -411,7 +474,7 @@ function showBreakdownQualityDetail(item, backAction) {
             <div><span>Entry Date</span><strong>${escapeHtml(AlishanCalc.fmtDate(item.dateTime || item.createdAt || item.addedDateTime))}</strong></div>
             <div><span>Total Dozen</span><strong>${AlishanCalc.fmtDozens(totals.dozens)}</strong></div>
             <div><span>Total Amount</span><strong>${AlishanCalc.fmtMoney(totals.amount)}</strong></div>
-            <div><span>Status</span><strong>${item.inStock === false ? 'Pending / Out of stock' : 'Complete / In stock'}</strong></div>
+            <div><span>Status</span><strong>${item.inStock === false ? 'Complete / Out of stock' : 'Incomplete / In stock'}</strong></div>
             <div><span>Notes</span><strong>${escapeHtml(item.notes || 'N/A')}</strong></div>
         </div>`);
     }
@@ -473,14 +536,37 @@ function showHomeSummaryItems(kind) {
     const content = items.length ? `<div class="breakdown-quality-list">${items.slice().sort((a,b)=>new Date(b.dateTime||b.createdAt||0)-new Date(a.dateTime||a.createdAt||0)).map(item => {
         const totals = AlishanCalc.itemTotals(item);
         const status = item.inStock === false ? 'Out of stock' : 'In stock';
-        return `<button type="button" class="breakdown-quality-row" data-breakdown-quality-id="${escapeHtml(String(item.id))}">
+        const row = `<button type="button" class="breakdown-quality-row" data-breakdown-quality-id="${escapeHtml(String(item.id))}">
             <span class="breakdown-quality-main"><strong>${escapeHtml(item.quality || 'Unnamed Quality')}</strong><small>${escapeHtml(breakdownTypeLabel(item.productType || 'OTHER'))} · ${escapeHtml(item.code || 'Quality entry')} · ${escapeHtml(AlishanCalc.fmtDate(item.dateTime || item.createdAt || item.addedDateTime))}</small></span>
             <span class="breakdown-quality-values"><strong>${AlishanCalc.fmtDozens(totals.dozens)} doz</strong><small>${AlishanCalc.fmtMoney(totals.amount)}</small></span>
-            <span class="breakdown-status ${item.inStock === false ? 'is-pending' : 'is-complete'}">${status}</span>
+            <span class="breakdown-status ${item.inStock === false ? 'is-complete' : 'is-pending'}">${status}</span>
         </button>`;
+        if (kind !== 'in-stock') return row;
+        return `<div class="breakdown-quality-item">${row}<button type="button" class="breakdown-complete-btn" data-complete-quality="${escapeHtml(String(item.id))}" title="Mark complete: this quality goes out of stock and leaves In Stock Items"><i class="fas fa-check"></i><span>Complete</span></button></div>`;
     }).join('')}</div>` : `<div class="breakdown-empty"><strong>No matching entries found</strong></div>`;
     openBreakdownDialog(title, subtitle, content);
     document.getElementById('breakdownDialogContent').dataset.summaryKind = kind;
+}
+
+// "Complete" on the Home > In Stock Items list: same action as the Complete button on the Inventory card
+// (AlishanStore.toggleStock => out of stock, leaves In Stock Items, leaves Aging, saved in Quality History).
+async function completeFromInStockList(btn) {
+    if (btn.disabled) return;
+    const id = btn.dataset.completeQuality;
+    const item = AlishanStore.getItem(id);
+    if (!item) { showHomeSummaryItems('in-stock'); return; }
+    if (item.inStock === false) { showHomeSummaryItems('in-stock'); return; }   // already out of stock: just refresh the list
+    btn.disabled = true;
+    const result = await AlishanStore.toggleStock(id);
+    if (!result.ok) { btn.disabled = false; showNotification(result.error || 'Could not complete this quality', 'error'); return; }
+    // take just this row out of the open list (no full redraw, so the scroll position stays)
+    const wrap = btn.closest('.breakdown-quality-item');
+    if (wrap) wrap.remove();
+    const left = AlishanStore.getItems().filter(i => i.inStock !== false).length;
+    if (!left) { showHomeSummaryItems('in-stock'); return; }
+    const sub = document.getElementById('breakdownDialogSubtitle');
+    if (sub) sub.textContent = `${left} entries currently in stock`;
+    showNotification(`${item.quality || 'Quality'} marked complete`, 'success');
 }
 
 function initHomeSummaryCards() {
@@ -533,6 +619,9 @@ function initProductTypeBreakdown() {
     if (root && !root.dataset.bound) {
         root.dataset.bound = '1';
         root.addEventListener('click', event => {
+            if (event.target.closest('[data-see-more-qualities]')) { showAllQualityNames(); return; }
+            const quality = event.target.closest('[data-quality-name]');
+            if (quality) { showQualityEntries(quality.dataset.qualityName, quality.dataset.qualityType, false); return; }
             const card = event.target.closest('[data-breakdown-type]');
             if (card) showProductTypeDetails(card.dataset.breakdownType);
         });
@@ -546,12 +635,25 @@ function initProductTypeBreakdown() {
         document.getElementById('breakdownDialogContent').addEventListener('click', event => {
             const typeCard = event.target.closest('[data-breakdown-type]');
             if (typeCard) { showProductTypeDetails(typeCard.dataset.breakdownType); return; }
+            const qualityName = event.target.closest('[data-quality-name]');
+            if (qualityName) {
+                const fromList = document.getElementById('breakdownDialogContent').dataset.summaryKind === 'all-qualities';
+                showQualityEntries(qualityName.dataset.qualityName, qualityName.dataset.qualityType, fromList);
+                return;
+            }
+            const completeBtn = event.target.closest('[data-complete-quality]');
+            if (completeBtn) { completeFromInStockList(completeBtn); return; }
             const quality = event.target.closest('[data-breakdown-quality-id]');
             if (!quality) return;
             const item = AlishanStore.getItem(quality.dataset.breakdownQualityId);
             if (!item) return;
             const summaryKind = document.getElementById('breakdownDialogContent').dataset.summaryKind;
-            const backAction = summaryKind === 'aging-breakdown' ? showAgingStockBreakdown : (summaryKind ? () => showHomeSummaryItems(summaryKind) : null);
+            const contentData = document.getElementById('breakdownDialogContent').dataset;
+            let backAction = summaryKind === 'aging-breakdown' ? showAgingStockBreakdown : (summaryKind ? () => showHomeSummaryItems(summaryKind) : null);
+            if (summaryKind === 'quality-entries') {
+                const { qualityName: name, qualityType: type, qualityFromList: fromList } = contentData;
+                backAction = () => showQualityEntries(name, type, !!fromList);
+            }
             showBreakdownQualityDetail(item, backAction);
         });
     }

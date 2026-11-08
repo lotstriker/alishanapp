@@ -92,24 +92,17 @@ function renderInventoryCards() {
 }
 
 function updatePaginationControls(paged) {
-    const paginationControls = document.getElementById('paginationControls');
-    const pageInfo = document.getElementById('pageInfo');
-    if (!paginationControls || !pageInfo) return;
-
-    if (paged.total <= itemsPerPage) {
-        paginationControls.style.display = 'none';
-    } else {
-        paginationControls.style.display = 'flex';
-        pageInfo.textContent = `Page ${paged.page} of ${paged.totalPages}`;
-    }
+    const host = document.getElementById('paginationControls');
+    if (!host || !window.CommonPagination) return;
+    CommonPagination.render(host, {
+        page: paged.page, pageSize: itemsPerPage, total: paged.total,
+        onPageChange: (page) => { currentPage = page; renderInventoryCards(); },
+        onPageSizeChange: (size) => { itemsPerPage = size; currentPage = 1; renderInventoryCards(); }
+    });
 }
 function nextPage() { currentPage++; renderInventoryCards(); }
 function prevPage() { currentPage = Math.max(1, currentPage - 1); renderInventoryCards(); }
-function changeItemsPerPage(value) {
-    itemsPerPage = parseInt(value) || 50;
-    currentPage = 1;
-    renderInventoryCards();
-}
+function changeItemsPerPage(value) { itemsPerPage = parseInt(value, 10) || 50; currentPage = 1; renderInventoryCards(); }
 
 // Redraws everything from the store (keeps the filters and the page you are on)
 function refreshUI() {
@@ -554,7 +547,7 @@ async function exportLargeDataInChunks(data, baseFileName) {
 async function initPage() {
     // makes sure every file is there (re-requests a file that did not load); search + loader are optional
     if (typeof AlishanRequire === 'function' && !(await AlishanRequire({
-        AlishanDB: 'db.js', AlishanCalc: 'calc.js', AlishanStore: 'store.js',
+        AlishanDB: 'db.js', AlishanCalc: 'calc.js', AlishanStore: 'store.js', CommonPagination: 'common-pagination.js',
         ItemForm: 'item-form.js', ItemCard: 'item-card.js', ItemModal: 'item-modal.js'
     }, { AlishanSearch: 'search.js', AlishanLoader: 'loader.js', BulkImport: 'bulk-import.js' }))) return;
     const info = await AlishanStore.init();            // loads qualities, colours, inventory, payments

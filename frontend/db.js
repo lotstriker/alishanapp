@@ -137,6 +137,7 @@ var AlishanDB = (() => {
     // ---- one-time migration from the old scattered localStorage keys ----
     async function migrateFromLocalStorage() {
         if (localStorage.getItem('alishan_db_migrated')) return;
+        let allOk = true;   // the flag is written only if every step below worked (ALISHAN-CHG-2026-11-04-003)
 
         try {
             const inv = localStorage.getItem('inventoryItems');
@@ -147,7 +148,7 @@ var AlishanDB = (() => {
                 }
             }
         } catch (e) {
-            console.error('AlishanDB: inventory migration failed', e);
+            console.error('AlishanDB: inventory migration failed', e); allOk = false;
         }
 
         try {
@@ -159,7 +160,7 @@ var AlishanDB = (() => {
                 }
             }
         } catch (e) {
-            console.error('AlishanDB: payments migration failed', e);
+            console.error('AlishanDB: payments migration failed', e); allOk = false;
         }
 
         // Everything settings-shaped collapses into the single
@@ -179,11 +180,11 @@ var AlishanDB = (() => {
                 try { value = JSON.parse(raw); } catch (e) { /* plain string value */ }
                 await put('settings', { key: k, value });
             } catch (e) {
-                console.error(`AlishanDB: migration of "${k}" failed`, e);
+                console.error(`AlishanDB: migration of "${k}" failed`, e); allOk = false;
             }
         }
 
-        localStorage.setItem('alishan_db_migrated', 'true');
+        if (allOk) localStorage.setItem('alishan_db_migrated', 'true');   // a failed step leaves the flag off, so the next load retries
     }
 
     return {
@@ -216,6 +217,36 @@ var AlishanDB = (() => {
         },
         async savePayments(items) {
             return putAll('payments', items);
+        },
+        // Adds ONE payment in a single readwrite transaction (ALISHAN-CHG-2026-11-04-004).
+        // Inside the same transaction it re-reads what is really saved for that quality, so two tabs can never both
+        // receive the same remaining amount. Nothing is written when the amount no longer fits.
+        // Resolves { ok:true } or { ok:false, received, pending } (money in rupees).
+        appendPayment(entry, expected) {
+            return openDB().then(db => new Promise((resolve, reject) => {
+                const tx = db.transaction('payments', 'readwrite');
+                const os = tx.objectStore('payments');
+                let outcome = { ok: true };
+                const req = os.getAll();
+                req.onsuccess = () => {
+                    const receivedCents = (req.result || [])
+                        .filter(p => String(p.inventoryId) === String(entry.inventoryId))
+                        .reduce((sum, p) => sum + Math.round((Number(p.amount) || 0) * 100), 0);
+                    const pendingCents = Math.max(0, Math.round((Number(expected) || 0) * 100) - receivedCents);
+                    if (Math.round((Number(entry.amount) || 0) * 100) > pendingCents) {
+                        outcome = { ok: false, received: receivedCents / 100, pending: pendingCents / 100 };
+                        return;                                   // nothing written
+                    }
+                    os.put(entry);
+                };
+                tx.oncomplete = () => { if (outcome.ok) notify('payments'); resolve(outcome); };
+                tx.onerror = () => reject(tx.error);
+                tx.onabort = () => reject(tx.error || new Error('payment transaction aborted'));
+            }));
+        },
+        // Removes ONE payment record (the rest of the store is not rewritten)
+        removePayment(id) {
+            return remove('payments', id);
         },
         // bulk import: adds the new entries AND their payments in ONE transaction (all or nothing)
         async addInventoryAndPayments(items, payments) {
@@ -262,11 +293,11 @@ var AlishanDB = (() => {
         async logActivity(type, text) {
             const now = Date.now();
             await put('editHistory', { id: now * 1000 + Math.floor(Math.random() * 1000), type, text, at: new Date(now).toISOString() });
-            // keep it small: only the newest 200 entries
+            // keep it small: only the newest 1000 entries (was 200 before v77; older entries are already gone)
             const all = await getAll('editHistory');
-            if (all.length > 200) {
+            if (all.length > 1000) {
                 all.sort((a, b) => a.id - b.id);
-                for (const old of all.slice(0, all.length - 200)) await remove('editHistory', old.id);
+                for (const old of all.slice(0, all.length - 1000)) await remove('editHistory', old.id);
             }
         },
         async getRecentActivity(limit = 5) {

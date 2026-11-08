@@ -17,6 +17,15 @@ why every change was made**. It is permanent and **append-only**.
 6. **No mismatch:** this file and the code must always agree. If you find a mismatch, fix it and record it as a Fix.
 7. **Calculations only in `calc.js`**, saving only through `store.js` / `db.js`, pages only take input and draw data
    (see `frontend/ARCHITECTURE.md`). A new button must reuse the existing calc/store function, never copy its maths.
+8. **Every update changes the version of the ZIP file (added by ALISHAN-CHG-2026-11-06-001).** Whenever source files are
+   changed and delivered, the project ZIP gets a NEW version number: `AlishanApp-v<NN>-<Short-Description>.zip`, where
+   `<NN>` is the previous number + 1 (v74 comes after v73, never reuse or skip a number) and the description names the
+   main change in a few words with hyphens (example: `AlishanApp-v74-Export-Center-Redesign.zip`).
+   - The same change adds one line to the **Version log** (section 10): version, file name, date, change IDs, summary.
+   - The top-level folder inside the ZIP stays `alishanapp-main/`; the version lives in the ZIP file name and the log.
+   - A ZIP is never delivered under an old name, and two different ZIPs never share a version number.
+   - A change that only fixes the documentation still gets a new version (a documentation-only change is also an update).
+9. **Screens must work on a phone (added by ALISHAN-CHG-2026-11-08-001).** The owner uses the app on a phone. Any change to a screen is looked at at **390, 360 and 320 px wide** (a real browser, not only a script test) before delivery: nothing may be wider than the screen, buttons must stay reachable. Rules learned the hard way: (a) a CSS grid or flex child does not shrink below its content by default, so a grid that holds a table or two side-by-side boxes needs `grid-template-columns: minmax(0, 1fr)` and `min-width: 0` on its children; (b) the app styles every `<header>` and `<footer>` tag as its top bar, so dialogs use plain `<div>`s; (c) the phone's bottom navigation sits at z-index 1000–1100, so full-screen dialogs use 1200; (d) a wide table becomes one card per record on a phone (`.rp-stack`).
 
 ---
 
@@ -41,14 +50,19 @@ editHistory, auditLog`. Reference lists: `qualities.json` (qualities + prices) a
 
 | Page | File | What it shows / does |
 |------|------|----------------------|
-| Dashboard | `index.html` + `dashboard.js` | Product Types, Quick Actions, Latest Added Qualities |
+| Dashboard | `index.html` + `dashboard.js` | Product Types, Quick Actions, Latest Added Qualities, Product Type Breakdown (top 4 qualities + See more, see -006) |
 | Add entry | `add-entry.html` + `item-form.js` | New product entry: Basic Information, Sizes & Colors |
 | Inventory | `inventory.html` + `inventory.js` | Complete Inventory, filters, export / import, backups, Bulk Import (`bulk-import.js`) |
-| Reports | `reports.html` | Tabs: Pending Amount Receival, Weekly Reports, Amount History, Inventory Valuation, Stock Aging Analysis; the **Add Amount Received** popup |
+| Reports | `reports.html` + `report-engine.js` + `report-views.js` + `reports.css` | **Eight report cards** (Weekly, Payment, Pending, Quality, Valuation, Aging, History, Business Analysis); each opens its own view (`reports.html#<report>`). The old sections (pending cards, amount history, weekly received, valuation tab, aging cards) and the **Add Amount Received** popup live inside the report that needs them. See ALISHAN-CHG-2026-11-06-003. *(SUPERSEDED wording: "Tabs: Pending Amount Receival, Weekly Reports, Amount History, Inventory Valuation, Stock Aging Analysis")* |
 | Settings | `setting.html` + `script.js` | Settings dashboard, profiles, business info, display, appearance, users, backup & restore |
+
+**Reports presentation update (v81):** On the Reports home, global filters appear above the eight report cards. Opening a report hides the report-card home and shows only the selected report detail view; `Back to Reports` returns to the card list. This supersedes the v79 presentation note that report cards remain visible after selecting a report. Existing report sections are closed accordion cards by default.
+
+**Shared pagination update (v81):** Inventory, Reports result lists, and the existing Pending Amount / Amount Received History / Weekly Amount Received lists use the shared `CommonPagination` component. Every pagination control stays on one horizontal line; on narrow phones the row may scroll horizontally rather than wrapping. Each list owns its own page and page-size state.
 | Pending Amount | `pending-amount.html` + `audit-pages.js` | One card per quality whose full amount is not received yet (see 2.1) |
 | Missing Lot Number | `missing-lot.html` + `audit-pages.js` | Qualities still waiting for a lot number |
-| Quality History | `quality-history.html` + `audit-pages.js` | Read-only log of important quality changes |
+| Missing Completion Date | `missing-completion.html` + `audit-pages.js` | Complete qualities that have no completion date; the owner types the real day and saves (added in v77, ALISHAN-CHG-2026-11-06-004). Linked from Home > Quick Actions and from the Weekly Report. |
+| Quality History | `quality-history.html` + `audit-pages.js` | Log of important quality changes, newest first; each record has a Delete button (see -005) |
 
 ### 2.1 Pending Amount page (`pending-amount.html`)
 Shows every quality with `pending > 0` (completed AND incomplete, partial payments included), newest first.
@@ -66,7 +80,8 @@ Each quality is one card made of:
 | 7 | **Received Amount** (button-card) | click = full pending amount is received (see 4.2) |
 | – | Edit Quality button | opens `inventory.html#edit=<id>` |
 
-Status chip on the card head: *Completed* (`inStock !== false`) or *Incomplete*.
+Status chip on the card head: *Complete* (`inStock === false`, out of stock) or *Incomplete* (`inStock !== false`, in stock).
+The locked status meaning is *Complete = out of stock* and *Incomplete = in stock*. Pending Amount, Missing Lot Number, Dashboard quality details, Dashboard product-type breakdown, search matching, Quality History and backup-export Status now use that same meaning. Inventory/Home action buttons may still say "Complete" as an action label when the quality is currently in stock; that is the command to mark it complete (out of stock).
 Boxes 2–7 sit in a 2-column grid (Lot/Dozen and Colors are full width) (1 column on phones), so with box 7 the grid has 6 boxes and no empty slot.
 
 ---
@@ -177,3 +192,553 @@ To undo: delete that payment in Reports -> Amount History (`deletePayment`); the
 - **Files:** `frontend/icons.js`, `PROJECT_SOURCE_OF_TRUTH.md`.
 - **Testing:** `icons.js` syntax and load checked, and a scan of all used icon names done; visual check in the browser
   is still to be done by the owner. (The separate `pay is not defined` error is NOT part of this change: not yet found.)
+
+### ALISHAN-CHG-2026-11-02-005 — Complete button on Home > In Stock Items, Quality History redesign, Complete/Incomplete wording fix
+- **Type:** New feature + Changed feature + Fix
+- **Meaning of Complete (owner's rule):** pressing **Complete** on a quality makes it *out of stock* (`inStock = false`):
+  it leaves In Stock Items and leaves Aging. The Inventory card button then shows "Pending"; pressing it puts the
+  quality back in stock. Both are the single function `AlishanStore.toggleStock(id)`.
+- **(a) Home > In Stock Items — Complete button.** *Reason:* to finish a quality without opening Inventory.
+  *Before:* the list only showed rows; opening a row showed details. *After:* every row has a "Complete" button
+  (right side; below the row on phones). It calls `toggleStock` (same as the Inventory button), the row disappears,
+  the count in the dialog heading drops, and the action is written to Quality History. No confirmation and no page
+  change; the list does not jump back to the top. *Impact:* In Stock count, Aging and Dashboard numbers update by the
+  normal store refresh. *Files:* `dashboard.js` (`completeFromInStockList`, row markup, click handler), `dashboard.css`.
+- **(b) Quality History cards.** *Reason:* a newly added quality showed every detail and filled the screen; Previous /
+  New values were stacked; records could not be removed. *Before:* all records fully open, values stacked on phones,
+  no delete. *After:* **New Quality Added** is a short card only (event, time, quality name / ID / product type, no
+  details); other records keep the changed fields with **Previous value on the left and New value on the right**
+  (also on phones); every record has a **Delete** button (asks first; removes only that history record, never the
+  quality or payments); the list is sorted newest first. *Impact:* history only. *Files:* `audit-pages.js`,
+  `quality-history.html`, `store.js` (`deleteQualityHistory`).
+- **(c) Fix: Complete / Incomplete shown the wrong way round in Quality History.** *Problem:* pressing Complete made the
+  quality out of stock, but history logged "Quality Marked Incomplete" and the Status changed "Complete -> Incomplete".
+  *Cause:* `toggleStock` and `qualitySnapshot` treated *in stock* as Complete. *After:* out of stock = **Complete**,
+  back in stock = **Incomplete** (action names `Quality Completed` / `Quality Marked Incomplete`, Status values).
+  New records carry `statusModel: 2`. **Old records are not edited**: when shown, records without `statusModel` get
+  their Status values and the two action names swapped on screen only. *Files:* `store.js` (`toggleStock`,
+  `qualitySnapshot`, `writeQualityHistory`), `audit-pages.js`. Also removed a stray duplicate line in the failure
+  branch of `toggleStock` (it only puts `inStock` back; behaviour unchanged).
+- **Testing:** JavaScript syntax checked; history page simulated (order, short new card, old-record correction,
+  delete). Real browser click tests on Home and Inventory are still to be done by the owner.
+
+
+### ALISHAN-CHG-2026-11-04-001 — Correct Complete / Incomplete status display across pages
+- **Type:** Bug fix (status wording consistency)
+- **Reason:** The locked rule from ALISHAN-CHG-2026-11-02-005 is Complete = out of stock (`inStock === false`) and Incomplete = in stock. Pending Amount, Missing Lot Number and parts of the Dashboard still displayed the reverse meaning.
+- **Before:** Audit-page chips and Dashboard breakdown/detail rows treated in-stock records as Complete; product-type summary counts also put in-stock entries in the Complete count. Search text used the same reversed terms.
+- **After:** All status displays and search terms follow the locked mapping. Action buttons labelled Complete remain action labels and were not changed.
+- **Impact:** Display, search matching and dashboard summary counts only; stored `inStock` values and stock-toggle behaviour are unchanged.
+- **Files:** `frontend/audit-pages.js`, `frontend/dashboard.js`, `frontend/calc.js`, `PROJECT_SOURCE_OF_TRUTH.md`.
+- **Testing:** JavaScript syntax checked; browser visual verification remains pending.
+
+### ALISHAN-CHG-2026-11-04-002 — Remove invalid Received Amount control from Missing Lot Number
+- **Type:** Bug fix
+- **Reason:** The Missing Lot Number page had a copied Received Amount button whose `aria-label` referenced an undefined `pay` variable. The page is for adding lot numbers, not recording payments.
+- **Before:** Rendering the button template could throw a ReferenceError; the button had no working payment handler.
+- **After:** Removed the stray Received Amount button from Missing Lot Number. The valid Received Amount card remains only on Pending Amount.
+- **Impact:** Missing Lot Number page renders without the undefined-variable error; no payment or lot-number data is changed.
+- **Files:** `frontend/audit-pages.js`, `PROJECT_SOURCE_OF_TRUTH.md`.
+- **Testing:** JavaScript syntax checked; browser page-load test remains pending.
+
+### ALISHAN-CHG-2026-11-04-003 — Make localStorage migration retry-safe
+- **Type:** Bug fix (data migration safety)
+- **Reason:** The migration-complete flag was set even when one or more inventory, payment or settings migration steps failed.
+- **Before:** A failed migration could be permanently marked complete, preventing automatic retry on the next load.
+- **After:** The completion flag is written only if every migration step succeeds. Failed steps leave the flag unset; already-successful writes are idempotent and can safely be encountered again.
+- **Impact:** Failed migrations can retry on the next app load; existing IndexedDB records are not cleared by this fix.
+- **Files:** `frontend/db.js`, `PROJECT_SOURCE_OF_TRUTH.md`.
+- **Testing:** JavaScript syntax checked; browser migration simulation remains pending.
+
+### ALISHAN-CHG-2026-11-04-004 — Atomic payment append and safer payment IDs
+- **Type:** Bug fix (multi-tab payment integrity)
+- **Reason:** Payment changes previously rewrote the entire payments store from one tab's in-memory array, risking overwriting another tab's newer payments. `Date.now()` alone was also used as the payment ID.
+- **Before:** A stale tab could replace newer payment rows; two simultaneous tabs could both validate against the same stale pending balance.
+- **After:** New payments are appended in a single IndexedDB readwrite transaction. The transaction checks the latest persisted received total against the current pending balance before writing, so concurrent tabs cannot both receive the same remaining amount. Payment IDs use `crypto.randomUUID()` where available, with a random fallback. Deletion removes only the selected payment record instead of rewriting the whole store.
+- **Impact:** Payment records are less vulnerable to stale-tab overwrites and duplicate IDs; existing Reports UI and payment-entry rules remain unchanged.
+- **Files:** `frontend/db.js`, `frontend/store.js`, `frontend/calc.js`, `PROJECT_SOURCE_OF_TRUTH.md`.
+- **Testing:** JavaScript syntax checked. IndexedDB concurrency and browser payment flows still require runtime tests.
+
+### ALISHAN-CHG-2026-11-04-005 — v70 brought in line with this file (details of -001 to -004 and what else they needed)
+- **Type:** Bug fix (the code of v70 did not yet contain the fixes written in -001 to -004; this record lists exactly what was done so file and code match again)
+- **Reason:** v70 still had: the stray Received Amount button on Missing Lot Number (`pay is not defined`), the reversed
+  Complete/Incomplete wording on several pages, a migration flag that was set even after a failed step, and payments
+  saved by rewriting the whole payments store.
+- **Before / After (by change):**
+  - **-002 Missing Lot Number:** the copied Received Amount button is removed; the Pending Amount card is untouched.
+  - **-001 status wording** (Complete = out of stock, Incomplete = in stock): chips on Pending Amount and Missing Lot,
+    Dashboard product-type counts (`complete` / `incomplete`), Dashboard breakdown rows and detail text, search text in
+    `calc.js`, and **also** the Status filter in `advanced-search.js` (it filtered the opposite way; not listed in -001)
+    now follow it. The guide text in `setting.html` (topic 4) got one sentence saying the same. The backup-export column
+    `Status` (`In Stock` / `Out of Stock`) is stock wording and was already correct.
+  - **-003 migration:** `allOk` in `db.js`; the flag `alishan_db_migrated` is written only if every step worked.
+  - **-004 payments:** `AlishanDB.appendPayment(entry, expected)` adds one payment in ONE readwrite transaction and
+    re-checks the saved received total first; `AlishanDB.removePayment(id)` removes one record; `store.addPayment` and
+    `store.deletePayment` use them (the old whole-store `savePayments` in `store.js` is gone); payment ids are
+    `pay-<uuid>` (`newPaymentId()` in `calc.js`). If a second tab already received the amount, the save is refused with
+    the message "Amount exceeds the pending value! ... Another tab may have saved a payment for this quality."
+  - **Needed because ids are now text:** `reports.html` writes the id in quotes, `deleteAmountEntry('<id>')`.
+    Old numeric ids still work (all comparisons use `String(id)`).
+- **Impact:** old payments, old history and stored `inStock` values are unchanged. New payment ids look like
+  `pay-xxxxxxxx-...`. The Reports popup and its rules are unchanged.
+- **Files:** `frontend/audit-pages.js`, `frontend/dashboard.js`, `frontend/calc.js`, `frontend/advanced-search.js`,
+  `frontend/setting.html`, `frontend/db.js`, `frontend/store.js`, `frontend/reports.html`, `PROJECT_SOURCE_OF_TRUTH.md`.
+- **Testing:** JavaScript syntax of every script checked. Simulated: Pending Amount page (card + click) and Missing Lot
+  page load without errors; two tabs saving the same full amount at the same time with a mock IndexedDB (first saved,
+  second refused, nothing extra written); `buildPayment` ids differ and an over-receive is blocked. Real browser tests
+  (Reports add/delete payment, Home/Inventory Complete, migration on a fresh browser) are still to be done by the owner.
+
+### ALISHAN-CHG-2026-11-04-006 — Change a colour in Edit (sizes kept) + Product Type Breakdown "See more" and per-quality list
+- **Type:** New feature (two parts). Formatting / Prettier is NOT part of this change (not done yet).
+- **(a) Change a colour in the Edit form.** *Reason:* in Edit the only way to change a colour was to remove it and add
+  another, which threw away the sizes typed for it ("different sizes" mode). Bulk Import already had a "replace colour,
+  keep sizes" feature. *Before:* remove + add = sizes lost. *After:* every picked colour in Edit has a swap button
+  (`fa-exchange-alt`) and every size card has a **Change** button next to Remove. Both open the row "Replace X with:
+  [Choose a colour]" under the colour picker (Suggestions from `AlishanStore.closeColors`, then All colours from
+  `AlishanStore.getColors`, the same lists Bulk Import uses). Picking a colour changes the name in the same place of
+  the list and renames the size card in place, so **all sizes stay** (in "same sizes" mode the one size grid is not
+  touched). A colour that is already picked is not offered (it would merge two colours); a colour not in the app list is
+  refused. It changes only the entry being edited and is saved with the normal Save, so Quality History shows the
+  Colours change as "Quality Updated". *Code:* `ItemForm.swapColor / openColorSwap / closeColorSwap / onColorRename`
+  (`item-form.js`), `renameEditCard` + `changeColorSizeItem` (`item-modal.js`), styles in `item-form.css`. Bulk Import
+  itself was not changed (it uses its own draft data but the same colour lists).
+- **(b) Product Type Breakdown (Home).** *Reason:* only the top 4 qualities were visible and clicking one opened the
+  whole product type. *Before:* top 4 rows, click = all qualities of that product type. *After:* a **See more (N more)**
+  button under the top 4 opens "All Qualities" (same ranking, all rows); clicking a quality (in the top 4 or in See
+  more) opens only the entries of that quality name inside its product type (case and spaces ignored), newest first,
+  with Total Entries / Total Dozen / Total Amount; from See more a "Back to all qualities" button returns to the list;
+  opening an entry and pressing Back returns to that quality's list. **All Product Types** (title arrow) and the product
+  type cards inside it are unchanged. The same quality name under different product types stays separate; the time
+  period filter still applies. *Code:* `getQualityRanking`, `qualityRankRowHTML`, `showAllQualityNames`,
+  `showQualityEntries`, `breakdownEntryRowHTML` (the entry row markup moved out of `showProductTypeDetails`, output
+  identical) in `dashboard.js`; styles in `dashboard.css`.
+- **Impact:** display and editing only; no calculation, payment or stock logic changed. Saved data format is unchanged.
+- **Files:** `frontend/item-form.js`, `frontend/item-modal.js`, `frontend/item-form.css`, `frontend/dashboard.js`,
+  `frontend/dashboard.css`, `PROJECT_SOURCE_OF_TRUTH.md`.
+- **Testing:** JavaScript syntax checked. `swapColor` tested with stub data (keeps position, calls the rename hook,
+  refuses a picked / unknown / unselected / same colour). Breakdown ranking and per-quality list tested with stub data
+  (only that quality's entries, See more list, back wiring). Real browser checks are still to be done by the owner:
+  Edit a quality with different sizes, change a colour and confirm the sizes stay after Save; Home > Product Type
+  Breakdown > See more / click a quality.
+
+### ALISHAN-CHG-2026-11-04-007 — Quality History records only what really changed
+- **Type:** Changed feature (how a "Quality Updated" record is built; supersedes the "one row per changed field" rule
+  of ALISHAN-CHG-2026-11-02-005 (b) for the Colours and Size Quantities fields)
+- **Reason:** Changing only the colour name D_GRAY -> D-GRAY produced a Colours row with the whole colour list and a
+  Size Quantities row with every size of every colour on both sides (the sizes looked "changed" only because the colour
+  name inside them changed). The owner wants only the changed word or number.
+- **Before:** Colours and Size Quantities were two long texts; if the text differed at all, both full texts were saved.
+- **After:** `store.js` (`qualityDetail`, `diffSnapshots`) compares the colour list and each size cell on its own:
+  - a changed normal field (Quality, Lot Number, Notes ...) = one row, old value and new value;
+  - **Colours:** one row per changed colour (`D_GRAY -> D-GRAY`; an added colour is `— -> PISTA`, a removed one
+    `WHITE -> —`);
+  - **Size Quantities:** one row per changed size cell, named with its colour and size
+    (`Size Quantities · D-GRAY 32: 15 dozen 0 pcs -> 16 dozen 0 pcs`; `All colours` in same-sizes mode; `—` = none);
+  - a colour that was only renamed shows just its one Colours row, its unchanged sizes are not listed again;
+  - if nothing changed there is no row (and no record, as before).
+- **Impact:** only new "Quality Updated" records are shorter. Old records already saved stay exactly as they were
+  (history is append-only); use the Delete button on a record you do not want. New Quality Added, Quality Deleted and
+  Complete/Incomplete records are unchanged. No calculation, stock or payment logic changed.
+- **Files:** `frontend/store.js`, `PROJECT_SOURCE_OF_TRUTH.md`.
+- **Testing:** JavaScript syntax checked; the diff was run on stub data for: only a colour renamed, one number changed,
+  rename + one number, colour added, colour removed, only the lot number changed, nothing changed, one number in
+  same-sizes mode. Real browser check still to be done by the owner (edit a quality, change one number or colour,
+  open Quality History).
+
+
+---
+
+## 7. Current implementation tracker — v73 handover
+
+**This tracker is the current status snapshot.** Statuses describe the source files in the delivered project archive, not promises or plans. `IMPLEMENTED — NOT VERIFIED` means code is present but the required real-browser/user acceptance checks have not yet been completed.
+
+### 7.1 Mandatory all-AI documentation protocol
+
+Every AI, coding agent, developer, reviewer, and contributor must follow `AI_HANDOVER_PROTOCOL.md` together with this file.
+
+- Read both documents and inspect the actual source before coding.
+- Work only within the user-approved scope.
+- Preserve old decisions and append change history; never silently delete or overwrite it.
+- Keep unimplemented work `PENDING`.
+- Use `IMPLEMENTED — NOT VERIFIED` when source changes exist but required checks are incomplete.
+- Mark work `COMPLETED` only after updated source files are delivered and required verification passes.
+- Report actual tests, untested cases, limitations, and remaining work.
+- Documentation must reflect the verified state of the delivered source, never an AI's verbal claim.
+
+### 7.2 Export Center and Settings work status
+
+| Pending ID | Work | Current status | Reason |
+|---|---|---|---|
+| `ALISHAN-PEND-2026-11-04-001` | Home Advanced Export Center | `IMPLEMENTED — NOT VERIFIED` | Home entry point, category selection, filters and output flows are present in source. Real browser exports still need testing. |
+| `ALISHAN-PEND-2026-11-04-002` | Settings cleanup and organization | `IMPLEMENTED — NOT VERIFIED` | Settings navigation is reorganized into the five approved sections and demo-only sections/controls are removed from the visible UI. Real browser/persistence checks remain. |
+| `ALISHAN-PEND-2026-11-04-003` | ZIP restore and backup safety | `IMPLEMENTED — NOT VERIFIED` | The Export Center creates a complete ZIP backup with manifest/checksum and validates it before calling the existing safety-backup restore flow. Real browser round-trip testing remains. |
+| `ALISHAN-PEND-2026-11-04-004` | Advanced backup capabilities | `PENDING` | Incremental backups, backup comparison, retention controls beyond the existing bounded history, and scheduled export delivery are not implemented by this change. |
+| `ALISHAN-PEND-2026-11-04-005` | Regression and runtime verification | `PENDING` | Static checks have been run, but full browser, mobile, export round-trip and regression checks remain. |
+| `ALISHAN-PEND-2026-11-05-001` | Data-driven Export Center filters | `IMPLEMENTED — NOT VERIFIED` | Filter values now load from saved records as selectable multi-select lists with dependent Quality Type → Quality → Colour options, date presets, live match count, and Clear All. Real browser interaction and export-result verification remain.
+
+### 7.3 Export Center — current implementation details
+
+- Home > Quick Actions > Export Data opens the Advanced Export Center in the Home page.
+- Categories: Quality / Inventory; Payments & Received Amount; Quality History; Activity Log; Settings; Quality / Colour Master Data; Backup History.
+- Filters: date range, quality name, Quality ID, Lot Number, Quality Type, Colour, Cup, Maal Gaya, Notes, quality status, payment status, and a general search field.
+- Formats:
+  - JSON: selected categories and filtered rows.
+  - Excel: multiple workbook sheets; the Excel library is loaded only when requested.
+  - CSV: first available selected sheet; this limitation is shown in the UI.
+  - PDF: printable summary opened in a print window; it is a summary/preview, not a complete row-by-row PDF archive.
+  - ZIP: complete backup containing `manifest.json` and `data.json`; the manifest includes record counts and a CRC-32 checksum for the data payload.
+- ZIP restore accepts the stored/uncompressed ZIP format generated by this Export Center. It checks required files, manifest, data size, checksum, and backup structure before asking for confirmation. Before applying the restore it stores a full safety snapshot (quality/payment data, quality history, activity log, and settings) in `fullRestoreSafetyBackups`; it then uses the existing store restore path and restores the ZIP's quality history, activity log, and settings.
+- Export reads from the existing IndexedDB / Store source of truth. It does not intentionally modify quality or payment records.
+- The service worker cache version was bumped and the new export/settings assets were added to the offline asset list.
+- The export filter date range is applied where exported rows contain a recognizable date. General and field-specific text filters are applied to the matching exported row fields.
+- `Maal Gaya` and Weight/Metre are added to the Quality Inventory export rows from the saved quality record.
+
+### 7.4 Settings — current visible structure
+
+Settings navigation is now:
+1. Overview
+2. Business Preferences
+3. Appearance
+4. Data & Backup
+5. Help & User Guide
+
+The old visible Users, Notifications, Import/Export, Security, and Audit sections were removed from the Settings navigation/UI for this scope because their controls were demo, duplicate, unsupported, or outside the approved five-section layout. Their previous code/history is not represented as deleted business data. Existing business preference, theme, and user-guide functionality is retained where supported.
+
+Data & Backup now exposes:
+- Automatic backup enable/disable and interval in hours, using the same IndexedDB settings consumed by the existing Store backup scheduler.
+- Manual local backup of quality and payment records.
+- Restore of the latest local backup, with a safety copy of current records before replacement.
+- Browser storage usage where supported.
+- Portable complete ZIP backup and ZIP restore through Home > Export Data.
+
+### 7.5 Remaining verification checklist
+
+Before changing the above `IMPLEMENTED — NOT VERIFIED` statuses to `COMPLETED`, verify in a real browser:
+
+- Open Home Export Center and close it by close button, Cancel, backdrop, and Escape.
+- Export JSON and confirm selected categories/filters are correct.
+- Export Excel with multiple sheets and inspect the workbook.
+- Export CSV and confirm the first-sheet limitation is clear.
+- Open the PDF summary and use Print / Save as PDF.
+- Create a ZIP, inspect `manifest.json` and `data.json`, and verify CRC-32.
+- Restore a ZIP into a test dataset; verify the pre-restore safety backup exists and records/payments are correct.
+- Try a modified/corrupt ZIP and confirm restore is refused without changing current data.
+- Check Settings navigation, business preference save, theme save, backup interval save, manual backup and local restore.
+- Test desktop and mobile layouts.
+- Recheck Home, Inventory, Add Entry, Reports, Payments, Pending Amount, Missing Lot Number, Quality History, and existing automatic backup behavior.
+- Confirm export does not mutate quality/payment records.
+
+---
+
+## 8. Change history — new entry (append-only)
+
+### ALISHAN-CHG-2026-11-04-008 — Home Advanced Export Center, Settings cleanup, and backup safety
+
+- **Type:** New feature + Settings organization.
+- **Status:** `IMPLEMENTED — NOT VERIFIED` for the implemented Export Center, Settings layout, and ZIP restore workflow. Advanced backup capabilities and full regression verification remain `PENDING`.
+- **Reason:** The user requested that the previously documented Export Center and Settings work be implemented in the actual source, not merely described in documentation. The previous Home Export Data action navigated to `inventory.html#export`; Settings exposed multiple demo/duplicate/non-functional sections and controls.
+- **Before:**
+  - Home Export Data navigated away to `inventory.html#export`.
+  - Settings sidebar showed Dashboard, User Guide, General, Appearance, Users, Backup & Restore, Notifications, Import/Export, Security, and Audit Log.
+  - Settings overview included simulated AI suggestions, Undo/Redo, hard-coded system health/activity, and Settings Profiles.
+  - The old export function exported only a limited JSON-shaped data object; non-JSON formats fell back to JSON.
+  - Backup timeline contained hard-coded sample dates.
+- **After:**
+  - Home Export Data opens an in-page Advanced Export Center.
+  - Export Center includes data categories, field-specific filters, date range and general search.
+  - JSON, multi-sheet Excel, first-sheet CSV, printable PDF summary, and complete ZIP backup paths are present.
+  - ZIP includes manifest and data payload, record counts, and CRC-32. ZIP restore validates the generated archive before confirmation, creates a full safety snapshot, restores quality/payment records, quality history, activity log, and settings.
+  - Settings visible navigation is Overview, Business Preferences, Appearance, Data & Backup, and Help & User Guide.
+  - Demo overview content and unused/demo sections and modals are removed from the visible Settings UI.
+  - Data & Backup exposes actual IndexedDB-backed automatic backup preferences, local manual backup/restore, and storage usage.
+- **Impact:** Export is read-only for quality/payment records. Restore is intentionally destructive after explicit confirmation and takes a safety backup first. Existing quality/payment calculations and business record format are not intentionally changed.
+- **Files changed:**
+  - `frontend/index.html`
+  - `frontend/export-center.js` (new)
+  - `frontend/export-center.css` (new)
+  - `frontend/setting.html`
+  - `frontend/script.js`
+  - `frontend/settings-data-backup.js` (new)
+  - `frontend/sw.js` (cache version bumped; new assets precached; unused Cropper dependency removed)
+  - `frontend/ARCHITECTURE.md`
+  - `README.md`
+  - `PROJECT_SOURCE_OF_TRUTH.md`
+  - `AI_HANDOVER_PROTOCOL.md` (included as the mandatory project protocol companion; protocol rules themselves were not changed)
+- **Tests actually run:** Node.js syntax checks for all frontend JavaScript files; HTML parsing and duplicate-ID checks for Home and Settings. These static checks passed.
+- **Not yet tested:** Real browser interactions, Excel library load in deployment, PDF print/save, ZIP create/restore round-trip, corrupt ZIP refusal, backup safety copy, actual mobile rendering, and full regression testing.
+- **Known limitations:** CSV exports the first available selected sheet. PDF is a printable summary/preview, not a full data dump. ZIP reader intentionally supports the uncompressed ZIP format generated by this Export Center; other compressed ZIP formats are rejected with an explanation. Advanced incremental backup, backup comparison, and additional retention/scheduling features remain pending.
+- **Related pending items:** `ALISHAN-PEND-2026-11-04-001` through `ALISHAN-PEND-2026-11-04-005`.
+
+
+
+### 9. Export Center usability enhancement — data-driven selection filters
+
+- The Export Center no longer asks users to type Quality, Quality ID, Lot Number, Quality Type, Colour, Cup, Maal Gaya, or Notes filter values manually.
+- These choices are populated from the existing saved quality records after `AlishanStore` initializes. The filter controls support multiple selections.
+- Dependent lists narrow as follows: selected Quality Type narrows Quality and Cup choices; selected Quality narrows Colour choices.
+- Added date presets: All dates, Today, Last 7 days, Last 30 days, This month, This year, and Custom range.
+- Added a Clear all filters action and a live count of matching quality records.
+- The selected filters continue to apply to exported inventory and payment rows through the existing export flow. No quality/payment record mutation was introduced.
+- **Status:** `IMPLEMENTED — NOT VERIFIED`. Static checks can verify source integrity, but actual browser selection behavior and resulting exports still require runtime verification.
+
+### ALISHAN-CHG-2026-11-05-001 — Data-driven Advanced Export filters
+
+- **Type:** Export Center usability enhancement.
+- **Status:** `IMPLEMENTED — NOT VERIFIED`.
+- **User problem:** Existing filter inputs required manual text entry even though the app already stores the available qualities, IDs, lots, types, colours, cups, Maal Gaya values, and notes.
+- **Before:** Text search inputs for most filters; users had to know and type the exact values.
+- **After:** Existing values appear in selectable multi-select lists. Quality Type narrows Quality and Cup options; Quality narrows Colour options. Date presets, Clear all filters, and a live matching-record count are added.
+- **Files changed:** `frontend/index.html`, `frontend/export-center.js`, `frontend/export-center.css`, `frontend/sw.js`, `frontend/ARCHITECTURE.md`, `PROJECT_SOURCE_OF_TRUTH.md`, `AI_HANDOVER_PROTOCOL.md`.
+- **Scope protection:** No business calculation, record schema, payment logic, or quality editing flow was intentionally changed. Export remains read-only.
+- **Tests run:** JavaScript syntax check for `export-center.js`; further static checks and archive integrity check.
+- **Not yet tested:** Real browser dropdown selection, dependent list behavior, mobile rendering, and exported file contents after combined filters.
+
+
+### ALISHAN-CHG-2026-11-06-001 — Export Center redesigned (matches the app) and made more advanced; ZIP version rule added
+
+- **Type:** Changed feature + new capabilities + documentation rule.
+- **Status:** `IMPLEMENTED — NOT VERIFIED` (static checks and a simulated-browser test were run; a real browser test is still to be done by the owner). Related pending item: `ALISHAN-PEND-2026-11-06-001`.
+- **User requirement:** Redesign the Export Center properly, fix it, make the layout, input boxes and everything else look like the rest of the app, make it more advanced, and add the rule that every update changes the ZIP version.
+- **Old problems found (v73):**
+  - The Export Center used colour variables that do not exist in this app (`--border-color`, `--bg-main`, hard-coded fallbacks), so inputs and borders looked different from the app and wrong in dark themes. It did not use the app's `.btn` and `.form-group` look.
+  - Filters used plain browser multi-select boxes (hard to use on a phone) and matched by *contains* (choosing lot `5` also exported lot `55`).
+  - Quality filters were not applied to Quality History (different field names); rows without a date passed every date filter.
+  - CSV exported only the first sheet; the PDF was a JSON-text summary of 12 rows; Master Data and Settings were exported as one JSON text cell.
+  - There was no preview, no totals, no column choice, no saved presets and no export history.
+- **New behaviour:**
+  - Same look as the app: dialog like the Home breakdown dialog, the app's `.btn` / `.btn-secondary`, `.form-group` inputs, chips and tags like the colour picker, all colours from the app's theme variables (works in every theme).
+  - Four steps in the **Export** tab: 1 Select data (13 data sets in groups: Stock, Payments, Records, Reference & system), 2 Filters, 3 Preview, 4 File format. Two more tabs: **Presets & History** and **Restore Backup**.
+  - Data sets: Quality Inventory, **Size-wise Detail (new)**, **Inventory Valuation (new)**, **Stock Aging (new)**, Received Payments, Pending Amount, Weekly Payments, Quality History, Activity Log, **Quality Master and Colour Master as proper rows**, Settings (as Setting / Value rows, logo and backup copies left out), Backup History.
+  - Filters: searchable multi-select lists with tags and counts (Quality Type, Quality Name, Quality ID, Lot Number, Colour, Cup, Maal Gaya, Notes) that narrow each other; date presets + from/to; Stock status and Payment status chips; a search box; removable chips for every active filter; Clear all; live count of matching quality entries. Matching is **exact** (lot 5 no longer matches lot 55). Each data set says which filters apply to it.
+  - Preview: first 8 rows of every selected data set, column totals (dozens, pieces, amounts), and a column chooser (hide columns; they are left out of the file).
+  - Formats: **Excel** (one sheet per data set + Summary sheet, filter buttons on the header row), **CSV** (one file per data set; several files are packed in a ZIP; UTF-8 with BOM so Excel shows text correctly), **PDF report** (print-ready A4 landscape, every row, repeating headers, totals row, filters and date at the top — use *Save as PDF*), **JSON** (data sets + filters + optional summary), **Complete backup ZIP** (unchanged format, still restorable).
+  - **Presets**: four ready-made ones and your own (saved with name, data, filters, columns, format; max 20). **Recent exports**: the last 15 downloads. Both are kept in the app's settings store (`exportPresets`, `exportHistory`).
+- **Rules placed in `calc.js` (so the page does not calculate):** `exportParseDate`, `exportInRange`, `exportFilterItems`, `exportSizeRows`, `exportTotals`. `store.js` passes them on (`exportFilterItems`, `exportSizeRows`, `exportTotals`, `exportInRange`, `exportParseDate`) and now owns the old-history correction `normalizeQualityHistory`, which Quality History (`audit-pages.js`) and the Export Center both use (the saved record is still never changed).
+- **Not changed (deliberately):** every existing calculation and `exportRows` function, payment rules, quality records and their format, the ZIP backup / restore code (`completeBackup`, `restoreZip`, ZIP reader/writer are the v73 code, moved unchanged), Settings page rules in `export-center.css` (kept at the bottom unchanged).
+- **Files changed:** `frontend/index.html` (Export Center markup), `frontend/export-center.js` (rewritten), `frontend/export-center.css` (rewritten; Settings rules kept), `frontend/calc.js`, `frontend/store.js`, `frontend/audit-pages.js` (uses the shared history correction), `frontend/icons.js` (file-pdf, file-code, file-zipper), `frontend/sw.js` (cache v7), `frontend/ARCHITECTURE.md`, `README.md`, `PROJECT_SOURCE_OF_TRUTH.md`, `AI_HANDOVER_PROTOCOL.md`.
+- **Data / calculation impact:** none on saved data. Export stays read-only. Only presets and the export list are saved (two new settings keys).
+- **Tests actually run:** JavaScript syntax check of every script; duplicate-ID check of `index.html`; `calc.js` export functions run on sample entries (exact lot match, colour / status / payment / date / search filters, size rows, totals, date helper); history page simulation; Export Center simulated with a fake page and the real `calc.js`: tiles, selection, live count, status filter, Excel (Summary + 13 sheets), CSV (single file with a hidden column, and ZIP of 13 CSV files), JSON (with summary), PDF report HTML, history saved.
+- **Not tested yet:** real browser (layout on phone and desktop, dark themes, dropdown behaviour, real Excel and PDF files, pop-up blocker), ZIP backup/restore round trip after this change, performance with several thousand entries.
+- **Known limitations:** PDF is made with the browser's print dialog (no PDF library); Weekly Payments ignores the date range; the ZIP reader accepts only ZIPs made by this Export Center.
+
+---
+
+## 10. Version log (ZIP versions) — append-only
+
+Rule: see section 0, rule 8. Newest at the bottom.
+
+| Version | ZIP file name | Date | Change IDs | Summary |
+|---|---|---|---|---|
+| v73 | `AlishanApp-v73-Export-Center-Selection-Upgrade.zip` | 2026-11-05 | `ALISHAN-CHG-2026-11-05-001` and earlier | Starting point of this work: Export Center with data-driven filters, Settings cleanup, backup safety. |
+| v74 | `AlishanApp-v74-Export-Center-Redesign.zip` | 2026-11-06 | `ALISHAN-CHG-2026-11-06-001` | Export Center redesigned to match the app and made more advanced; ZIP version rule added. |
+| v75 | `AlishanApp-v75-Completion-Date.zip` | 2026-11-06 | `ALISHAN-CHG-2026-11-06-002` | Complete now saves the date the goods went ("Maal Gaya"); shown on Pending Amount and in the quality details; editable; the owner's way of using the app is written down (section 11). |
+| v76 | `AlishanApp-v76-Report-Page-Redesign.zip` | 2026-11-06 | `ALISHAN-CHG-2026-11-06-003` | Report Page redesigned: eight report cards, each with filters, summary, charts and table; Weekly Report and Business Analysis by Quality Completion Date. No calculation file changed. |
+| v77 | `AlishanApp-v77-Limits-Fixed.zip` | 2026-11-06 | `ALISHAN-CHG-2026-11-06-004` | Known limits of v74–v76 fixed: Export Center completion-date and amount filters + Completed Work data set (Weekly Report / Business Analysis now export), Missing Completion Date page, Activity Log keeps 1000, Payment Report's old sections follow its date range, Bulk Import and Edit share one colour-choice function. |
+| v78 | `AlishanApp-v78-Mobile-Fixes.zip` | 2026-11-08 | `ALISHAN-CHG-2026-11-08-001` | Export Center and Report Page made to work on a phone (found by looking at them in a real browser at phone width); phone rule added. |
+| v79 | `AlishanApp-v79-Report-Cards-Pagination-Limits.zip` | 2026-11-08 | `ALISHAN-CHG-2026-11-08-002` | Report Page result cards and read-only detail popup redesigned; report selection stays visible; Inventory and Reports now share Common Pagination; Activity Log readers use the full 1000-record retained limit. |
+| v80 | `AlishanApp-v80-Reports-Runtime-Pagination-Fix.zip` | 2026-11-08 | `ALISHAN-CHG-2026-11-08-003` | Fixed Reports overview runtime error caused by removed Aging Stock DOM nodes; restored a consistent two-column six-card overview on phones; made Reports Common Pagination render with Inventory's exact shared component styling. |
+| v81 | `AlishanApp-v81-Reports-Settings-Usability.zip` | 2026-11-08 | `ALISHAN-CHG-2026-11-08-004` | Enforced one-line shared pagination; moved Reports home filters above report cards; made each selected report a focused view; separated and collapsed existing report sections; added pagination to long pending/payment-history/weekly lists; expanded the latest User Guide and improved Data & Backup status, backup/restore safeguards and storage refresh. |
+| v82 | `AlishanApp-v82-Reports-Compact-Pagination-Focus.zip` | 2026-11-08 | `ALISHAN-CHG-2026-11-08-005` | Made Previous/Next pagination buttons compact so all controls fit on one line without clipping or horizontal scrolling; in a selected Report view, hide dashboard preview cards and report chooser while keeping Search and global filters visible above the selected report. |
+| v83 | `AlishanApp-v83-Reports-Pagination-Test-Audit.zip` | 2026-11-09 | `ALISHAN-CHG-2026-11-09-001` | Added a transparent verification log: shared pagination callbacks and synthetic ReportEngine filter checks passed; responsive browser and real stored-record acceptance tests remain pending. No application code changed. |
+
+### 7.6 Pending work added on 2026-11-06
+
+| Pending ID | Work | Current status | Reason |
+|---|---|---|---|
+| `ALISHAN-PEND-2026-11-06-001` | Export Center redesign | `IMPLEMENTED — NOT VERIFIED` | Delivered in v74. Real-browser tests of every format, mobile layout, dark themes and ZIP round trip remain. |
+| `ALISHAN-PEND-2026-11-06-002` | Report Page redesign (8 report cards, from `AlishanApp_Report_Page_AI_Implementation_Handover.md`) | `PENDING` | Specification received on 2026-11-06; not started. The app stores no quality **completion date** (no `completedAt` field), which the Weekly Report needs; this gap must be decided by the owner before coding. |
+| `ALISHAN-PEND-2026-11-06-003` | Completion date for the Weekly Report | `IMPLEMENTED — NOT VERIFIED` | Delivered in v75 (`completedAt`). It answers the data gap noted in `ALISHAN-PEND-2026-11-06-002`; entries without a date still cannot be counted in any week. The Report Page itself is still `PENDING` (planned as v76). |
+| `ALISHAN-PEND-2026-11-06-004` | Report Page redesign (was `ALISHAN-PEND-2026-11-06-002`) | `IMPLEMENTED — NOT VERIFIED` | Delivered in v76. Real-browser checks of every report, filters on a phone, dark themes, the Export Center hand-off and the Add Amount Received flow remain. Weekly Report and Business Analysis cannot be exported through the Export Center (it has no completion-date filter); they use the Excel button. |
+| `ALISHAN-PEND-2026-11-06-005` | Limits of v74–v76 (see ALISHAN-CHG-2026-11-06-004) | `IMPLEMENTED — NOT VERIFIED` | Delivered in v77. Real-browser checks remain: Export Center new filters and the Completed Work file, hand-off from Weekly Report / Business Analysis, Missing Completion Date page, Payment Report old sections with a date range, Bulk Import colour replace, Edit colour swap. |
+| `ALISHAN-PEND-2026-11-08-006` | Phone layout of Export Center and Report Page | `IMPLEMENTED — PARTLY VERIFIED` | Checked in a real browser (Chromium, 390 / 360 / 320 px) with test data. Not checked on a real phone (Android Chrome, iPhone Safari), landscape, Excel files and charts (their libraries are not in `vendor/`, they load from the internet). |
+| `ALISHAN-PEND-2026-11-08-007` | Report result-card redesign, read-only detail popup, shared pagination and 1000-record Activity Log reads | `IMPLEMENTED — NOT VERIFIED` | Delivered in v79. JavaScript / HTML static checks passed; actual browser checks at 390 / 360 / 320 px, report-data flows, pagination state isolation, popup completeness and backup/export contents remain. |
+| `ALISHAN-PEND-2026-11-08-008` | Verify v80 Reports runtime error fix, six-card mobile overview layout, and Inventory-matching pagination in a real browser | `IMPLEMENTED — NOT VERIFIED` | v80 removes the stale Aging Stock DOM writes, overrides the legacy third-card full-width rule for Reports, and gives `.pagination-controls.common-pagination` precedence over the old Report-only styles. Static checks are pending; real browser tests at 390 / 360 / 320 px and real report data are still required. |
+| `ALISHAN-PEND-2026-11-08-009` | Verify v81 Reports focused views, collapsed legacy sections, one-line pagination, updated User Guide and Data & Backup flows | `IMPLEMENTED — NOT VERIFIED` | v81 source changes and static checks are present. Real browser checks at 390 / 360 / 320 px, actual long payment/pending datasets, pagination callbacks, restore safety behavior and ZIP hand-off still require user/browser verification. |
+| `ALISHAN-PEND-2026-11-08-010` | Verify v82 compact shared pagination and Reports focused-view visibility/order | `IMPLEMENTED — NOT VERIFIED` | v82 applies compact fixed-width shared pagination controls and hides dashboard/report-preview cards in selected-report mode while retaining search/global filters. Real browser checks at 390 / 360 / 320 px and real list data are still required. |
+
+
+### ALISHAN-CHG-2026-11-06-002 — Completion date ("Maal Gaya") saved when a quality is completed
+- **Type:** New feature (one new optional field on a quality: `completedAt`).
+- **Status:** `IMPLEMENTED — NOT VERIFIED` (see tests). Related pending item: `ALISHAN-PEND-2026-11-06-003`.
+- **Reason:** The owner uses **Complete** as "the goods have gone" and **Pending Amount** as the payment status (section 11). The app only stored In Stock / Out of Stock, not the day the goods went. The Report Page (weekly report, business analysis) needs that day, and the owner wants to see how long ago goods went while the money is still pending.
+- **Before:** Complete only switched `inStock` to false. No date was kept; Quality History had the event time but nothing showed it on the quality.
+- **After:**
+  - **Complete** (Inventory card button and Home > In Stock Items button, both `AlishanStore.toggleStock`) saves `completedAt` = the moment of pressing. Going **back in stock** removes `completedAt`. If saving fails, both `inStock` and `completedAt` are put back.
+  - **Edit** shows a "Maal Gaya (Completion Date)" box only for a Complete quality. Choosing a day sets it (today = now, the day already saved = unchanged, any other day = 12:00 of that day); an empty box removes the date. Refused: a future day, a day before the entry day, a text that is not a date. A quality that is still in stock has no such box and edits never change its date.
+  - **Shown:** on every Pending Amount card of a Complete quality ("Maal gaya: 12 Nov 2026 · 5 days ago", or "date not set"), and in the quality details window (MAAL GAYA row).
+  - **Quality History:** the snapshot has a new row "Completion Date", so Complete / back-in-stock / edit records show the date change like any other change.
+  - **Older Complete qualities (saved before v75):** when the app loads, a Complete quality without a date takes the time of its latest real **"Quality Completed"** record in Quality History (records of v65–v69 are read through `normalizeQualityHistory`, which fixes their old reversed wording). A quality with no such record stays "date not set"; **nothing is guessed**. The saved history is never changed.
+  - Backup, restore, ZIP backup and Export carry the field because they copy whole records.
+- **Not changed:** calculations, amounts, payments, aging (aging still counts from the entry date), the Complete button name and wording, Bulk Import.
+- **Files changed:** `frontend/calc.js` (`completionStamp`, `completionInfo`, Edit rule in `buildUpdatedItem`), `frontend/store.js` (`toggleStock`, `backfillCompletionDates`, history snapshot row, `completionInfo`), `frontend/item-modal.js` (Edit box), `frontend/item-card.js` (details row), `frontend/audit-pages.js` and `frontend/pending-amount.html` (Pending Amount line), `PROJECT_SOURCE_OF_TRUTH.md`, `README.md`.
+- **Tests actually run:** JavaScript syntax of the changed scripts. Run with stub data: Edit rules (unchanged day keeps its time, other day becomes 12:00, today = now, future refused, before-entry refused, empty removes, absent field keeps, in-stock entry ignores, garbage refused); `completionInfo` (days ago, no date, in stock = none); `normalizeInventory` keeps the field; Complete / back in stock / failed save in `toggleStock`; back-fill (latest record wins, an old reversed record is read correctly, an entry that already has a date is not touched, an entry without a record stays empty).
+- **Not tested yet:** real browser (Edit box layout, Pending Amount line, details row, Home button), back-fill on the owner's real data, backup / restore round trip with the new field.
+- **Known limitations:** Qualities completed before v70 have no history record, so they show "date not set" until the owner types a date in Edit. A date typed for another day is stored as 12:00 of that day.
+
+---
+
+## 11. How the owner uses the app (business workflow) — recorded 2026-11-06
+
+This section records how the app is really used. Read it before changing anything about stock, payments or reports. It is append-only; a changed way of working is added below with the old text marked `SUPERSEDED`.
+
+1. **Order arrives → entry added at once.** The quality is added as soon as the order is received. It stays **In Stock**, which means the goods are **not finished / not sent yet** (shown as *Incomplete*).
+2. **Goods finished and gone → press Complete.** The owner presses **Complete** when the goods are ready and **go out**. The quality becomes **Out of Stock = Complete = "Maal Gaya"**. It leaves In Stock Items and Aging. (The Complete button is used for "the goods have gone"; since v75 the day is saved as `completedAt`.)
+3. **Money comes later → Received.** Payment usually arrives later: after one week, two weeks or a month, and in parts or at once. The owner records it with **Add Amount Received** (Reports) or the **Received Amount** card (Pending Amount page). **Pending Amount = the payment status**: a quality stays there until its pending balance is zero, whether it is Complete or Incomplete.
+4. **The two things are independent.** Money can arrive before the goods go or a week or a month after. Never connect "paid" with "Complete", and never use one to decide the other.
+5. **Questions the app must answer:**
+   - Which orders are not sent yet? → Home > **In Stock Items** (Incomplete).
+   - Which goods have gone but are not fully paid? → **Pending Amount**, cards marked *Completed*, with "Maal gaya: date · N days ago".
+   - How long have the goods been waiting for money? → the same cards (Pending Days counts from the entry date; the Maal gaya line counts from the day the goods went).
+6. **Decisions made in this discussion:**
+   - **D-004** Locked: *Complete = Out of Stock = goods gone (Maal Gaya).* The Complete button keeps its name; a rename to "Maal Gaya" is possible later only on the owner's request.
+   - **D-005** Locked: *Pending Amount page = payment status.*
+   - **D-006** `SUPERSEDED` before any code was written: the chat idea of a separate "Maal Gaya" button, a "dispatch pending" list and three stages per quality (Complete / Paid / Gaya). Replaced by D-004 and D-005 (the owner already uses Complete as Maal Gaya). Replaced by: D-007.
+   - **D-007** The day the goods went is saved when Complete is pressed (`completedAt`, ALISHAN-CHG-2026-11-06-002); it is shown, editable, and never guessed for old entries.
+7. **For the Report Page (planned v76):** weekly figures such as "this week's work" use the **completion date** (`completedAt`). A quality without a date is not counted in any week and is listed as "date not set". Payment figures use the payment's own date. Aging stays on the entry date.
+
+### ALISHAN-CHG-2026-11-06-003 — Report Page redesigned: eight report cards
+- **Type:** Changed feature (presentation) + new read-only report views. Source: `AlishanApp_Report_Page_AI_Implementation_Handover.md`.
+- **Status:** `IMPLEMENTED — NOT VERIFIED` (static checks and simulated-page tests were run; real browser tests are still to be done by the owner).
+- **Calculation files:** **`calc.js`, `store.js` and `db.js` were NOT changed in this version** (checked against the v75 ZIP: only `export-center.js`, `reports.html`, `sw.js` changed and `report-engine.js`, `report-views.js`, `reports.css` were added). No existing formula was reimplemented: amount, quantity, received, pending, valuation and aging come from `AlishanCalc` / `AlishanStore`; the new files only choose records (filters, weeks, months), add up those existing numbers and arrange them.
+- **Before:** `reports.html` opened on a tab bar (Pending Amount Receival, Weekly Reports, Amount History, Inventory Valuation, Stock Aging Analysis). One shared filter panel (Time Period, Product Type, Quality) filtered everything; Weekly Reports meant *payments received per week*.
+- **After:**
+  - **Main page:** the report search box, **eight report cards** (each with one real figure), then the old overview cards, Advanced Quality Search and the old filter panel (these three are shown only on the main page; the old filter panel still filters the overview cards and the old *Export Report* window as before).
+  - **Opening a card** shows that report with: Back to reports; filters (only those the report's records support); summary tiles; charts; a table (click a heading to sort, 50 rows at a time, click a row to see the quality read-only); *Export Center* and *Excel* buttons. The address is `reports.html#<report>` so the browser's Back button works. Opening or filtering never writes any record.
+  - **Shared filters:** Date range, Quality, Quality ID, Quality Type, Lot Number, Colour, Cup, Status (Complete / Incomplete), Amount range. Matching is exact; lists narrow each other like the Export Center; the page's quick search also narrows every report. Clicking a chart bar or slice applies that value as a filter (Aging: opens that age group).
+  - **Old sections kept:** Pending cards with *Add Amount Received* (inside Pending Report), Amount History with delete and Weekly received per week (inside Payment Report), the valuation trend / stock summary (inside Valuation Report), the aging cards (inside Aging Report). They draw from the same filtered entries as the new parts.
+- **The eight reports and what they mean (definitions):**
+  1. **Weekly Report** — Monday–Sunday week (navigate ‹ ›, or a custom range). *Work of the week = qualities whose Quality Completion Date (`completedAt`) is inside the week.* Tiles: qualities completed, quantity (dozens), work amount, amount received and pending **for those qualities (till today)**, cash received in the week (payment dates), incomplete qualities (not completed yet, **not** counted as work) and completed-without-a-date (**not** counted in any week). Compared with the previous week; charts: work amount by day, received vs pending, quantity and quality-count trend over 8 weeks.
+  2. **Payment Report** — the really saved payments: total received, number of entries, average (total ÷ entries); monthly bar and received-by-type; date range = payment date.
+  3. **Pending Report** — qualities with remaining amount > 0 (partly paid ones show the remaining amount; fully paid ones never appear): total pending, count, quantity, oldest pending record; by type and highest-pending qualities.
+  4. **Quality Report** — qualities with quantity and amount; average = total ÷ qualities; type breakdown, leading qualities, quality-wise amount.
+  5. **Valuation Report** — the app's existing valuation (`qualitySummary` / `summary`) of the selected entries (as in the old Inventory Valuation tab, it counts the selected entries, not only those in stock). It is not the cash received.
+  6. **Aging Report** — existing aging (`agingReport`, entry date): Fresh 0–7, Aging 8–15, Warning 16–30, Critical 31+ days; only entries still in stock (Incomplete) age; the four group tiles open their list.
+  7. **History Report** — Quality History (old records read through `normalizeQualityHistory`) and the Activity Log together, newest first. The Activity Log keeps only the newest 200 actions and has no quality fields, so quality filters hide it (the screen says so).
+  8. **Business Analysis** — week or month against the one before. Work amount, quantity, quality count and pending use the Quality Completion Date (same as the Weekly Report); cash received uses payment dates (same as the Payment Report). Comparison table with change and %, bar and 6-period line chart.
+- **Export:** *Export Center* hands the report's data set and filters over (`sessionStorage 'alishanExportPreset'`, read by `export-center.js` which then opens with them applied; nothing is exported until the owner presses Export). Pending, Payment, Quality, Valuation, Aging and History map to existing Export Center data sets. **Weekly Report and Business Analysis cannot be expressed there** (no completion-date filter) and the Amount range is not an Export Center filter; for these the *Excel* button downloads the report's summary and table (same Excel helpers as before). This is a documented limitation, not a second export system.
+- **Data not available / not invented:** qualities without a completion date are never put into a week; no completion dates are guessed; no new payment-status or aging labels were created (existing ones are used).
+- **Decisions:** `SUPERSEDED` — the five-tab layout and the single Time Period / Product Type / Quality filter panel as the way into reports (replaced by the eight cards and per-report filters; the old panel remains on the main page for the overview cards and the old Export Report window). `SUPERSEDED` — "Weekly Reports = amount received per week" as *the* weekly report (kept as a section inside the Payment Report; the Weekly Report now follows section 11 of this file).
+- **Files changed:** `frontend/reports.html`, `frontend/export-center.js` (hand-off), `frontend/sw.js` (cache v8, new files), `frontend/ARCHITECTURE.md`, `README.md`, `PROJECT_SOURCE_OF_TRUTH.md`. **Added:** `frontend/report-engine.js`, `frontend/report-views.js`, `frontend/reports.css`.
+- **Tests actually run:** JavaScript syntax of all scripts and of the inline script of `reports.html`; HTML id uniqueness and div balance. Engine run on sample entries with the real `calc.js`: week range (Monday–Sunday), completion-date weeks and previous week, no-date quality not counted, partly paid / fully paid pending, aging groups and their lists, payments by month, exact lot filter (5 vs 55), amount range, status and payment filters, history with and without a quality filter, week and month analysis, custom range, Export Center presets. Eight views, card figures, navigation, week buttons, aging group click, quality window, Excel hand-off and filter + clear run in a simulated page; Export Center opens with a report's hand-off applied.
+- **Not tested yet:** real browser (layout on phone and desktop, dark themes, charts, the read-only quality card, the old sections inside a report, Add Amount Received and delete from inside a report), real Excel files, large data (thousands of entries), hand-off through the real page navigation.
+- **Known limitations:** Weekly Report / Business Analysis are not exportable through the Export Center; the Amount range is not passed to it; the Activity Log keeps 200 actions; qualities completed before v70 without a date appear only as "completed without a date"; the old section *Weekly received per week* inside the Payment Report does not follow the new date range.
+
+(Update 2026-11-06: item 7 above was delivered in v76 — see ALISHAN-CHG-2026-11-06-003.)
+
+### ALISHAN-CHG-2026-11-06-004 — Known limits of v74–v76 fixed
+- **Type:** Changed features + one new page (no formula or amount rule changed; `calc.js` unchanged).
+- **Status:** `IMPLEMENTED — NOT VERIFIED` (see tests). Related pending item: `ALISHAN-PEND-2026-11-06-005`.
+- **Reason:** The owner asked to fix the limitations listed after v76. Each limit and its fix:
+  1. **Weekly Report and Business Analysis could not go to the Export Center** (it had no completion-date filter). *Fix:* the Export Center now has **Completion date — from / to** (only qualities completed inside it, with a saved completion date) and a new data set **Completed Work** (completion date, quality, ID, type, lot, quantity, total / received / pending amount). The report hands over this data set with the open week or month; all eight reports now open in the Export Center. *(SUPERSEDES the limitation written in ALISHAN-CHG-2026-11-06-003.)*
+  2. **Amount range was not an Export Center filter.** *Fix:* **Amount — min / max (₹)** added. It applies to the amount of Quality Inventory (*Total Amount*), Completed Work (*Total Amount*), Pending Amount (*Pending Amount*), Received Payments (*Amount Received*) and Stock Aging (*Value*); the preview line says when it does not apply to a data set (Size-wise Detail, Valuation, Weekly Payments, history, master and system lists). The hand-off passes the report's range.
+  3. **Complete qualities with no completion date stayed "date not set" until edited one by one.** *Fix:* new page **Missing Completion Date** (Home > Quick Actions; also linked from the Weekly Report note). It lists every Complete quality without a date, with a date box (not before the entry day, not in the future) and *Save date*. Saving (`AlishanStore.setCompletionDate`) uses the same rules as the Edit box (`AlishanCalc.completionStamp`), is written to Quality History as *Quality Updated* with a "Completion Date" row, and the quality leaves the list. Nothing is guessed or filled automatically.
+  4. **Activity Log kept only the newest 200 actions.** *Fix:* it keeps the newest **1000** (`db.js`). Actions already dropped cannot be recovered. The History Report note says 1000.
+  5. **The old "received per week" and Amount History sections inside the Payment Report ignored its date range.** *Fix:* they now follow the Payment Report's payment date range and payment amount range (weeks without a payment in range are not offered; totals follow the shown days).
+  6. **Bulk Import colour replace and Edit colour swap used separate code for the choices.** *Fix:* one function `AlishanStore.colorChoices(colorName, takenColours)` (close suggestions first, then every colour, taken colours left out) is used by the Edit swap row, the Bulk Import swap row and the Bulk Import "colours not in the app" list. The behaviour of both screens is unchanged; the colour-swapping itself still works on the Edit form (live size cards) and on the Bulk Import draft (data) respectively, because they hold their data differently.
+- **Not changed:** every calculation (`calc.js`), amounts, payments, aging, the Complete button, the report definitions of ALISHAN-CHG-2026-11-06-003.
+- **Files changed:** `frontend/store.js` (`colorChoices`, `setCompletionDate`, `missingCompletionItems`), `frontend/db.js` (activity cap), `frontend/export-center.js`, `frontend/index.html` (new Export Center inputs, Quick Action), `frontend/report-engine.js`, `frontend/report-views.js`, `frontend/reports.html`, `frontend/item-form.js`, `frontend/bulk-import.js`, `frontend/audit-pages.js`, `frontend/icons.js` (calendar-check, code-compare, hand-pointer — the last two were already used by the Report Page without an icon), `frontend/sw.js`, `PROJECT_SOURCE_OF_TRUTH.md`, `README.md`, `frontend/ARCHITECTURE.md`. **Added:** `frontend/missing-completion.html`.
+- **Tests actually run:** JavaScript syntax of every script and of the inline script of `reports.html`; id checks of `index.html` and `export-center.js`; with stub data: `setCompletionDate` (future, before entry, in-stock quality refused; a valid day saves, writes history, leaves the list), colour choices, export presets of Weekly Report (Monday–Sunday completion range) and Business Analysis (month), amount flags, payment range check; the Export Center with the new inputs (Completed Work 2 rows, this week 1 row, amount min 1000 → 0 rows, filter chips); the Missing Completion Date page (card, date limits, empty date refused, save call, list becomes "All caught up").
+- **Not tested yet:** real browser (layout of the new Export Center inputs and the new page on a phone and in dark themes, the real Completed Work Excel / CSV / PDF file, hand-off by real page navigation, the old sections inside the Payment Report with a date range, Edit colour swap and Bulk Import replace after the shared change), large data.
+- **Known limitations:** the amount range is not applied to every Export Center data set (the screen says which); the Activity Log still has a cap (1000); Complete qualities without a completion date still need the owner to type it (by design: nothing is guessed).
+
+### ALISHAN-CHG-2026-11-08-001 — Export Center and Report Page fixed for phones
+- **Type:** Bug fixes (layout only; no data, calculation or report definition changed).
+- **Status:** `IMPLEMENTED — PARTLY VERIFIED` (looked at in a real Chromium browser at phone width; see tests).
+- **Reason:** The owner thought the Report Page and the Export Center did not work in the mobile view. They did not: v74–v77 had only been tested with scripts, which cannot see layout. The pages were then opened in a real browser at 390 × 844 with test data and the problems below were found and fixed.
+- **Problems found (before) and fixes (after):**
+  1. **Export Center — wrong header and footer.** The app styles every `<header>` and `<footer>` tag as its blue top bar, so the dialog had a blue gradient header with unreadable text and tabs hidden behind it. *Fix:* plain `<div>`s.
+  2. **Export Center — wider than the screen.** Content was cut at the right edge (the dialog body was 2335 px wide inside a 388 px screen) because grid children do not shrink by default. *Fix:* `minmax(0, 1fr)` and `min-width: 0`; grid columns use `min(230px, 100%)`.
+  3. **Export Center — the Export and Cancel buttons were hidden behind the phone's bottom navigation.** *Fix:* the dialog now sits above it (z-index 1200) and is a full-height sheet on a phone with the footer above the system bar; filter boxes sit two by two; date and amount boxes two by two.
+  4. **Report views — the page became 578–866 px wide** (same grid problem, plus a 10-column table). *Fix:* `minmax(0, 1fr)`, `min-width: 0`.
+  5. **Report views on a phone:** week buttons were full-width bars (now one row ‹ label ›); the Filters box starts closed on a phone and its boxes sit two by two; the Details and comparison tables became cards (one card per record; the comparison shows current / previous / change together instead of hiding two columns); charts that cannot load no longer leave large empty boxes (one note instead); the Aging Report showed the four age groups twice (now totals plus the four clickable group cards, titles no longer repeat the range); the Valuation Report's old table pushed the page wider at 360 px and below.
+  6. **Read-only quality window:** raised above the bottom navigation (z-index 1200); its title bar no longer uses a `<header>` tag.
+- **Not changed:** calculations, report definitions (ALISHAN-CHG-2026-11-06-003), export contents, the old pagination block on the Report home.
+- **Files changed:** `frontend/index.html` (header / footer tags of the Export Center), `frontend/export-center.css`, `frontend/reports.css`, `frontend/report-views.js`, `frontend/report-engine.js` (Aging tiles), `frontend/sw.js` (cache v9), `PROJECT_SOURCE_OF_TRUTH.md` (rule 9, this record), `README.md`, `frontend/ARCHITECTURE.md`, `AI_HANDOVER_PROTOCOL.md`.
+- **Tests actually run (real Chromium, phone viewport, test data of 6 qualities and 2 payments, service worker blocked):**
+  - Screenshots and an "anything wider than the screen" check of: Report home, all eight report views, the read-only quality window, the Export Center (every section, an opened filter list), the Missing Completion Date page and the Edit form with the colour swap row — at 390 px, and the Report views, Export Center and new page again at 360 and 320 px: **no horizontal overflow** after the fixes.
+  - Real flows: Pending Report → Export Center (Pending Amount pre-selected); Weekly Report → Export Center (Completed Work, completion range Monday–Sunday, 1 row); real **CSV**, **JSON** and **complete ZIP backup** downloads (file contents checked); ZIP **restore round trip** (6 qualities → one deleted → restored to 6).
+- **Not tested yet:** a real phone (Android Chrome, iPhone Safari), landscape, the Excel file and the PDF print window, the charts (the libraries are not in `vendor/` and could not be downloaded here: Excel and charts need the internet unless the files are copied into `frontend/vendor/` as described in `vendor/README.txt`), the Quality History and Home pages at phone width were not re-checked in this change.
+- **Known limitations:** without internet and without the files in `vendor/`, charts and Excel do not load (the pages say so and everything else works); the Home breakdown window and a few older dialogs use z-index 1000 and may still sit under the bottom navigation (not changed here).
+
+
+### ALISHAN-CHG-2026-11-08-002 — Report result cards, detail popup, shared pagination and Activity Log read limits
+- **Type:** Changed feature (Report Page presentation and navigation) + shared UI module + limit consistency fix.
+- **Status:** `IMPLEMENTED — NOT VERIFIED` (static checks passed; browser checks are pending). Related pending item: `ALISHAN-PEND-2026-11-08-007`.
+- **User-approved scope:** Implement the Report Page decisions agreed on 2026-11-08, and correct the 200 / 500 record read limits to match the Activity Log's 1000-record retention. Do not change business calculations or unrelated screens.
+- **Before:** Report cards disappeared after opening a report; result rows were displayed as a wide table / single-column phone stack; clicking a row reused the Inventory ItemCard with its Inventory layout; report pagination used a separate show-more control; Inventory and Reports had separate pagination markup; Export Center Activity Log / safety backup / complete ZIP backup read 200 records and Report History read 500 even though the retained Activity Log limit is 1000.
+- **After:** The six Report Page overview cards remain at the top (Aging Stock is removed from this Report Page overview only). Search and Advanced Quality Search sit below them, followed by the report-selection cards. Selecting a report keeps those cards visible and shows that report's data underneath. Result records are compact two-column cards: Quality Name is a compact centered heading; the report-specific essential fields sit in two columns; each report uses the same card shell but its own fields. Clicking a quality card opens a read-only popup with a neutral detail grid (not the Inventory ItemCard layout), including available quality, size/quantity summary, colour, payment and other saved details; payment and history cards add their own report context.
+- **Sorting:** Latest First, Oldest First, Quality A–Z / Z–A, Amount High to Low / Low to High. Sorting uses fields already returned by the selected report.
+- **Pagination:** Added `common-pagination.js` / `common-pagination.css`, using Inventory's existing 10 / 20 / 50 / 100 options and Previous / Next / Page n of m behavior. Inventory now uses the shared module; Reports uses the same module and keeps each report's own page and page-size state. Filtering resets that report to page 1.
+- **Activity Log:** All three Export Center readers now call `getRecentActivity(1000)` (Activity Log export, complete ZIP backup, pre-restore safety backup); Report History now calls `getRecentActivity(1000)`. This reads the newest 1000 retained actions. Actions already deleted from storage by earlier retention limits cannot be recovered.
+- **Data / calculation flow:** Report Engine continues to read AlishanStore / AlishanCalc outputs. No formula, quantity conversion, price, payment application, database schema, or quality record was changed. The popup is read-only. Pagination state is UI-only and is not saved to business records.
+- **Files changed:** `frontend/reports.html`, `frontend/reports.css`, `frontend/report-views.js`, `frontend/report-engine.js`, `frontend/export-center.js`, `frontend/inventory.html`, `frontend/inventory.js`, `frontend/common-pagination.js` (new), `frontend/common-pagination.css` (new), `frontend/sw.js` (cache v10), `frontend/ARCHITECTURE.md`, `PROJECT_SOURCE_OF_TRUTH.md`, `README.md`.
+- **Tests actually run:** `node --check` for every frontend `.js` file and the inline script in `reports.html`; Python HTML parsing for `reports.html` / `inventory.html` (no duplicate IDs; all script sources exist); CSS brace-balance check; CommonPagination mock test (page count, Next callback, page-size callback); Report History mock test (requests 1000 actions and exposes Previous / New values); source scan confirmed six overview cards and no remaining `getRecentActivity(200)` / `getRecentActivity(500)` calls in the changed readers.
+- **Not yet tested:** Real browser at 390 / 360 / 320 px. A headless Chromium screenshot attempt did not complete in this runtime, so no visual/browser result is claimed. Actual quality/payment/history data click-through; pagination on Inventory and multiple Reports; data export and restore contents after the 1000-record change; theme checks; Android Chrome / iPhone Safari remain untested.
+- **Known limitations:** This is not a real-device acceptance test. Activity actions that were already pruned before v79 are not recoverable. The existing report-specific filter definitions and calculation models were not expanded as part of this task.
+
+
+### ALISHAN-CHG-2026-11-08-003 — v80 Reports runtime and pagination styling corrections
+- **Type:** Bug fix (Report Page runtime + mobile overview layout + shared pagination presentation).
+- **Status:** `IMPLEMENTED — NOT VERIFIED` until all checks below pass.
+- **User-reported v79 defects:** `Reports: cards failed` / `TypeError`; Added This Week overview card occupied the full row on mobile; Reports pagination did not visually match Inventory.
+- **Root cause:** The six-card Report overview had removed the Aging Stock overview DOM nodes, but the legacy `updateDashboard()` still attempted to write to `agingItems`, `agingLabel` and `agingBreakdown`, causing a null-element TypeError. The mobile stylesheet still applied the old four-card Reports rule that made card 3 span the full row. The old inline `.pagination-controls` styles in `reports.html` had equal/later cascade priority and overrode the shared pagination module's Inventory-based shell.
+- **Fix:** Removed only the obsolete Aging Stock overview DOM writes; the separate Aging Report remains untouched. The six Report overview cards now use two equal columns on mobile and no card is forced full-width. The shared pagination base selector is now `.pagination-controls.common-pagination`, so the shared Inventory design wins over legacy page styles.
+- **Files changed:** `frontend/reports.html`, `frontend/mobile.css`, `frontend/common-pagination.css`, `frontend/sw.js` (cache v11), `PROJECT_SOURCE_OF_TRUTH.md`.
+- **Data/calculation impact:** None. Existing report data, calculations, filters, payment flows, and Inventory pagination behavior are unchanged.
+- **Verification required:** Run JS syntax checks, HTML/script reference checks, CSS checks, then open Reports and Inventory in Chromium at 390 / 360 / 320 px; confirm no `Reports: cards failed` error, all six overview cards are two-per-row, report result pagination matches Inventory, page navigation/page-size changes work, and Inventory pagination is unchanged.
+- **Known limitations:** Until the browser and real-data checks pass, status remains `IMPLEMENTED — NOT VERIFIED`.
+
+
+### ALISHAN-CHG-2026-11-08-004 — Reports focus, one-line pagination, and Settings usability
+
+- **Type:** Changed feature + usability improvements.
+- **Status:** `IMPLEMENTED — NOT VERIFIED`. Related pending item: `ALISHAN-PEND-2026-11-08-009`.
+- **User requirement:** Keep every pagination row on one line like Inventory; move Reports home filters above the report cards; when a report card is selected show only that report; separate the old Amount Received History, Weekly Amount Received and Select Week sections into clear cards that are closed initially; add pagination to long existing report lists; update Help & User Guide for current features; make Data & Backup easier to understand and operate.
+- **Previous behavior / problem:** Reports had global filters after the report cards; the selected report view left the report-card home visible; old report sections appeared as one long expanded block; Payment History and Weekly Amount Received used a growing Show More pattern or no visible pagination; the shared pagination component could wrap controls on narrow screens; the guide did not explain the latest report, export, history and backup workflows in sufficient detail.
+- **After:**
+  - Reports home filters are before the report cards. Selecting a report hides the card home and opens only that report. A Back to Reports control returns to the home. This explicitly supersedes the v79 presentation decision that report cards remain visible while a report is open; no report data or report definitions are removed.
+  - Payment Report's Amount Received History, Select Week, and Weekly Amount Received are individual collapsed accordion cards. Other legacy sections (Pending Amount Receival, Inventory Valuation Details, Inventory Aging Details) are also collapsed cards.
+  - Pending Amount, Amount Received History, and Weekly Amount Received legacy lists use Common Pagination with independent page/page-size state. Search/filter refresh resets their page to 1.
+  - Common Pagination stays in a single horizontal row. On narrow phones it can scroll horizontally; controls do not wrap into multiple rows. The shared component remains used by Inventory and Reports.
+  - Help & User Guide now covers Dashboard, Inventory, Pending Amount, Missing Lot Number, Reports, Payment Report sub-sections, Quality History, Export Center formats and ZIP restore, Data & Backup, mobile layouts and pagination. Existing guide content was corrected where the quantity display wording was inaccurate.
+  - Data & Backup now shows current quality/payment counts and latest local backup date/type, labels backup types, allows local backup when either quality or payment records exist, saves a safety copy if either current dataset exists before restore, disables restore when no valid local backup exists, and provides a Refresh Storage Usage action plus a direct link back to Home for the complete ZIP Export Center.
+- **Impact:** Presentation, navigation and local backup UI only. No quantity, amount, payment validation, week calculation, record schema or business calculation changed. Local restore continues to replace quality/payment stores after confirmation; portable complete ZIP remains handled by Home Export Center.
+- **Files changed:** `frontend/reports.html`, `frontend/report-views.js`, `frontend/reports.css`, `frontend/common-pagination.css`, `frontend/mobile.css`, `frontend/setting.html`, `frontend/settings-data-backup.js`, `PROJECT_SOURCE_OF_TRUTH.md`, `frontend/sw.js` (cache version).
+- **Tests actually run:** Node syntax checks for every frontend JavaScript file; extracted inline Reports script syntax check; HTML parse and duplicate-ID checks for Reports and Settings; CSS brace-balance checks; source assertions for one-line pagination, report-home hiding, filter ordering, collapsed section markup, and guide topic count. ZIP integrity check is run after packaging.
+- **Not yet tested:** Real browser interactions, actual datasets exceeding page size in each legacy report section, visual overflow at 390 / 360 / 320 px, browser storage API behavior, automatic backup scheduling across page navigation, manual backup/restore round trip, ZIP export/restore hand-off.
+- **Known limitations:** Browser automatic backups cannot run while the app/browser is fully closed; the schedule is applied by app initialization while the app is active. The Settings local backup covers quality/payment records only; use the Export Center's complete ZIP for history, activity and settings.
+- **Related pending item:** `ALISHAN-PEND-2026-11-08-009`.
+
+
+### ALISHAN-CHG-2026-11-08-005 — Compact shared pagination and focused Report view
+
+- **Type:** Fix (responsive pagination width + Report view focus).
+- **Status:** `IMPLEMENTED — NOT VERIFIED`. Related pending item: `ALISHAN-PEND-2026-11-08-010`.
+- **User requirement:** Make Report Previous/Next buttons as compact as Inventory so Previous is never clipped and the pagination row does not require horizontal scrolling. When a report card is selected, hide preview/dashboard cards and the report-card chooser; keep Search and global filters visible above the selected report content.
+- **Before:** Reports pagination inherited wide button sizing and an overflow-scroll row; at phone width the Previous button could be partly hidden. The selected-report CSS hid all `.rp-home-only` elements, including the global filters, while dashboard preview cards were not explicitly hidden by selected-view state.
+- **After:** The shared pagination stylesheet gives Previous/Next explicit compact auto widths, removes inherited minimum widths from page information, fixes the page-size selector width, and keeps the four controls on one line without horizontal scrolling at 320px and above. Selected-report mode hides only `.dashboard-cards` and `#reportHome`; search and global filter controls remain visible before the report detail.
+- **Reason:** The shared pagination component should have the same compact behavior in every page, and a report detail should be the only report content shown after the search/filter controls.
+- **Impact:** UI only. No calculations, saved records, payments, filtering logic, or pagination state logic changed. Both Inventory and Reports continue to use `CommonPagination`.
+- **Files changed:** `frontend/common-pagination.css`, `frontend/reports.css`, `frontend/sw.js`, `PROJECT_SOURCE_OF_TRUTH.md`.
+- **Tests actually run:** `node --check` passed for every `frontend/*.js`; `reports.html` parsed with no duplicate IDs; combined pagination/report CSS brace-balance check passed; source assertions confirmed filter controls precede report results, selected-report mode hides dashboard/report preview cards without hiding global search/filter controls, and compact pagination rules disable horizontal overflow. ZIP integrity check passed after packaging.
+- **Browser/runtime attempt:** Headless Chromium was launched against a local HTTP server, but the browser process timed out before producing a usable DOM/render result; this is not counted as a browser test pass.
+- **Not yet tested:** Actual browser layout at 390 / 360 / 320px, Android browser rendering, and long real-data lists.
+
+### ALISHAN-CHG-2026-11-09-001 — v82 pagination and Reports test audit
+- **Type:** Verification / documentation-only change.
+- **Status:** `IMPLEMENTED — NOT VERIFIED`. Related pending item: `ALISHAN-PEND-2026-11-08-010`.
+- **Reason:** Begin the agreed stability pass before adding features or declaring a final release.
+- **Scope:** Test the existing v82 shared pagination and Reports filter/view implementation. No application code, styles, calculations, storage, or business data were changed in this audit.
+- **Tests actually run:**
+  - **PASS:** `node --check` for `common-pagination.js`, `report-engine.js`, `report-views.js`, and `inventory.js`.
+  - **PASS:** CommonPagination logic harness using the actual `common-pagination.js`: 10/20/50/100 page-size options; correct page count; Previous/Next callbacks; page-size callback; pagination hidden when total records do not exceed page size.
+  - **PASS (synthetic test records only):** Actual `calc.js` exact-match filter function connected to `ReportEngine.scopeItems`: Lot `5` does not match Lot `55`; colour selection; date range; amount range.
+  - **PASS:** Source assertions: Reports Search precedes report home; selected report filters precede result summary; selected-view CSS hides dashboard preview and report chooser without using the old broad `.rp-home-only` hide rule; Inventory and Reports both reference `CommonPagination`; 768px and 340px responsive CSS breakpoints are present.
+  - **PASS:** Local HTTP server served `reports.html`, `inventory.html`, and `common-pagination.js` with HTTP 200.
+  - **FAIL / ENVIRONMENT BLOCKER:** Headless Chromium did not produce a DOM or screenshot before timeout (tested with two launch configurations). This is not evidence of a layout defect, but it means visual browser verification could not be completed here.
+  - **NOT RUN:** Real browser visual checks at 390px, 360px and 320px; Android Chrome / actual device; click-through of selected report view in a browser; Inventory and Reports pagination with actual saved records; all report-specific filters against the user's actual stored data; long result sets beyond one page; previous/next visual clipping at each target width.
+- **Important test boundary:** The ReportEngine checks used synthetic fixtures, not the owner's actual IndexedDB records. They verify filter plumbing and exact-match behaviour only; they do not count as real-data acceptance tests.
+- **Result / status decision:** No reproducible clipping defect was confirmed or ruled out because the browser renderer could not run. Do not mark v82 or the Report/Pagination work `COMPLETED`. Keep `ALISHAN-PEND-2026-11-08-010` as `IMPLEMENTED — NOT VERIFIED`.
+- **Next verification:** Open the delivered v83 project in a functioning browser/device. At 390 / 360 / 320px compare Inventory and Reports pagination, test Previous / Next and all page sizes, open each Report and verify search/filter order and visibility, then repeat the filters and pagination with actual saved records. Append every discovered fix and its test evidence before release.
+- **Files changed in this audit:** `PROJECT_SOURCE_OF_TRUTH.md` only. No application source changed.
+
