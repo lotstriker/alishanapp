@@ -7,7 +7,7 @@
      downloaded and used from then on. Put them in the vendor/ folder to have them from the very first start.
    * Your data (entries, payments, backups) is not touched: it lives in the browser database, not here.
    ============================================================ */
-const VERSION = 'v13';                       // change this only if files are renamed or removed
+const VERSION = 'v20';                       // bump when cached app-shell assets change
 const APP_CACHE = 'alishan-app-' + VERSION;
 const LIB_CACHE = 'alishan-libs-v1';        // the library URLs contain their version, so this never goes stale
 
@@ -52,6 +52,7 @@ const APP_FILES = [
     "qualities.json",
     "reports.html",
     "reports.css",
+    "responsive-layout.css",
     "report-engine.js",
     "report-views.js",
     "script.js",
@@ -65,6 +66,39 @@ const APP_FILES = [
     "theme-manager.js",
     "themes.css",
     "ui.js",
+    "user-guide.js",
+    "guide-images/screen-01.jpg",
+    "guide-images/screen-02.jpg",
+    "guide-images/screen-03.jpg",
+    "guide-images/screen-04.jpg",
+    "guide-images/screen-05.jpg",
+    "guide-images/screen-06.jpg",
+    "guide-images/screen-07.jpg",
+    "guide-images/screen-08.jpg",
+    "guide-images/screen-09.jpg",
+    "guide-images/screen-10.jpg",
+    "guide-images/screen-11.jpg",
+    "guide-images/screen-12.jpg",
+    "guide-images/screen-13.jpg",
+    "guide-images/screen-14.jpg",
+    "guide-images/screen-15.jpg",
+    "guide-images/screen-16.jpg",
+    "guide-images/screen-17.jpg",
+    "guide-images/screen-18.jpg",
+    "guide-images/screen-19.jpg",
+    "guide-images/screen-20.jpg",
+    "guide-images/screen-21.jpg",
+    "guide-images/screen-22.jpg",
+    "guide-images/screen-23.jpg",
+    "guide-images/screen-24.jpg",
+    "guide-images/screen-25.jpg",
+    "guide-images/screen-26.jpg",
+    "guide-images/screen-27.jpg",
+    "guide-images/screen-28.jpg",
+    "guide-images/screen-29.jpg",
+    "guide-images/screen-30.jpg",
+    "guide-images/screen-31.jpg",
+    "guide-images/screen-32.jpg",
     "icons/icon-192.png",
     "icons/icon-512.png",
     "icons/icon-maskable-512.png"

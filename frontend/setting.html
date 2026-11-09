@@ -16,7 +16,8 @@
 <link href="manifest.webmanifest" rel="manifest"/>
 <meta content="#121214" name="theme-color"/>
 <link href="icons/icon-192.png" rel="apple-touch-icon"/>
-<link href="export-center.css" rel="stylesheet"/></head>
+<link href="export-center.css" rel="stylesheet"/>    <link rel="stylesheet" href="responsive-layout.css">
+</head>
 <body class="theme-light-default">
 <header class="site-topbar">
 <div class="site-topbar-inner">
@@ -74,17 +75,28 @@
 <div>
 <span class="guide-eyebrow"><i class="fas fa-book-open"></i> HELP CENTRE</span>
 <h1>User Guide</h1>
-<p>Alishan ke latest version ke Dashboard, Inventory, Reports, Payments, Search, History, Export aur Backup features ko step-by-step samajhne ke liye topics kholein ya search karein.</p>
+<p>Alishan ke implemented features ko sirf padhkar nahi, balki visual workflow, examples aur decision guides ke through samjhein. Har guide ko current app release ke against verify kiya gaya hai.</p>
 </div>
+</div>
+<div class="guide-learning-map" aria-label="Alishan app learning paths">
+  <div class="guide-learning-heading"><strong>Kaam ke hisaab se seekhein</strong><span>Ek workflow chunein, phir neeche uski detailed guide kholein.</span></div>
+  <div class="guide-path-grid">
+    <a class="guide-path" href="#guide-entry"><span class="guide-path-icon"><i class="fas fa-circle-plus"></i></span><span><b>1. Entry banayein</b><small>Quality Type → Quality → Cup → Colour → Size → Save</small></span><i class="fas fa-arrow-right"></i></a>
+    <a class="guide-path" href="#guide-manage"><span class="guide-path-icon"><i class="fas fa-boxes-stacked"></i></span><span><b>2. Inventory manage karein</b><small>Search → Edit → Complete / Incomplete</small></span><i class="fas fa-arrow-right"></i></a>
+    <a class="guide-path" href="#guide-payment"><span class="guide-path-icon"><i class="fas fa-wallet"></i></span><span><b>3. Payment record karein</b><small>Pending → Add received → History</small></span><i class="fas fa-arrow-right"></i></a>
+    <a class="guide-path" href="#guide-reports"><span class="guide-path-icon"><i class="fas fa-chart-column"></i></span><span><b>4. Reports dekhein</b><small>Report → Filter → Sort → Export</small></span><i class="fas fa-arrow-right"></i></a>
+    <a class="guide-path" href="#guide-safety"><span class="guide-path-icon"><i class="fas fa-shield-halved"></i></span><span><b>5. Data safe rakhein</b><small>Backup → Verify → Store separately</small></span><i class="fas fa-arrow-right"></i></a>
+  </div>
+  <p class="guide-map-note"><i class="fas fa-circle-info"></i> Ye learning paths simplified diagrams hain, actual app screenshots nahi. Button aur field ke exact naam neeche diye gaye real app workflow se liye gaye hain.</p>
 </div>
 <div class="guide-search-box">
 <i class="fas fa-search"></i>
 <input aria-label="Search user guide" id="guideSearchInput" placeholder="Guide mein search karein — quality, colour, filter, payment..." type="search"/>
 <button aria-label="Clear guide search" hidden="" id="guideSearchClear" type="button">×</button>
 </div>
-<div aria-live="polite" class="guide-search-status" id="guideSearchStatus">Saare guide topics neeche diye gaye hain.</div>
+<div class="guide-tools"><div aria-live="polite" class="guide-search-status" id="guideSearchStatus">Saare guide topics neeche diye gaye hain.</div><div class="guide-tools-actions"><button class="guide-tool-btn" id="guideExpandAll" type="button"><i class="fas fa-angles-down"></i> Expand all</button><button class="guide-tool-btn" id="guideCollapseAll" type="button"><i class="fas fa-angles-up"></i> Collapse all</button></div></div>
 <div class="guide-topic-grid" id="guideTopics">
-<details class="guide-topic" data-guide-topic="" open="">
+<details class="guide-topic" data-guide-topic="" open="" data-guide-group="start">
 <summary><span class="guide-topic-icon"><i class="fas fa-house"></i></span><span><strong>1. Dashboard ko samjhein</strong><small>Home screen aur records ka overview</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
 <div class="guide-topic-body">
 <p>Dashboard app kholne par aane wali main screen hai. Yahan se aap apne records dekh sakte hain, search kar sakte hain aur nayi quality entry shuru kar sakte hain.</p>
@@ -92,9 +104,9 @@
 </div>
 </details>
 <details class="guide-topic" data-guide-topic="">
-<summary><span class="guide-topic-icon"><i class="fas fa-circle-plus"></i></span><span><strong>2. Nayi Quality kaise add karein</strong><small>Quality type, quality, cup, colour aur size quantity</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<summary><span class="guide-topic-icon"><i class="fas fa-circle-plus"></i></span><span><strong id="guide-entry">2. Nayi Quality kaise add karein</strong><small>Quality type, quality, cup, colour aur size quantity</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
 <div class="guide-topic-body">
-<ol><li><b>Add Quality</b> kholein.</li><li>Quality Type select karein.</li><li>Quality select karein. Quality ke saath uska price pehle se attached hota hai; alag se price enter karne ki zaroorat nahi hoti.</li><li>Applicable Cup aur Colour select karein.</li><li>Har size ke saamne quantity enter karein. App 12 pieces ko 1 dozen mein convert karti hai; saved calculation nahi badalti. Quantity display compact dozen/pieces format mein ho sakta hai.</li><li>Weight/Meter aur Notes optional hain.</li><li>Entry save karein aur Latest Qualities mein check karein.</li></ol>
+<ol><li>Dashboard/navigation se <b>Add Product Entry</b> page kholein.</li><li><b>Quality Type</b> select karein.</li><li><b>Quality</b> select karein. Quality ke saath uska price pehle se attached hota hai; alag se price enter karne ki zaroorat nahi hoti.</li><li>Applicable <b>Cup</b> select karein.</li><li>Required <b>Colours</b> select karein.</li><li>Har size ke saamne quantity enter karein. App 12 pieces ko 1 dozen mein convert karti hai; saved calculation nahi badalti. Quantity display compact dozen/pieces format mein ho sakta hai.</li><li><b>More Details</b> mein Material (meters), Weight (kg) aur Notes optional hain.</li><li>Entry save karein aur Latest Qualities mein check karein.</li></ol>
 <p><b>Tip:</b> Size ke saamne quantity bharte waqt sahi colour/size row ka dhyan rakhein.</p>
 </div>
 </details>
@@ -151,7 +163,7 @@
 <div class="guide-topic-body"><p>Settings ke Appearance section mein available theme aur display preferences dekhein. Theme change karne ke baad app ke alag pages par bhi check karein ki text aur controls clearly dikh rahe hain.</p></div>
 </details>
 <details class="guide-topic" data-guide-topic="">
-<summary><span class="guide-topic-icon"><i class="fas fa-boxes"></i></span><span><strong>11. Inventory page aur quality cards</strong><small>Records dekhna, sort karna aur details kholna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<summary><span class="guide-topic-icon"><i class="fas fa-boxes"></i></span><span><strong id="guide-manage">11. Inventory page aur quality cards</strong><small>Records dekhna, sort karna aur details kholna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
 <div class="guide-topic-body"><ol><li>Inventory page par saved quality records ki list dekhein.</li><li>Search box se Quality Name/ID, Lot Number, Quality Type, Colour, Cup, Size, Notes ya doosri saved details dhoondhein.</li><li>Advanced Filter se multiple conditions lagayein aur Sort se latest/oldest, quality name, dozen ya amount ke hisaab se arrange karein.</li><li>Inventory card par Edit se record update karein. Complete action ka matlab quality ka kaam clear/out of stock mark karna hai; Incomplete ka matlab wapas in stock.</li><li>Pagination mein page size 10, 20, 50 ya 100 select karke list ke pages badlein.</li></ol><p>Inventory aur Reports ek hi saved records se data dikhate hain; alag duplicate record create nahi hota.</p></div>
 </details>
 <details class="guide-topic" data-guide-topic="">
@@ -163,11 +175,11 @@
 <div class="guide-topic-body"><ul><li>Pending Amount page par completed aur incomplete dono tarah ki qualities aa sakti hain, jab unka kuch amount receive hona baaki ho.</li><li>Quality card mein lot, dozen, colours, dates, expected/received/pending amount aur pending days dekhein.</li><li><b>Received Amount</b> card par tap karne se us quality ka poora remaining pending amount aaj ki date ke saath receive mark hota hai; partial payment ke liye Reports ka Add Amount Received use karein.</li><li>Missing Lot Number page par lot number ke bina records dekhein. Record ko Edit karke Lot Number save karein.</li></ul></div>
 </details>
 <details class="guide-topic" data-guide-topic="">
-<summary><span class="guide-topic-icon"><i class="fas fa-chart-bar"></i></span><span><strong>14. Reports page — report select karna</strong><small>Har report ka focused detail view</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<summary><span class="guide-topic-icon"><i class="fas fa-chart-bar"></i></span><span><strong id="guide-reports">14. Reports page — report select karna</strong><small>Har report ka focused detail view</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
 <div class="guide-topic-body"><p>Reports page par Weekly Report, Payment Report, Pending Report, Quality Report, Valuation Report, Aging Report, History Report aur Business Analysis cards hain.</p><ol><li>Report kholne se pehle home filters mein Time Period, Product Type aur Quality select kar sakte hain.</li><li>Jis report ko dekhna hai usi card par tap karein. Detail view mein sirf selected report khulti hai.</li><li>Report ke andar Filters kholkar us report ke supported date, quality, ID, type, lot, colour, cup, status ya amount filters use karein.</li><li>Sort dropdown se sirf relevant sorting option chunein. Back to Reports se report cards par laut jaayein.</li><li>Result card par tap karne se us record ki read-only details popup mein khulti hain. Report ka Excel ya Export Center action data export karne ke liye hai.</li></ol></div>
 </details>
 <details class="guide-topic" data-guide-topic="">
-<summary><span class="guide-topic-icon"><i class="fas fa-money-bill-wave"></i></span><span><strong>15. Payment Report, Amount History aur Weekly Amount</strong><small>Payment entry aur received amount ka record samajhna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<summary><span class="guide-topic-icon"><i class="fas fa-money-bill-wave"></i></span><span><strong id="guide-payment">15. Payment Report, Amount History aur Weekly Amount</strong><small>Payment entry aur received amount ka record samajhna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
 <div class="guide-topic-body"><ul><li>Payment Report mein received payments ka summary aur individual payment records dekhein.</li><li><b>Amount Received History</b> card ko kholkar har payment ki date, quality, lot, week, amount aur available notes dekhein. Delete sirf tab use karein jab galat payment entry ko hatana ho; delete karne se pending amount dobara badh sakta hai.</li><li><b>Select Week</b> card kholkar Monday–Sunday week chunein.</li><li><b>Weekly Amount Received</b> card kholkar us week ki payment entries aur week total dekhein.</li><li>History aur weekly lists ki pagination se Previous/Next aur 10/20/50/100 items per page use karein. Har section ki pagination alag state rakhti hai.</li><li>Partial ya full payment add karne ke liye Pending quality ke Add Amount Received action se amount, date aur notes bharein. Amount pending se zyada nahi ho sakta.</li></ul></div>
 </details>
 <details class="guide-topic" data-guide-topic="">
@@ -175,7 +187,7 @@
 <div class="guide-topic-body"><p>Quality History page par important quality changes newest first dekhein. Update records mein Previous Value aur New Value compare karein. New Quality Added, Quality Updated, Deleted aur Complete/Incomplete jaise events aa sakte hain. Delete button sirf selected history record ko delete karta hai; ye quality record ko delete nahi karta. Report Page ka History Report Quality History aur Activity Log ko ek report view mein dikhata hai.</p></div>
 </details>
 <details class="guide-topic" data-guide-topic="">
-<summary><span class="guide-topic-icon"><i class="fas fa-file-export"></i></span><span><strong>17. Export Center — data export aur complete ZIP</strong><small>JSON, Excel, CSV, PDF aur ZIP</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<summary><span class="guide-topic-icon"><i class="fas fa-file-export"></i></span><span><strong id="guide-safety">17. Export Center — data export aur complete ZIP</strong><small>JSON, Excel, CSV, PDF aur ZIP</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
 <div class="guide-topic-body"><ol><li>Dashboard → Quick Actions → Export Data kholein.</li><li>Quality/Inventory, Payments, Quality History, Activity Log, Settings, Master Data aur Backup History jaise categories select karein.</li><li>Available date range, quality, ID, lot, type, colour, cup, Maal Gaya, Notes, status aur search filters lagayein.</li><li>JSON selected categories/rows export karta hai; Excel multiple sheets bana sakta hai; CSV first available selected sheet export karta hai; PDF printable summary/preview hai.</li><li><b>ZIP</b> complete backup ke liye hai: manifest aur data payload ke saath qualities, payments, history, activity aur settings rakhta hai.</li><li>ZIP restore se pehle file structure/checksum validate hota hai aur current data ki safety snapshot banayi jaati hai. Sirf Export Center ke supported generated ZIP format ko restore karein.</li></ol><p>Export data ko read karta hai; normal export se saved quality/payment records change nahi hote.</p></div>
 </details>
 <details class="guide-topic" data-guide-topic="">
@@ -194,11 +206,131 @@
 <summary><span class="guide-topic-icon"><i class="fas fa-eye"></i></span><span><strong>21. Quality card ka Large View (Eye icon)</strong><small>Size aur colour quantities ko bade view mein dekhna</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
 <div class="guide-topic-body"><ul><li>Quality card ke size/colour section mein <b>Large view</b> ya eye icon dabayein.</li><li>Same-size mode mein size aur quantity values bade full-screen view mein dekhein.</li><li>Different-size mode mein jis colour ke header ka eye icon dabaya hai, us colour ke filled sizes aur uska total dozen dekhein.</li><li>View band karne ke liye Close/Escape use karein. Phone ko jis orientation mein padhna aasan ho, manually us tarah ghumayein; view ko kholne par automatic screen rotation zaroori nahi hai.</li></ul></div>
 </details>
+
+<details class="guide-topic guide-topic-featured" data-guide-topic="" data-guide-group="workflows">
+<summary><span class="guide-topic-icon"><i class="fas fa-route"></i></span><span><strong>22. Complete Quality Entry Workflow — shuru se verify tak</strong><small>Form bharne ka poora process, choices aur save ke baad check</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<p><b>Is guide ka goal:</b> Nayi entry ko sahi master quality, colour, size mode aur quantity ke saath save karna. Add Product Entry page mein locked order <b>Quality Type → Quality Name → Cup Size</b> hai; uske baad Entry Date/Time, Colours, More Details aur Sizes &amp; Colors sections aate hain.</p>
+<div class="guide-flow" aria-label="Quality entry workflow">
+ <div class="guide-flow-step"><b>1. Basic details</b><small>Quality Type → Quality → Cup</small></div><i class="fas fa-arrow-down"></i>
+ <div class="guide-flow-step"><b>2. Date and colours</b><small>Default date/time ya manual date/time → Colours</small></div><i class="fas fa-arrow-down"></i>
+ <div class="guide-flow-step"><b>3. Size mode choose karein</b><small>Same sizes for all colours OR Different sizes for each colour</small></div><i class="fas fa-arrow-down"></i>
+ <div class="guide-flow-step"><b>4. Quantity bharein</b><small>Har applicable size ke dozens aur loose pieces</small></div><i class="fas fa-arrow-down"></i>
+ <div class="guide-flow-step guide-flow-success"><b>5. Add Product Entry</b><small>Save ke baad Dashboard / Inventory mein entry verify karein</small></div>
+</div>
+<ol><li><b>Quality Type:</b> BRA, PANTY, SET ya BLOUSE mein se applicable type chunein. Iske baad matching quality options load hote hain.</li><li><b>Quality Name:</b> Search ya category list se sahi quality chunein. Price quality master se aata hai; Add form mein manual price field nahi hai.</li><li><b>Cup Size:</b> Quality select karne ke baad, sirf jab product ke liye relevant ho tab A–F mein se chunein. Jo product cup use nahi karta, usmein cup field ko applicable na samjhein.</li><li><b>Entry Date/Time:</b> Default entry aaj ki date aur current time par save hoti hai. Purani entry record karni ho to manual date/time switch enable karke date aur time bharein.</li><li><b>Colours:</b> Colour selector se ek ya zyada colours choose karein. Search, Select All aur Clear All controls available hain.</li><li><b>More Details:</b> Material (meters), Weight (kg) aur Notes optional fields hain. Inhe zaroorat par expand karein.</li><li><b>Size mode:</b> Sabhi selected colours ke sizes same hon to “Same sizes for all colors” chunein. Colour ke hisaab se sizes alag hon to “Different sizes for each color” chunein.</li><li><b>Quantity:</b> Har size ke liye dozens aur loose pieces enter karein. Kisi size mein quantity nahi hai to use zero/blank chhodein; kam se kam ek size quantity zaroor honi chahiye.</li><li><b>Save and verify:</b> Add Product Entry dabayein. Success ke baad Dashboard/Inventory par quality name, colour, sizes aur total quantity check karein. Doubt ho to record ko expand karke details dekhein.</li></ol>
+<div class="guide-example"><b>Decision example</b><p>Red aur Black dono colours mein size 32, 34, 36 same hain → Same sizes for all colors. Agar Red mein 32/34 aur Black mein 36/38 hain → Different sizes for each color.</p></div>
+<p><b>Common mistake:</b> Size mode galat select karne se quantity wrong colour ke against enter ho sakti hai. Save karne se pehle colour heading aur size row dobara check karein.</p>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="" data-guide-group="workflows">
+<summary><span class="guide-topic-icon"><i class="fas fa-calculator"></i></span><span><strong>23. Quantity, Dozen aur Amount Calculation</strong><small>App ke actual calculation rules aur worked examples</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<p>Alishan calculation mein base quantity pieces hoti hai. <b>12 pieces = 1 dozen</b>. Quality amount ka formula hai: total dozens × saved price per dozen. App ka compact quantity display jaise <b>2.6</b> ka matlab 2 dozen + 6 pieces hai — ise decimal 2.6 dozen na samjhein.</p>
+<div class="guide-formula-grid"><div><small>Pieces to dozen</small><b>Pieces ÷ 12</b></div><div><small>Quality amount</small><b>Dozens × ₹ / dozen</b></div></div>
+<div class="guide-example"><b>Example 1 — 30 pieces</b><p>30 ÷ 12 = 2.5 dozen. Display ise 2 dozen + 6 pieces ke roop mein bhi dikha sakta hai. Half-dozen ko round karke hataya nahi jata.</p></div>
+<div class="guide-example"><b>Example 2 — amount</b><p>Agar total 30 pieces (2.5 dozen) aur saved price ₹40 per dozen hai: 2.5 × ₹40 = <b>₹100</b>. Yeh example calculation samjhane ke liye hai; actual amount selected quality ke saved price se calculate hota hai.</p></div>
+<div class="guide-flow guide-flow-horizontal"><div class="guide-flow-step"><b>Size quantities</b><small>Dozens + pieces</small></div><i class="fas fa-arrow-right"></i><div class="guide-flow-step"><b>Total pieces</b><small>All sizes / colours</small></div><i class="fas fa-arrow-right"></i><div class="guide-flow-step"><b>Total dozens</b><small>Pieces ÷ 12</small></div><i class="fas fa-arrow-right"></i><div class="guide-flow-step guide-flow-success"><b>Total amount</b><small>Dozens × saved rate</small></div></div>
+<ul><li>Same-size mode mein ek size set har selected colour par apply hota hai. Example: 30 pieces per colour aur 2 colours select hain, toh total 60 pieces (5 dozen) calculate honge.</li><li>Different-size mode mein har colour ke apne size quantities ka total calculate hota hai.</li><li>Loose pieces 0–11 ke beech hone chahiye; 12 pieces ko 1 dozen ke roop mein carry kiya jata hai.</li><li>Price per dozen quality master se aata hai. Record ka amount sabhi entered size quantities ko mila kar calculate hota hai.</li></ul>
+<p><b>Important:</b> Report ya export mein quantity ko dozen aur loose pieces ke format mein dekh sakte hain. Amount verify karte waqt quality ka saved price bhi check karein.</p>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="" data-guide-group="workflows">
+<summary><span class="guide-topic-icon"><i class="fas fa-money-check-dollar"></i></span><span><strong>24. Complete Payment Workflow</strong><small>Pending se partial/full received payment aur history tak</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<div class="guide-flow" aria-label="Payment workflow"><div class="guide-flow-step"><b>1. Pending quality dhoondhein</b><small>Reports → Pending / Pending Amount</small></div><i class="fas fa-arrow-down"></i><div class="guide-flow-step"><b>2. Add Amount Received</b><small>Amount, date aur optional notes</small></div><i class="fas fa-arrow-down"></i><div class="guide-flow-step"><b>3. Save payment</b><small>App pending limit validate karti hai</small></div><i class="fas fa-arrow-down"></i><div class="guide-flow-step guide-flow-success"><b>4. Verify history</b><small>Payment Report → Amount Received History</small></div></div>
+<ol><li>Pending Report ya Pending Amount page par relevant quality identify karein.</li><li>Us quality ka <b>Add Amount Received</b> action kholein. Form quality, lot, type aur expected amount ki details dikhata hai.</li><li>Amount field mein receive hua amount enter karein. Default amount remaining pending hota hai; partial payment ke liye isse kam amount enter karein.</li><li>Payment date check karein (default aaj ki date hoti hai). Notes optional hain.</li><li>Save karein. Amount zero se zyada hona chahiye aur remaining pending se zyada nahi ho sakta.</li><li>Payment Report → Amount Received History mein date, quality, lot, week, amount aur notes verify karein. Weekly Amount view mein Monday–Sunday week ke hisaab se entries dekhein.</li></ol>
+<div class="guide-formula-grid"><div><small>Expected amount</small><b>Quality value</b></div><div><small>Pending amount</small><b>Expected − Received</b></div></div>
+<p><b>Example:</b> Expected ₹1,000 aur pehle ₹300 receive hue hain, toh pending ₹700 hai. Ab ₹200 receive karne par total received ₹500 aur pending ₹500 hoga.</p>
+<p><b>Correction warning:</b> Payment History ka Delete action selected payment entry ko delete karta hai. Isse received total kam aur pending amount zyada ho sakta hai. Sirf galat payment entry ko correct karne ke liye use karein.</p>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="" data-guide-group="workflows">
+<summary><span class="guide-topic-icon"><i class="fas fa-chart-line"></i></span><span><strong>25. Reports — kaunsi report kab use karein?</strong><small>8 report types ka simple comparison aur workflow</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<div class="guide-report-grid"><div><b>Weekly Report</b><small>Monday–Sunday week mein completed work</small></div><div><b>Payment Report</b><small>Actually received payments</small></div><div><b>Pending Report</b><small>Jin qualities ka paisa baaki hai</small></div><div><b>Quality Report</b><small>Qualities, quantities aur amounts</small></div><div><b>Valuation Report</b><small>Inventory ki value</small></div><div><b>Aging Report</b><small>Stock kitne din se wait kar raha hai</small></div><div><b>History Report</b><small>Quality History + Activity Log</small></div><div><b>Business Analysis</b><small>Weekly aur monthly comparison</small></div></div>
+<div class="guide-flow guide-flow-horizontal"><div class="guide-flow-step"><b>Choose report</b><small>Reports home</small></div><i class="fas fa-arrow-right"></i><div class="guide-flow-step"><b>Set filters</b><small>Date / type / quality etc.</small></div><i class="fas fa-arrow-right"></i><div class="guide-flow-step"><b>Sort and inspect</b><small>Rows and detail popup</small></div><i class="fas fa-arrow-right"></i><div class="guide-flow-step guide-flow-success"><b>Export if needed</b><small>Report export action</small></div></div>
+<p><b>Filter ka date meaning report ke hisaab se badalta hai:</b> Payment Report mein Payment Date, Pending/Quality/Valuation/Aging reports mein Entry Date, aur History Report mein Event Date use hota hai. Weekly Report Monday–Sunday completion week dikhati hai.</p>
+<p>Har report sirf wahi filters dikhati hai jo us data ke liye supported hain. Report open karne ke baad Filters aur Sort controls dekhein; result card tap karne par read-only details popup khulta hai. Back to Reports se report selection screen par lautein.</p>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="" data-guide-group="reference">
+<summary><span class="guide-topic-icon"><i class="fas fa-database"></i></span><span><strong>26. Quality Master Data, Colours aur Sizes</strong><small>Master values ka role aur entry ke saath unka relation</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<p>Quality selector product type ke hisaab se master quality list load karta hai. Selected quality ke saath uska saved price attached hota hai. Isliye entry banate waqt exact quality aur type choose karna important hai.</p>
+<ul><li>Quality ka naam dekhkar hi nahi, uska product type/category bhi verify karein. Similar naam wali alag quality ko galti se select na karein.</li><li>Colour selector master colour options se values dikhata hai. Colour search ka use karein; unknown colour ko import/review workflow mein app ke available matching colour se map karna pad sakta hai.</li><li>Size fields dozens aur loose pieces accept karte hain. Same sizes mode ya different sizes mode choose karna colour-wise size mapping decide karta hai.</li><li>Quality master prices ko entry form mein manual price field samajhkar edit na karein. Price management ke liye app ke existing master-data/settings mechanism ka use karein, agar current build mein available ho.</li></ul>
+<p><b>Before save checklist:</b> Quality Type ✓ Quality Name ✓ Cup (if applicable) ✓ Colours ✓ Size mode ✓ Quantities ✓ Optional details ✓</p>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="" data-guide-group="reference">
+<summary><span class="guide-topic-icon"><i class="fas fa-magnifying-glass-chart"></i></span><span><strong>27. Search ke practical examples</strong><small>Daily use ke liye search, filter aur sort recipes</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<div class="guide-example"><b>Lot se record dhoondhna</b><p>Search box mein Lot Number ya unique code type karein. Matching suggestion aaye to select karein.</p></div>
+<div class="guide-example"><b>Specific colour + status</b><p>Advanced Filter mein Colour aur Status choose karein. Dono conditions ek saath chahiye toh AND logic use karein.</p></div>
+<div class="guide-example"><b>Amount range</b><p>Advanced Filter ke Amount Min/Max fields mein range set karein, phir Apply Filters dabayein.</p></div>
+<div class="guide-example"><b>High value records pehle</b><p>Advanced Sort mein Total Amount ko Descending / High to Low select karein.</p></div>
+<p>Saved Searches mein frequently used Search + Filter + Sort combination save karein. Clear All current search, filters aur sorting reset karta hai.</p>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="" data-guide-group="reference">
+<summary><span class="guide-topic-icon"><i class="fas fa-triangle-exclamation"></i></span><span><strong>28. Common Problems aur Safe Checks</strong><small>Save, search, quantity, payment, backup aur import issues</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<ul><li><b>Quality list nahi aa rahi:</b> Pehle Product Type select karein; phir quality search/category list dekhein.</li><li><b>Colour size cards nahi dikh rahe:</b> Colours box mein kam se kam ek colour select karein; Different sizes mode mein selected colours ke cards bante hain.</li><li><b>Save reject ho raha hai:</b> Required fields, selected quality, colour aur kam se kam ek valid size quantity check karein. Loose pieces 0–11 range mein rakhein.</li><li><b>Amount expected se alag hai:</b> Total pieces, dozen conversion aur selected quality ka saved price verify karein.</li><li><b>Payment save nahi ho rahi:</b> Amount zero se zyada, date filled aur amount current pending se zyada na ho. Doosre tab mein payment add hui ho toh page refresh/recheck karein.</li><li><b>Search result nahi mil raha:</b> Search term ko chhota karein, spelling/lot/code check karein, filters reset karke dobara try karein.</li><li><b>Restore/import ka doubt:</b> Pehle current data ka portable ZIP backup banayein. Restore/Undo ko samjhe bina confirm na karein.</li><li><b>App update ke baad purana UI:</b> App ko close/reopen karke reload karein. Agar update phir bhi nahi dikhe, browser tab reload karein; data clear karne se pehle backup banayein.</li></ul>
+<p>Yeh checks safe first steps hain. Agar problem bani rahe, exact error message aur kis page/action par aaya uska note rakhein. Sensitive business data public message mein share na karein.</p>
+</div>
+</details>
+<details class="guide-topic" data-guide-topic="" data-guide-group="reference">
+<summary><span class="guide-topic-icon"><i class="fas fa-book"></i></span><span><strong>29. Alishan Glossary — common terms</strong><small>App ke words ka simple meaning</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<dl class="guide-glossary"><dt>Quality</dt><dd>Master list mein saved product/quality name.</dd><dt>Product Type</dt><dd>BRA, PANTY, SET ya BLOUSE jaisi type.</dd><dt>Lot Number</dt><dd>Record ko identify karne ke liye baad mein add kiya ja sakne wala lot reference.</dd><dt>Dozen</dt><dd>12 pieces ka group.</dd><dt>Loose Pieces</dt><dd>Poore dozen ke alawa bache pieces (0–11).</dd><dt>Quality Amount</dt><dd>Total dozens × quality ka saved price per dozen.</dd><dt>Received Amount</dt><dd>Payment records mein save ki gayi received rakam.</dd><dt>Pending Amount</dt><dd>Expected quality amount mein se received amount ghataane ke baad bachi rakam.</dd><dt>Aging</dt><dd>Entry date se stock kitne calendar days se in stock hai.</dd><dt>Activity Log</dt><dd>App mein record kiye gaye activity events ka log.</dd><dt>Quality History</dt><dd>Quality record ke important changes ka history.</dd><dt>Restore</dt><dd>Backup se saved data wapas lana; current records replace ho sakte hain.</dd></dl>
+</div>
+</details>
 </div>
 <div class="guide-no-results" hidden="" id="guideNoResults">
 <i class="fas fa-book-open"></i><strong>Koi guide topic nahi mila</strong><span>Doosra word try karein, jaise “search”, “colour”, “payment” ya “backup”.</span>
 </div>
-<div class="guide-footer-note"><i class="fas fa-lightbulb"></i><span><b>Guide version:</b> v81. Is guide mein maujooda single-user AlishanApp ke implemented features cover kiye gaye hain. Jo feature abhi available nahi hai, uska use karne ka jhootha step yahan nahi diya gaya.</span></div>
+
+<details class="guide-topic" data-guide-topic="" data-guide-group="reference">
+<summary><span class="guide-topic-icon"><i class="fas fa-images"></i></span><span><strong>30. PDF Visual Reference Library — 32 screenshots</strong><small>Supplied manual se nikali gayi har image, number aur explanation ke saath</small></span><i class="fas fa-chevron-down guide-chevron"></i></summary>
+<div class="guide-topic-body">
+<p><b>Important:</b> Ye images tumhari supplied PDF se extract ki gayi reference screenshots hain. Kuch screens ya labels current v90 build se alag ho sakte hain aur inmein sample/demo data dikh sakta hai. Current app ke live labels aur controls ko final maana jayega. Screen 24 ke entry form mein purana field order dikh sakta hai; current locked order <b>Quality Type → Quality → Cup</b> hai.</p>
+<div class="guide-screenshot-grid">
+<figure class="guide-screenshot" id="pdf-screen-01"><img src="guide-images/screen-01.jpg" alt="PDF reference screenshot 01: Home Screen & Metrics" loading="lazy" decoding="async"><figcaption><b>Screen 01 — Home Screen & Metrics</b><span>Home dashboard aur overview cards</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-02"><img src="guide-images/screen-02.jpg" alt="PDF reference screenshot 02: Time Period Filtering" loading="lazy" decoding="async"><figcaption><b>Screen 02 — Time Period Filtering</b><span>Dashboard par time-period filter</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-03"><img src="guide-images/screen-03.jpg" alt="PDF reference screenshot 03: In-Stock Drawer & Complete Action" loading="lazy" decoding="async"><figcaption><b>Screen 03 — In-Stock Drawer & Complete Action</b><span>In-stock records aur Complete action</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-04"><img src="guide-images/screen-04.jpg" alt="PDF reference screenshot 04: Added This Week View" loading="lazy" decoding="async"><figcaption><b>Screen 04 — Added This Week View</b><span>Added This Week records ka view</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-05"><img src="guide-images/screen-05.jpg" alt="PDF reference screenshot 05: Aging Stock Breakdown" loading="lazy" decoding="async"><figcaption><b>Screen 05 — Aging Stock Breakdown</b><span>Stock aging categories ka reference</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-06"><img src="guide-images/screen-06.jpg" alt="PDF reference screenshot 06: Product Type Breakdown" loading="lazy" decoding="async"><figcaption><b>Screen 06 — Product Type Breakdown</b><span>Product Type breakdown ka reference</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-07"><img src="guide-images/screen-07.jpg" alt="PDF reference screenshot 07: Pending Amount Modal" loading="lazy" decoding="async"><figcaption><b>Screen 07 — Pending Amount Modal</b><span>Pending amount detail ka reference</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-08"><img src="guide-images/screen-08.jpg" alt="PDF reference screenshot 08: Quality Ranking Frequency" loading="lazy" decoding="async"><figcaption><b>Screen 08 — Quality Ranking Frequency</b><span>Quality ranking/frequency view</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-09"><img src="guide-images/screen-09.jpg" alt="PDF reference screenshot 09: Quality Specific Production Log" loading="lazy" decoding="async"><figcaption><b>Screen 09 — Quality Specific Production Log</b><span>Ek quality ka production history</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-10"><img src="guide-images/screen-10.jpg" alt="PDF reference screenshot 10: Pending Ledger Resolution Screen" loading="lazy" decoding="async"><figcaption><b>Screen 10 — Pending Ledger Resolution Screen</b><span>Pending ledger resolution reference</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-11"><img src="guide-images/screen-11.jpg" alt="PDF reference screenshot 11: Missing Lot Number Queue" loading="lazy" decoding="async"><figcaption><b>Screen 11 — Missing Lot Number Queue</b><span>Missing Lot Number list</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-12"><img src="guide-images/screen-12.jpg" alt="PDF reference screenshot 12: Missing Completion Date Queue" loading="lazy" decoding="async"><figcaption><b>Screen 12 — Missing Completion Date Queue</b><span>Missing Completion Date list</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-13"><img src="guide-images/screen-13.jpg" alt="PDF reference screenshot 13: Field-Level Edit Audit Log" loading="lazy" decoding="async"><figcaption><b>Screen 13 — Field-Level Edit Audit Log</b><span>Record fields ke change history ka reference</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-14"><img src="guide-images/screen-14.jpg" alt="PDF reference screenshot 14: AI Ledger JSON Bulk Ingestion" loading="lazy" decoding="async"><figcaption><b>Screen 14 — AI Ledger JSON Bulk Ingestion</b><span>PDF mein diya gaya AI/JSON bulk-ingestion reference</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-15"><img src="guide-images/screen-15.jpg" alt="PDF reference screenshot 15: JSON Restore (Replace/Merge)" loading="lazy" decoding="async"><figcaption><b>Screen 15 — JSON Restore (Replace/Merge)</b><span>Backup restore ke Replace/Merge options</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-16"><img src="guide-images/screen-16.jpg" alt="PDF reference screenshot 16: Multi-Dataset Export Center" loading="lazy" decoding="async"><figcaption><b>Screen 16 — Multi-Dataset Export Center</b><span>Multiple datasets ka Export Center</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-17"><img src="guide-images/screen-17.jpg" alt="PDF reference screenshot 17: Complete Inventory Feed" loading="lazy" decoding="async"><figcaption><b>Screen 17 — Complete Inventory Feed</b><span>Complete inventory list</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-18"><img src="guide-images/screen-18.jpg" alt="PDF reference screenshot 18: Advanced Two-Level Sorting" loading="lazy" decoding="async"><figcaption><b>Screen 18 — Advanced Two-Level Sorting</b><span>Two-level sorting controls</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-19"><img src="guide-images/screen-19.jpg" alt="PDF reference screenshot 19: Multi-Field Boolean Filter" loading="lazy" decoding="async"><figcaption><b>Screen 19 — Multi-Field Boolean Filter</b><span>Multiple fields aur AND/OR filter</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-20"><img src="guide-images/screen-20.jpg" alt="PDF reference screenshot 20: Inventory Item Badges & Status" loading="lazy" decoding="async"><figcaption><b>Screen 20 — Inventory Item Badges & Status</b><span>Inventory status badges</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-21"><img src="guide-images/screen-21.jpg" alt="PDF reference screenshot 21: Equal Size Multi-Color Ratio" loading="lazy" decoding="async"><figcaption><b>Screen 21 — Equal Size Multi-Color Ratio</b><span>Same-size multi-colour quantity example</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-22"><img src="guide-images/screen-22.jpg" alt="PDF reference screenshot 22: Expanded Individual Color Breakdown" loading="lazy" decoding="async"><figcaption><b>Screen 22 — Expanded Individual Color Breakdown</b><span>Colour-wise detail view</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-23"><img src="guide-images/screen-23.jpg" alt="PDF reference screenshot 23: Grand Total & Valuation Card" loading="lazy" decoding="async"><figcaption><b>Screen 23 — Grand Total & Valuation Card</b><span>Total amount aur valuation reference</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-24"><img src="guide-images/screen-24.jpg" alt="PDF reference screenshot 24: Quality Entry Classification Form" loading="lazy" decoding="async"><figcaption><b>Screen 24 — Quality Entry Classification Form</b><span>Quality entry form ka PDF reference; current app order written steps ke mutabik follow karein</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-25"><img src="guide-images/screen-25.jpg" alt="PDF reference screenshot 25: Color-Wise Size Distribution Grid" loading="lazy" decoding="async"><figcaption><b>Screen 25 — Color-Wise Size Distribution Grid</b><span>Colour-wise size/quantity grid</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-26"><img src="guide-images/screen-26.jpg" alt="PDF reference screenshot 26: Advanced Reports & Analytics Hub" loading="lazy" decoding="async"><figcaption><b>Screen 26 — Advanced Reports & Analytics Hub</b><span>Reports aur analytics navigation</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-27"><img src="guide-images/screen-27.jpg" alt="PDF reference screenshot 27: Weekly Production & Cash Report" loading="lazy" decoding="async"><figcaption><b>Screen 27 — Weekly Production & Cash Report</b><span>Weekly production/payment report reference</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-28"><img src="guide-images/screen-28.jpg" alt="PDF reference screenshot 28: Settings & Dashboard Hub" loading="lazy" decoding="async"><figcaption><b>Screen 28 — Settings & Dashboard Hub</b><span>Settings overview</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-29"><img src="guide-images/screen-29.jpg" alt="PDF reference screenshot 29: Theme & Color Scheme Settings" loading="lazy" decoding="async"><figcaption><b>Screen 29 — Theme & Color Scheme Settings</b><span>Theme selection reference</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-30"><img src="guide-images/screen-30.jpg" alt="PDF reference screenshot 30: Business Info & Display Preferences" loading="lazy" decoding="async"><figcaption><b>Screen 30 — Business Info & Display Preferences</b><span>Business preferences reference</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-31"><img src="guide-images/screen-31.jpg" alt="PDF reference screenshot 31: Automatic Backup Interval & Restore" loading="lazy" decoding="async"><figcaption><b>Screen 31 — Automatic Backup Interval & Restore</b><span>Automatic backup aur restore reference</span></figcaption></figure>
+<figure class="guide-screenshot" id="pdf-screen-32"><img src="guide-images/screen-32.jpg" alt="PDF reference screenshot 32: Analytics Custom Scope & Filters" loading="lazy" decoding="async"><figcaption><b>Screen 32 — Analytics Custom Scope & Filters</b><span>Analytics scope aur filter reference</span></figcaption></figure>
+</div>
+</div>
+</details>
+<div class="guide-footer-note guide-version-note"><i class="fas fa-circle-check"></i><span><b>App version: v90 · User Guide version: v90 · Last verified: 09 Nov 2026.</b><br>Is guide ke workflows current v90 source ke against verify kiye gaye hain. Har future app release par guide audit, screenshots/diagrams/examples update aur version match check mandatory hai. Jo feature current build mein available nahi hai, uska step implemented feature ki tarah document nahi kiya jayega.</span></div>
 </div>
 <!-- General Settings Section -->
 <div class="settings-section" id="general">

@@ -49,7 +49,7 @@
 
     <main class="add-entry-main">
         <div class="add-entry-heading">
-            <div><p class="add-entry-eyebrow">NEW RECORD</p><h1><i class="fas fa-plus-circle"></i> Add New Product Entry</h1><p>Fill in the quality, colours and size quantities below.</p></div>
+            <div><p class="add-entry-eyebrow">NEW RECORD</p><h1><i class="fas fa-plus-circle"></i> Add New Product Entry</h1><p>Follow the entry order: Quality Type → Quality → Cup → Colours → Size quantities.</p></div>
             <a class="add-entry-back" href="index.html"><i class="fas fa-arrow-left"></i> Home</a>
         </div>
                 <div class="form-section">
@@ -62,25 +62,13 @@
                                 <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
                                 <div class="form-grid">
                                     <div class="form-group">
-                                        <label for="productType">Product Type</label>
+                                        <label for="productType">Quality Type</label>
                                         <select id="productType" required onchange="ItemForm.renderQualitySelector('', window.qualityData, this.value)">
                                             <option value="">Select Type</option>
                                             <option value="bra">Bra</option>
                                             <option value="panty">Panty</option>
                                             <option value="set">Set</option>
                                             <option value="blouse">Blouse</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="cupSize">Cup Size</label>
-                                        <select id="cupSize">
-                                            <option value="">Select Cup Size</option>
-                                            <option value="A">A Cup</option>
-                                            <option value="B">B Cup</option>
-                                            <option value="C">C Cup</option>
-                                            <option value="D">D Cup</option>
-                                            <option value="E">E Cup</option>
-                                            <option value="F">F Cup</option>
                                         </select>
                                     </div>
                                     <!-- Lot Number removed from Add — kept in Edit only, filled in later -->
@@ -114,7 +102,19 @@
                                                 <strong>Selected:</strong> <span id="selectedQualityText"></span>
                                             </div>
                                         </div>
-                                    
+                                                                        <div class="form-group">
+                                        <label for="cupSize">Cup Size</label>
+                                        <select id="cupSize">
+                                            <option value="">Select Cup Size</option>
+                                            <option value="A">A Cup</option>
+                                            <option value="B">B Cup</option>
+                                            <option value="C">C Cup</option>
+                                            <option value="D">D Cup</option>
+                                            <option value="E">E Cup</option>
+                                            <option value="F">F Cup</option>
+                                        </select>
+                                    </div>
+
                                     
                                     
                                     

@@ -1,44 +1,124 @@
-/* Shared pagination: Inventory is the reference. Compact controls must fit in one row. */
+/* Shared, compact pagination for Inventory and Reports. Controls remain visible on narrow phones. */
 .pagination-controls.common-pagination {
-  display:flex !important; flex-direction:row !important; flex-wrap:nowrap !important;
-  justify-content:center; align-items:center; gap:10px; margin-top:20px; padding:10px;
-  background:var(--light); border-radius:8px; width:100%; max-width:100%; min-width:0;
-  overflow-x:hidden; overflow-y:hidden; white-space:nowrap; box-sizing:border-box;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  margin: 12px 0 !important;
+  padding: 8px 6px !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+  background: var(--light, #f4f5f7);
+  border-radius: 8px;
 }
-.pagination-controls.common-pagination > * { flex:0 0 auto !important; white-space:nowrap; min-width:0; }
+
+.pagination-controls.common-pagination > * {
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+}
+
 .pagination-controls.common-pagination > button[data-page-action] {
-  display:inline-flex !important; align-items:center; justify-content:center;
-  width:auto !important; min-width:0 !important; max-width:78px !important;
-  padding:0 8px !important; margin:0 !important; font-size:12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  min-height: 36px !important;
+  padding: 0 10px !important;
+  margin: 0 !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+  flex: 0 0 auto !important;
 }
+
 .pagination-controls.common-pagination .page-info {
-  flex:0 0 auto !important; width:auto !important; min-width:0 !important;
-  padding:0 2px; font-size:12px; font-weight:600; color:var(--dark); text-align:center;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  padding: 0 2px;
+  font-size: 12px !important;
+  line-height: 1.2;
+  font-weight: 600;
+  color: var(--dark, #222);
+  text-align: center;
 }
+
 .pagination-controls.common-pagination .page-select {
-  flex:0 0 82px !important; width:82px !important; min-width:0 !important; max-width:82px !important;
-  padding:0 5px !important; margin:0 !important; font-size:11px !important;
-  border:1px solid var(--light-gray); border-radius:4px; background:var(--white); color:var(--dark);
+  flex: 0 0 82px !important;
+  width: 82px !important;
+  min-width: 82px !important;
+  max-width: 82px !important;
+  min-height: 36px !important;
+  padding: 0 5px !important;
+  margin: 0 !important;
+  font-size: 11px !important;
+  border: 1px solid var(--light-gray, #d5d8de);
+  border-radius: 5px;
+  background: var(--white, #fff);
+  color: var(--dark, #222);
 }
-.pagination-controls.common-pagination button:disabled { opacity:.45; cursor:not-allowed; }
-@media (max-width:768px) {
+
+.pagination-controls.common-pagination button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 420px) {
   .pagination-controls.common-pagination {
-    flex-wrap:nowrap !important; justify-content:center !important; gap:5px !important;
-    padding:6px 4px !important; overflow-x:hidden !important;
+    gap: 5px !important;
+    padding: 7px 3px !important;
   }
   .pagination-controls.common-pagination > button[data-page-action] {
-    min-height:34px !important; max-width:68px !important; padding:0 5px !important;
-    font-size:11px !important;
+    min-height: 36px !important;
+    padding: 0 7px !important;
+    font-size: 11px !important;
   }
-  .pagination-controls.common-pagination .page-info { font-size:11px !important; }
+  .pagination-controls.common-pagination .page-info {
+    font-size: 11px !important;
+  }
   .pagination-controls.common-pagination .page-select {
-    flex-basis:76px !important; width:76px !important; max-width:76px !important;
-    min-height:34px !important; padding:0 3px !important; font-size:10px !important;
+    flex-basis: 76px !important;
+    width: 76px !important;
+    min-width: 76px !important;
+    max-width: 76px !important;
+    min-height: 36px !important;
+    font-size: 10px !important;
   }
 }
-@media (max-width:340px) {
-  .pagination-controls.common-pagination { gap:3px !important; padding:5px 2px !important; }
-  .pagination-controls.common-pagination > button[data-page-action] { max-width:62px !important; padding:0 3px !important; }
-  .pagination-controls.common-pagination .page-info { font-size:10px !important; }
-  .pagination-controls.common-pagination .page-select { flex-basis:70px !important; width:70px !important; max-width:70px !important; }
+
+/* At 390 / 360 / 320px, use icon-only navigation buttons to preserve space. */
+@media (max-width: 380px) {
+  .pagination-controls.common-pagination {
+    gap: 4px !important;
+    padding-right: 2px !important;
+    padding-left: 2px !important;
+  }
+  .pagination-controls.common-pagination > button[data-page-action] {
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    padding: 0 !important;
+  }
+  .pagination-controls.common-pagination .pagination-label {
+    display: none !important;
+  }
+  .pagination-controls.common-pagination .page-info {
+    padding: 0 1px;
+    font-size: 10px !important;
+  }
+  .pagination-controls.common-pagination .page-select {
+    flex-basis: 72px !important;
+    width: 72px !important;
+    min-width: 72px !important;
+    max-width: 72px !important;
+  }
 }

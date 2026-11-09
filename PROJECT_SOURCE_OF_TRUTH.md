@@ -58,6 +58,8 @@ editHistory, auditLog`. Reference lists: `qualities.json` (qualities + prices) a
 
 **Reports presentation update (v81):** On the Reports home, global filters appear above the eight report cards. Opening a report hides the report-card home and shows only the selected report detail view; `Back to Reports` returns to the card list. This supersedes the v79 presentation note that report cards remain visible after selecting a report. Existing report sections are closed accordion cards by default.
 
+**Responsive presentation update (v85):** At widths above 768px, the shared app navigation becomes a left rail and the existing pages use larger, balanced layouts. Inventory gains a tablet/desktop-only summary overview; the phone Inventory page remains without these cards. Dashboard Quick Actions retain Export Data, Import Data and Bulk Import. No feature is moved between pages.
+
 **Shared pagination update (v81):** Inventory, Reports result lists, and the existing Pending Amount / Amount Received History / Weekly Amount Received lists use the shared `CommonPagination` component. Every pagination control stays on one horizontal line; on narrow phones the row may scroll horizontally rather than wrapping. Each list owns its own page and page-size state.
 | Pending Amount | `pending-amount.html` + `audit-pages.js` | One card per quality whose full amount is not received yet (see 2.1) |
 | Missing Lot Number | `missing-lot.html` + `audit-pages.js` | Qualities still waiting for a lot number |
@@ -138,6 +140,40 @@ To undo: delete that payment in Reports -> Amount History (`deletePayment`); the
   / amount field, and the quality just leaves the Pending list. Reports' own Add Amount Received popup is unchanged.
 
 ---
+
+
+## User Guide & Documentation Standards (LOCKED — introduced in v89)
+
+The in-app Help & User Guide is a maintained Visual Learning Center, not merely a collection of text paragraphs. Its purpose is to teach the currently implemented Alishan workflows accurately and accessibly.
+
+### Required teaching methods
+- Use concise written steps for actions and exact control names.
+- Use workflow diagrams for multi-step processes; use decision paths when the user must choose between alternatives.
+- Use worked examples for quantity, dozen, amount and payment calculations. Examples must match the actual calculation rules in source code.
+- Use report comparison grids, glossary definitions, safe troubleshooting checklists and cross-links/learning paths where they materially help.
+- Use annotated screenshots only when captured from the current actual app build. Never fabricate screenshots or present a schematic diagram as a real screenshot. If screenshots are unavailable, use clearly labelled schematic diagrams instead.
+- Major topics should explain purpose, where to find the feature, workflow, expected result, examples, common mistakes and safe troubleshooting. Keep minor topics concise.
+
+### Accuracy and scope rules
+- Verify all steps, labels, fields, constraints, calculations and outcomes against the current source and implemented app before documenting them.
+- Never describe a planned or unavailable feature as implemented. Clearly label conceptual diagrams and future ideas.
+- Do not invent button names, field names, capabilities, permissions or background behavior.
+- Treat business data safety operations (restore, delete, payment correction, bulk import and undo) as high-impact instructions; explain consequences and verification steps.
+- Keep phone readability and responsive behavior in mind. Diagrams and tables must adapt to narrow screens.
+
+### Mandatory release-version synchronization
+- The App version and in-app User Guide version must match the latest released app version.
+- Every app release must include a User Guide audit before release completion, even if the code change appears unrelated to help content.
+- Audit all existing topics for changed labels, moved controls, changed workflows, removed features, calculations, screenshots, diagrams, examples and troubleshooting steps.
+- Update stale instructions and visuals in the same release; do not leave a previous version number in the guide footer.
+- The guide footer must show the app version, guide version and last verification date. A version mismatch is a release documentation defect.
+- Add or update a release checklist/test that asserts the app and guide version labels match.
+- The Service Worker cache version must be bumped when cached app-shell assets change, and new guide assets/scripts must be included in the app shell cache list where appropriate.
+
+### Change history policy
+- This standard is locked as of v89. Any future change to this policy must be appended as a new dated/versioned decision; do not delete or overwrite this decision history.
+- Keep `PROJECT_SOURCE_OF_TRUTH.md` append-only: record what changed, why, previous behavior, new behavior, affected files, tests and known limitations.
+
 
 ## 6. Change history (append only — newest at the bottom)
 
@@ -540,6 +576,13 @@ Rule: see section 0, rule 8. Newest at the bottom.
 | v81 | `AlishanApp-v81-Reports-Settings-Usability.zip` | 2026-11-08 | `ALISHAN-CHG-2026-11-08-004` | Enforced one-line shared pagination; moved Reports home filters above report cards; made each selected report a focused view; separated and collapsed existing report sections; added pagination to long pending/payment-history/weekly lists; expanded the latest User Guide and improved Data & Backup status, backup/restore safeguards and storage refresh. |
 | v82 | `AlishanApp-v82-Reports-Compact-Pagination-Focus.zip` | 2026-11-08 | `ALISHAN-CHG-2026-11-08-005` | Made Previous/Next pagination buttons compact so all controls fit on one line without clipping or horizontal scrolling; in a selected Report view, hide dashboard preview cards and report chooser while keeping Search and global filters visible above the selected report. |
 | v83 | `AlishanApp-v83-Reports-Pagination-Test-Audit.zip` | 2026-11-09 | `ALISHAN-CHG-2026-11-09-001` | Added a transparent verification log: shared pagination callbacks and synthetic ReportEngine filter checks passed; responsive browser and real stored-record acceptance tests remain pending. No application code changed. |
+| v84 | `AlishanApp-v84-Responsive-Pagination-Fix.zip` | 2026-11-09 | `ALISHAN-CHG-2026-11-09-002` | Fixed shared pagination accessibility and narrow-phone fit, added repeatable Node regression tests, and bumped the service-worker cache to v14. Real-device/browser and owner IndexedDB acceptance remain pending. |
+| v85 | `AlishanApp-v85-Tablet-Desktop-Responsive-Enhancement.zip` | 2026-11-09 | `ALISHAN-CHG-2026-11-09-003` | Added tablet/desktop-only responsive layouts with a left navigation rail, balanced spacing and a tablet/desktop Inventory Overview. Phone layout remains controlled by the existing mobile stylesheet; Dashboard Export/Import/Bulk Import actions stay on Home. Static checks passed; browser rendering remains pending. |
+| v86 | *(ZIP filename not preserved in the v89 source log)* | 2026-11-09 | `ALISHAN-CHG-2026-11-09-004` | Matched tablet/desktop quality-card colours to the restrained phone theme palette; removed vivid product-type gradients without changing card data or actions. |
+| v87 | *(ZIP filename not preserved in the v89 source log)* | 2026-11-09 | `ALISHAN-CHG-2026-11-09-005` | Replaced the tablet/desktop left rail with a horizontal topbar and restored two quality-card columns. This was subsequently superseded by v88's one-card-per-row requirement. |
+| v88 | *(ZIP filename not preserved in the v89 source log)* | 2026-11-09 | `ALISHAN-CHG-2026-11-09-006` | Changed tablet/desktop Inventory to one full-width quality card per row and removed the separate action-panel background. |
+| v89 | `AlishanApp-v89-Visual-Learning-Center.zip` | 2026-11-09 | `ALISHAN-CHG-2026-11-09-007` | Expanded the User Guide to 29 topics, five learning paths, workflow diagrams and searchable help; synchronized guide version to v89. |
+| v90 | `AlishanApp-v90-Visual-Manual-Workflow-Fixes.zip` | 2026-11-09 | `ALISHAN-CHG-2026-11-09-008` | Fixed Expand All/Collapse All interaction using delegated controls and live feedback; corrected Add Entry field order to Quality Type → Quality → Cup; added all 32 supplied PDF screenshots to the responsive, offline-capable Visual Reference Library; documented v86–v89 and synchronized app/guide to v90. |
 
 ### 7.6 Pending work added on 2026-11-06
 
@@ -554,7 +597,8 @@ Rule: see section 0, rule 8. Newest at the bottom.
 | `ALISHAN-PEND-2026-11-08-007` | Report result-card redesign, read-only detail popup, shared pagination and 1000-record Activity Log reads | `IMPLEMENTED — NOT VERIFIED` | Delivered in v79. JavaScript / HTML static checks passed; actual browser checks at 390 / 360 / 320 px, report-data flows, pagination state isolation, popup completeness and backup/export contents remain. |
 | `ALISHAN-PEND-2026-11-08-008` | Verify v80 Reports runtime error fix, six-card mobile overview layout, and Inventory-matching pagination in a real browser | `IMPLEMENTED — NOT VERIFIED` | v80 removes the stale Aging Stock DOM writes, overrides the legacy third-card full-width rule for Reports, and gives `.pagination-controls.common-pagination` precedence over the old Report-only styles. Static checks are pending; real browser tests at 390 / 360 / 320 px and real report data are still required. |
 | `ALISHAN-PEND-2026-11-08-009` | Verify v81 Reports focused views, collapsed legacy sections, one-line pagination, updated User Guide and Data & Backup flows | `IMPLEMENTED — NOT VERIFIED` | v81 source changes and static checks are present. Real browser checks at 390 / 360 / 320 px, actual long payment/pending datasets, pagination callbacks, restore safety behavior and ZIP hand-off still require user/browser verification. |
-| `ALISHAN-PEND-2026-11-08-010` | Verify v82 compact shared pagination and Reports focused-view visibility/order | `IMPLEMENTED — NOT VERIFIED` | v82 applies compact fixed-width shared pagination controls and hides dashboard/report-preview cards in selected-report mode while retaining search/global filters. Real browser checks at 390 / 360 / 320 px and real list data are still required. |
+| `ALISHAN-PEND-2026-11-08-010` | Verify shared pagination and Reports focused-view visibility/order | `IMPLEMENTED — NOT VERIFIED` | v84 replaces the narrow-phone clipping/scrolling rules with compact icon-only controls at 380px and below, adds accessibility semantics and repeatable Node tests. Real browser checks at 390 / 360 / 320 px, Android Chrome, focused-report click-through and actual stored list data are still required. |
+| `ALISHAN-PEND-2026-11-09-001` | Verify tablet/desktop responsive navigation, page sizing and Inventory Overview | `IMPLEMENTED — NOT VERIFIED` | v85 adds the tablet/desktop-only responsive stylesheet and Inventory Overview. Static tests pass, but real browser/device rendering at tablet and desktop widths remains required. Confirm the phone layout is unchanged and Dashboard Export/Import/Bulk Import actions remain in place. |
 
 
 ### ALISHAN-CHG-2026-11-06-002 — Completion date ("Maal Gaya") saved when a quality is completed
@@ -741,4 +785,119 @@ This section records how the app is really used. Read it before changing anythin
 - **Result / status decision:** No reproducible clipping defect was confirmed or ruled out because the browser renderer could not run. Do not mark v82 or the Report/Pagination work `COMPLETED`. Keep `ALISHAN-PEND-2026-11-08-010` as `IMPLEMENTED — NOT VERIFIED`.
 - **Next verification:** Open the delivered v83 project in a functioning browser/device. At 390 / 360 / 320px compare Inventory and Reports pagination, test Previous / Next and all page sizes, open each Report and verify search/filter order and visibility, then repeat the filters and pagination with actual saved records. Append every discovered fix and its test evidence before release.
 - **Files changed in this audit:** `PROJECT_SOURCE_OF_TRUTH.md` only. No application source changed.
+
+
+
+### ALISHAN-CHG-2026-11-09-002 — Responsive shared pagination and repeatable regression tests
+- **Type:** Bug fix + test infrastructure.
+- **Status:** `IMPLEMENTED — STATIC TESTS PASSED; BROWSER NOT VERIFIED`. Related pending item: `ALISHAN-PEND-2026-11-08-010`.
+- **Problem found in v83:** The shared pagination CSS and Inventory mobile overrides could clip or horizontally scroll controls. The Previous/Next labels consumed scarce width at 320–380px. The shared component also lacked explicit navigation semantics and a polite live announcement for page changes. The prior audit's tests were documented but not retained as runnable project tests.
+- **Before:** Controls used a nowrap row with overflow clipping/scrolling depending on stylesheet precedence. On narrow phones, text labels competed with the page indicator and page-size selector. No repository-owned regression test file existed for the shared component.
+- **After:**
+  - `common-pagination.css` now keeps the row visible without `overflow-x: hidden`, `auto` or `scroll`. At widths up to 380px the Previous/Next text labels are hidden while their accessible names and icons remain; fixed compact icon buttons and a 72px page-size selector preserve room for the page indicator. At 381–420px controls use tighter spacing and sizing.
+  - `common-pagination.js` adds navigation role/label, accessible button names, decorative-icon hiding, a polite live page indicator, safe callback guards and bounded page transitions. Existing Inventory and Reports callbacks and page-size choices remain unchanged.
+  - Added `tests/common-pagination.test.js`, runnable with `node --test tests/common-pagination.test.js`. It covers page-size options, accessibility markup, page clamping, Previous/Next boundaries, invalid page-size input, hidden single-page state and responsive CSS safeguards.
+  - Service Worker cache version changed from v13 to v14 so installed clients can fetch the updated shared pagination assets.
+  - README test instructions and this append-only change history were updated.
+- **Impact:** Shared pagination presentation/accessibility and test coverage only. No report calculations, inventory calculations, stored records, payments, filters, or business rules were changed.
+- **Files changed:** `frontend/common-pagination.js`, `frontend/common-pagination.css`, `frontend/sw.js`, `tests/common-pagination.test.js`, `README.md`, `PROJECT_SOURCE_OF_TRUTH.md`.
+- **Tests actually run:** Node built-in regression tests; JavaScript syntax checks for all frontend scripts; HTML parse/duplicate-ID checks for Reports and Inventory; CSS brace balance; source checks that Inventory and Reports both use CommonPagination; ZIP integrity.
+- **Not tested:** Actual Android Chrome / physical device rendering at 390 / 360 / 320px; real IndexedDB records; browser click-through of every report; actual list datasets exceeding one page. This environment did not provide a successful browser-rendering run, so no visual browser pass is claimed.
+- **Known limitation:** At narrow widths the Previous/Next text is visually replaced by chevron icons. Screen readers retain the full accessible names, and the buttons retain title text.
+
+
+### ALISHAN-CHG-2026-11-09-003 — Tablet and desktop responsive enhancement
+
+- **Type:** Responsive UI enhancement.
+- **Status:** `IMPLEMENTED — STATIC CHECKS PENDING BROWSER VERIFICATION`.
+- **Locked user decisions:** Desktop uses a left navigation sidebar; information density is balanced. Phone layout must remain unchanged. Tablet and desktop may be visually larger and show more information, but the same features must remain on their existing pages. A small number of useful desktop/tablet-only additions are allowed.
+- **User clarification:** Existing phone layout and workflows are the reference. Do not move features between pages. Export Data, Import Data and Bulk Import remain in Dashboard → Quick Actions, as on phone. Inventory may gain an additional overview section on tablet/desktop even though the phone Inventory page has no overview cards.
+- **Before:** Shared navigation used a horizontal top tab row outside phone widths. The Inventory page began with its heading and search area and did not provide a summary overview. Desktop/tablet sizing and information density were not unified across the main pages.
+- **After:** Added `frontend/responsive-layout.css`, loaded after the existing page styles on Dashboard, Inventory, Reports and Settings. At widths above 768px it provides a fixed left navigation rail, larger readable typography and controls, balanced page spacing, wider report cards/tiles, and tablet/desktop grids. Narrow tablets use an icon-only navigation rail; larger desktop widths show labelled navigation. Existing mobile CSS remains the sole layout authority at 768px and below. Added a tablet/desktop-only Inventory Overview with Total Items, Total Inventory Value, In Stock Items and Aging Stock, populated by the existing `AlishanStore.summary()` values through the existing `updateDashboard()` routine.
+- **Feature placement:** No feature was moved. Dashboard Quick Actions continue to contain Export Data, Import Data and Bulk Import. The Inventory page retains its existing search, item list, filters, pagination and import/export entry points. Reports and Settings retain their existing sections and actions.
+- **Data/calculation impact:** None intended. The new Inventory overview reads the same summary object already used by Inventory's existing dashboard update function. No database schema, records, calculations, filters, pagination state or business rules were changed.
+- **Phone protection:** All new responsive layout rules are inside `@media (min-width: 769px)`. The Inventory overview has the `desktop-tablet-only` class and is hidden by default, shown only within that same tablet/desktop media query. Existing `mobile.css` and phone navigation markup are not edited.
+- **Service Worker:** Cache version bumped from v14 to v15 and `responsive-layout.css` added to the app shell.
+- **Files changed:** `frontend/responsive-layout.css` (new), `frontend/index.html`, `frontend/inventory.html`, `frontend/reports.html`, `frontend/setting.html`, `frontend/sw.js`, `tests/responsive-layout.test.js` (new), `README.md`, `PROJECT_SOURCE_OF_TRUTH.md`. `inventory.js` was not changed; its existing `updateDashboard()` already fills the overview IDs from `AlishanStore.summary()`.
+- **Tests actually run:** `node --check` for every `frontend/*.js`; `node --test tests/common-pagination.test.js` (6/6 passed); `node --test tests/responsive-layout.test.js` (5/5 passed); HTML duplicate-ID and stylesheet-reference checks for all four primary pages; CSS brace checks; source assertions for phone-hidden-by-default overview, existing Inventory summary IDs, Dashboard Quick Actions placement and Service Worker v15.
+- **Browser verification:** A local headless Chromium screenshot attempt timed out before producing a rendered page. This is an environment limitation, not a visual pass. Actual browser/device rendering remains pending at 390px, 768px, 820px, 1024px, 1280px, 1440px and 1920px.
+
+
+### ALISHAN-CHG-2026-11-09-004 — Match tablet/desktop quality-card colours to phone palette
+
+- **Type:** Visual consistency fix.
+- **Status:** `IMPLEMENTED — STATIC CHECKS PASSED; BROWSER NOT VERIFIED`.
+- **User requirement:** Quality cards on tablet and desktop should use the same restrained theme colours already used on the phone, rather than strong product-type-specific colours.
+- **Before:** Desktop/tablet quality cards inherited vivid BRA/PANTY/SET/BLOUSE gradient headers (purple, pink, teal and orange), white header text and bright chips. The phone intentionally suppresses these gradients and uses theme-based neutral surfaces, readable text and a slim aging-status rail.
+- **After:** At widths above 768px, quality-card headers, names, chips, type badges, icon surfaces and expand controls now use the active app theme tokens, matching the phone palette. The large product-type gradients are removed on tablet/desktop. Aging status remains communicated by the same slim coloured left rail used on phone. Card layout, size, content and interactions are unchanged.
+- **Phone protection:** No phone CSS or phone breakpoint was changed. All new overrides are scoped to `@media (min-width: 769px)`.
+- **Files changed:** `frontend/responsive-layout.css`, `frontend/sw.js` (cache v16), `tests/responsive-layout.test.js`, `PROJECT_SOURCE_OF_TRUTH.md`.
+- **Tests actually run:** `node --test tests/responsive-layout.test.js` (6/6 passed); `node --test tests/common-pagination.test.js` (6/6 passed); `node --check` for every `frontend/*.js`; CSS brace-balance check; ZIP integrity check after packaging.
+- **Not yet tested:** Actual browser rendering across all saved themes and real device widths.
+
+
+### ALISHAN-CHG-2026-11-09-005 — Replace tablet/desktop sidebar with topbar and restore two-column quality cards
+
+- **Type:** Responsive layout correction.
+- **Status:** `IMPLEMENTED — STATIC TESTS PASSED; BROWSER NOT VERIFIED`.
+- **User requirement:** Remove the tablet/desktop left sidebar because it consumes too much horizontal space; use a horizontal topbar instead. Quality cards must remain two per row and must not be reduced to one or expanded to three per row.
+- **Before:** The v85/v86 responsive stylesheet converted the shared navigation bar into a fixed left sidebar. This reduced the content width. It also changed Inventory quality cards to one column on narrow tablets and three columns on wide desktop screens, making the cards appear inconsistent and smaller than requested.
+- **After:** At widths from 769px upward, the shared navigation is now a full-width, fixed horizontal topbar with the ALISHAN logo and existing Dashboard, Inventory, Reports and Settings links in one row. The page content no longer reserves any left-side navigation width and starts below the 66px topbar. Quality cards use exactly two equal-width columns at every tablet and desktop width, with a larger gap, roomier card header padding and readable content typography. The old breakpoint rules are intentionally superseded by the final two-column override.
+- **Phone protection:** All new overrides are inside `@media (min-width: 769px)`. No phone navigation markup, `mobile.css`, or phone styles were changed.
+- **Feature/data impact:** Navigation destinations and feature locations remain the same. No data, calculations, business logic, filters, pagination, or storage behavior changed. Settings' own in-page category navigation is not the global left rail and remains unchanged.
+- **Service Worker:** Cache version bumped from v16 to v17 so clients refresh the updated responsive stylesheet.
+- **Files changed:** `frontend/responsive-layout.css`, `frontend/sw.js`, `tests/responsive-layout.test.js`, `PROJECT_SOURCE_OF_TRUTH.md`.
+- **Tests actually run:** `node --test tests/responsive-layout.test.js tests/common-pagination.test.js`; `node --check` for all `frontend/*.js`; CSS brace-balance check; ZIP integrity check after packaging.
+- **Not yet tested:** Actual browser rendering and device verification at 769px, 820px, 1024px, 1280px, 1440px and 1920px; visual confirmation of topbar fit at all tablet widths; real Inventory card content with long quality names. No browser visual pass is claimed.
+
+
+### ALISHAN-CHG-2026-11-09-006 — One quality card per row and remove separate action-panel background
+
+- **Type:** Inventory quality-card layout and visual cleanup.
+- **Status:** `IMPLEMENTED — STATIC TESTS PENDING BROWSER VERIFICATION`.
+- **User requirement:** Show only one quality card in each row. Remove the separate white background visible behind the Edit / Delete / Complete / Total Amount action section.
+- **Before:** v87 used two quality-card columns at tablet and desktop widths. The expanded card's action footer inherited a gradient footer surface and the nested `.card-actions` wrapper had its own white background and border, making the controls look like a separate white panel inside the quality card.
+- **After:** At widths above 768px, Inventory quality cards now occupy one full-width column. The expanded action footer blends into the card surface; the nested action wrapper has a transparent background, no separate border and no separate panel shadow. The action buttons, labels, order, click handlers and total amount remain unchanged.
+- **Phone protection:** No phone CSS or phone breakpoint was changed. Existing phone layout remains controlled by `mobile.css`; the new rules are scoped to `@media (min-width: 769px)`.
+- **Data/behavior impact:** None. No data, calculations, storage, filters, pagination, or action behavior changed.
+- **Service Worker:** Cache version bumped from v17 to v18.
+- **Files changed:** `frontend/responsive-layout.css`, `frontend/sw.js`, `tests/responsive-layout.test.js`, `PROJECT_SOURCE_OF_TRUTH.md`.
+- **Tests actually run:** `node --test tests/responsive-layout.test.js tests/common-pagination.test.js` (15/15 passed); `node --check` for all frontend JavaScript files; CSS brace-balance check; ZIP integrity check after packaging.
+- **Not yet tested:** Actual browser rendering on tablet and desktop, including expanded cards in the user's active theme. No visual browser pass is claimed.
+
+
+### ALISHAN-CHG-2026-11-09-007 — Expand User Guide into a visual learning centre and synchronize release version
+
+- **Type:** Documentation / in-app Help Centre enhancement.
+- **Status:** `IMPLEMENTED — STATIC CHECKS PENDING BROWSER VERIFICATION`.
+- **User requirement:** Explain all proposed User Guide improvements in more detail; teach workflows using methods beyond plain text; and make it mandatory that the User Guide version matches the latest app version.
+- **Before:** The in-app guide contained 21 expandable topics with mostly text instructions. Its footer incorrectly showed `Guide version: v81` while the app was at v88. It had no complete workflow map, no expand/collapse-all controls, and no formal release synchronization standard.
+- **After:** The guide now identifies itself as a visual learning centre. It includes five workflow learning paths, schematic process diagrams, expand/collapse-all controls, clearer search result counts, and eight additional detailed topics (22–29): complete quality entry, quantity/dozen/amount calculation, payment workflow, report selection guide, master data/colour/size guide, practical search examples, safe troubleshooting and glossary. Existing 21 topics remain in place. The footer now shows App v89, User Guide v89 and last verified date 09 Nov 2026.
+- **Teaching formats:** CSS-based flow diagrams, decision guidance, calculation examples, report comparison grid, workflow checklist and glossary were added. Diagrams are explicitly labelled as schematics; no fabricated app screenshots were added. Actual annotated screenshots remain a future enhancement requiring capture from the running v89 app.
+- **Accuracy checks:** Quantity and amount examples were checked against `frontend/calc.js` (12 pieces per dozen; amount = total dozens × saved price per dozen; fractional dozens retained). Payment instructions were checked against `frontend/store.js` and `frontend/calc.js` (positive amount, required date, amount cannot exceed pending). Report descriptions/date semantics were checked against `frontend/report-views.js`. Entry fields and same/different-size modes were checked against `frontend/add-entry.html`.
+- **Version policy:** Added a locked `User Guide & Documentation Standards` section to this document. Every release must audit the guide, update stale instructions/visuals, match app and guide version, show last verification date, and treat a mismatch as a release defect. History remains append-only.
+- **Service Worker:** Bumped cache version from v18 to v19 and added `user-guide.js` to the app-shell precache list.
+- **Files changed:** `frontend/setting.html`, `frontend/setting.css`, `frontend/user-guide.js`, `frontend/sw.js`, `tests/user-guide.test.js`, `tests/responsive-layout.test.js` (updated cache-version expectations), `README.md`, `PROJECT_SOURCE_OF_TRUTH.md`.
+- **Data/business logic:** No inventory, payment, quantity, amount, report calculation, database or storage logic was changed.
+- **Tests actually run:** `node --check` for every `frontend/*.js`; `node --test tests/*.test.js` (21/21 passed); HTML parse with 29 guide topics, no duplicate IDs and all five learning-path anchors resolving; local setting-page script/style reference check; CSS brace-balance check; User Guide version-match assertions; Service Worker v19 and guide-script precache assertions. ZIP integrity is checked after packaging.
+- **Browser verification:** Not yet performed. Actual rendering, anchor navigation, expand/collapse controls, search behavior and diagram fit still need browser checks at phone, tablet and desktop widths.
+
+### ALISHAN-CHG-2026-11-09-008 — Repair User Guide controls, lock entry sequence and add PDF screenshot library
+
+- **Type:** User Guide interaction fix, Add Entry workflow correction and visual documentation enhancement.
+- **Status:** `IMPLEMENTED — 25 AUTOMATED TESTS + ISOLATED CHROMIUM GUIDE INTERACTION/RESPONSIVE CHECKS PASSED; FULL APP DEVICE ACCEPTANCE PENDING`.
+- **User requirements:** Expand All / Collapse All must work; the Version Log must include v86–v89; Add Entry must follow the locked `Quality Type → Quality → Cup` sequence; extract every screenshot from the supplied `ALISHAN Complete App Screenshots Manual.pdf` and use them in the in-app manual.
+- **Before:** The v89 guide controls had direct click listeners with no visible completion feedback; the entry form displayed Product Type → Cup Size → Quality Name; the version log stopped at v85; the User Guide used only text and schematic diagrams despite the supplied visual manual.
+- **After:**
+  - Expand/Collapse controls now use delegated click handling, are initialized safely whether the script loads before or after DOM readiness, avoid duplicate initialization, and report how many visible topics were expanded/collapsed.
+  - Add Entry now labels the first field **Quality Type**, then shows **Quality Name**, then **Cup Size**. Existing IDs and data keys are unchanged; the selected Quality Type still drives the quality selector. No calculation or storage logic changed.
+  - Added a responsive **PDF Visual Reference Library** with all 32 screenshots extracted individually from the 16-page PDF. Each image has a screen number, descriptive caption, lazy loading and alt text. Images are precached for offline guide use.
+  - The gallery explicitly warns that the supplied PDF is a reference and may show sample data, older labels or screens that differ from the current app. The current live app and locked written workflow remain authoritative; Screen 24's old entry-form layout must not override the corrected field order.
+  - Added v86, v87, v88 and v89 rows to the append-only Version Log, then recorded this update as v90. README and User Guide footer both identify v90.
+- **Files changed:** `frontend/add-entry.html`, `frontend/setting.html`, `frontend/setting.css`, `frontend/user-guide.js`, `frontend/sw.js`, `frontend/guide-images/screen-01.jpg` through `screen-32.jpg`, `tests/user-guide.test.js`, `README.md`, `PROJECT_SOURCE_OF_TRUTH.md`.
+- **Data/calculation impact:** None. No saved records, database schema, quantity calculations, quality prices, payment logic, report calculations or storage functions were changed. Existing field IDs and submission data keys were retained.
+- **Service Worker:** Cache bumped from v19 to v20; all 32 screenshot assets added to the app-shell precache list.
+- **Tests:** `node --test tests/*.test.js` passes 25/25; `node --check` for every frontend JavaScript file; HTML/local-asset/duplicate-ID checks; field-order assertion; all 32 extracted images and Service Worker references verified. An isolated Chromium fixture using the exact User Guide section HTML, CSS and JavaScript confirmed 30/30 topics expand, zero remain open after Collapse All, filtered search (13 matches) expands only visible topics, Clear Search restores all 30 topics, and no horizontal overflow at 320/360/390px. This fixture is not a full end-to-end test of the complete app.
+- **Browser acceptance still required:** Verify both controls inside the complete running app and confirm all 32 screenshot files load through the app Service Worker online and offline. The isolated Chromium test does not replace a full app/device test.
+
 

@@ -22,6 +22,7 @@
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#121214">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="stylesheet" href="responsive-layout.css">
 </head>
 <body>
     <header class="site-topbar">
@@ -51,6 +52,26 @@
 
     <div class="container">
         <h2><i class="fas fa-database"></i> Complete Inventory</h2>
+
+        <!-- Additional overview is intentionally tablet/desktop only. The phone layout remains unchanged. -->
+        <section class="inventory-overview desktop-tablet-only" aria-label="Inventory overview">
+            <article class="inventory-overview-card">
+                <span class="inventory-overview-icon"><i class="fas fa-boxes"></i></span>
+                <div><strong id="totalItems">0</strong><span>Total Items</span></div>
+            </article>
+            <article class="inventory-overview-card">
+                <span class="inventory-overview-icon"><i class="fas fa-money-bill-wave"></i></span>
+                <div><strong id="totalValue">₹0</strong><span>Total Inventory Value</span></div>
+            </article>
+            <article class="inventory-overview-card">
+                <span class="inventory-overview-icon"><i class="fas fa-check-circle"></i></span>
+                <div><strong id="inStockItems">0</strong><span>In Stock Items</span></div>
+            </article>
+            <article class="inventory-overview-card">
+                <span class="inventory-overview-icon"><i class="fas fa-clock"></i></span>
+                <div><strong id="agingItems">0</strong><span id="agingLabel">Aging Stock</span></div>
+            </article>
+        </section>
         
         <!-- Search (search.js): the same search box on every page -->
         <div id="alishan-search"></div>
