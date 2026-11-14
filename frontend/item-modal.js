@@ -27,10 +27,7 @@
 // AlishanStore (store.js): calc.js builds + checks the entry, db.js saves it, every page is told.
 var ItemModal = (() => {
 
-    // Set at the start of open(index); used by handleSizeOptionChange()
-    // to know whether the item currently being edited was originally
-    // saved in "same" mode, so switching to "different" mid-edit can
-    // auto-convert its size data instead of starting from blank.
+    // The entry being edited (set at the start of open(id)).
     let openItem = null;
 
     function html() {
@@ -133,6 +130,12 @@ var ItemModal = (() => {
                             <div class="selected-quality-display" id="editSelectedQualityDisplay" style="display: none;">
                                 <strong>Selected:</strong> <span id="editSelectedQualityText"></span>
                             </div>
+                            <div class="form-group edit-price-box">
+                                <label for="editPrice">Price per dozen (₹)</label>
+                                <input type="number" id="editPrice" min="0" step="0.01" inputmode="decimal" placeholder="Price per dozen">
+                                <small id="editPriceHint" class="edit-price-hint"></small>
+                                <button type="button" class="btn btn-small edit-price-use" id="editPriceUseApp" hidden>Use app price</button>
+                            </div>
                         </div>
                     </section>
 
@@ -172,28 +175,8 @@ var ItemModal = (() => {
 
                     <section class="edit-section">
                         <h3 class="edit-section-title"><i class="fas fa-ruler"></i> Size Quantities</h3>
-                        <div class="size-option">
-                            <label>
-                                <input type="radio" name="editSizeOption" value="same" checked onchange="ItemModal.handleSizeOptionChange()">
-                                Same sizes for all colors
-                            </label>
-                            <label>
-                                <input type="radio" name="editSizeOption" value="different" onchange="ItemModal.handleSizeOptionChange()">
-                                Different sizes for each color
-                            </label>
-                        </div>
-
-                        <div id="editSameSizesContainer"></div>
-
-                        <div id="editDifferentSizesContainer" class="color-size-container" style="display: none;">
-                            <p class="different-sizes-hint" id="editColorSizeHint">
-                                <i class="fas fa-info-circle"></i>
-                                Pick the colors in the <strong>Colors</strong> box above — a size card appears here for each color you pick.
-                            </p>
-                            <div id="editColorSizeItems">
-                                <!-- Color size items will be added dynamically -->
-                            </div>
-                        </div>
+                        <p class="size-groups-lead">All colours share one size grid. For a colour with different sizes, use <b>⇄</b> on that colour → <b>New group</b>.</p>
+                        <div id="editSizeGroups" class="size-groups-box"></div>
                     </section>
 
                     <section class="edit-section">
@@ -225,8 +208,19 @@ var ItemModal = (() => {
                 submit(e);
             });
         }
-        ItemForm.onColorsChange('edit', syncEditCards);      // size cards follow the one colour picker
-        ItemForm.onColorRename('edit', renameEditCard);      // a changed colour keeps its size card (and the sizes in it)
+        SizeGroups.init('edit');      // the size groups follow the one colour picker (a changed colour keeps its sizes)
+        const priceEl = document.getElementById('editPrice');
+        if (priceEl) priceEl.addEventListener('input', refreshPriceHint);
+        const useBtn = document.getElementById('editPriceUseApp');
+        if (useBtn) useBtn.addEventListener('click', useAppPrice);
+        // a quality picked in this window brings its own (app) price; the user can still type another one
+        document.addEventListener('alishan:quality-selected', function (e) {
+            if (!e.detail || e.detail.prefix !== 'edit') return;
+            const app = Number(ItemForm.getQualityPrice(e.detail.name)) || 0;
+            const box = document.getElementById('editPrice');
+            if (box && app > 0) box.value = app;
+            refreshPriceHint();
+        });
 
         const modal = document.getElementById('editModal');
         if (modal) {
@@ -255,143 +249,38 @@ var ItemModal = (() => {
         );
     }
 
-    // ---- per-color "different sizes" card (used by both the Add
-    // Color button and pre-filling colors when the modal opens) ----
-    function colorSizeItemHTMLWithValues(colorName, sizesObj) {
-        const color = ItemForm.getColorStyleSafe(colorName);
-        const safeName = escapeHtml(colorName);
-        const cells = ItemForm.SIZES.map(size => ItemForm.sizeCellHTML(size, {
-            dozenClass: `edit-color-size-${size}`,
-            piecesClass: `edit-color-size-${size}_pieces`,
-            dozenValue: sizesObj ? sizesObj[`size${size}`] : 0,
-            piecesValue: sizesObj ? sizesObj[`size${size}_pieces`] : 0,
-            color: colorName
-        })).join('');
-        return `
-            <div class="color-size-item" data-color="${safeName}">
-                <div class="color-size-header" style="background-color: ${color.backgroundColor}; color: ${color.textColor}; border-color: ${color.borderColor}">
-                    <h4><i class="fas fa-palette"></i> ${escapeHtml(color.displayName)}</h4>
-                    <span class="color-card-actions">
-                        <button type="button" class="remove-color-btn" onclick="ItemModal.changeColorSizeItem(this)">Change</button>
-                        <button type="button" class="remove-color-btn" onclick="ItemModal.removeColorSizeItem(this)">Remove</button>
-                    </span>
-                </div>
-                <div class="size-grid">${cells}</div>
-            </div>`;
-    }
-
-    function colorSizeItemHTML(colorName) {
-        return colorSizeItemHTMLWithValues(colorName, null);
-    }
-
-    function toggleSizeOption() {
-        const same = document.querySelector('input[name="editSizeOption"][value="same"]');
-        const sameContainer = document.getElementById('editSameSizesContainer');
-        const diffContainer = document.getElementById('editDifferentSizesContainer');
-        if (!same || !sameContainer || !diffContainer) return;
-        if (same.checked) {
-            sameContainer.style.display = 'block';
-            diffContainer.style.display = 'none';
-        } else {
-            sameContainer.style.display = 'none';
-            diffContainer.style.display = 'block';
-        }
-    }
-
-    // Called on every size-option radio change. If the item being
-    // edited was originally "same" mode and the user just switched
-    // to "different", auto-convert its size data into per-color
-    // cards instead of leaving the list empty.
-    // ONE colour picker does everything: in "different sizes" mode a size card appears for
-    // every colour picked in the Colors box (and goes when the colour is un-picked).
-    function syncEditCards() {
-        const selected = document.querySelector('input[name="editSizeOption"]:checked');
-        if (!selected || selected.value !== 'different') return;
-        const chosen = ItemForm.getSelectedColors('edit');
-        ItemForm.syncColorCards(document.getElementById('editColorSizeItems'), chosen, name => colorSizeItemHTMLWithValues(name, null));
-        const hint = document.getElementById('editColorSizeHint');
-        if (hint) hint.style.display = chosen.length ? 'none' : '';
-    }
-
-    function handleSizeOptionChange() {
-        const selected = document.querySelector('input[name="editSizeOption"]:checked');
-        const container = document.getElementById('editColorSizeItems');
-        if (selected && selected.value === 'different' && container && container.children.length === 0) {
-            convertSameToDifferentSizes();      // copies what is typed in the same-size boxes into every colour
-        }
-        toggleSizeOption();
-        syncEditCards();
-    }
-
-    // the card's Change button opens the same "replace colour" row as the colour picker's swap button
-    function changeColorSizeItem(button) {
-        const card = button.closest('.color-size-item');
-        if (card) ItemForm.openColorSwap(card.getAttribute('data-color'), 'edit');
-    }
-
-    // The colour was changed in the picker: the card (and every size typed in it) stays, only its colour changes.
-    function renameEditCard(oldName, newName) {
-        const container = document.getElementById('editColorSizeItems');
-        if (!container) return;
-        const card = Array.from(container.querySelectorAll(':scope > .color-size-item'))
-            .find(c => c.getAttribute('data-color') === oldName);
-        if (!card) return;
-        card.setAttribute('data-color', newName);
-        card.querySelectorAll('[data-color]').forEach(el => {
-            if (el.getAttribute('data-color') === oldName) el.setAttribute('data-color', newName);
-        });
-        const color = ItemForm.getColorStyleSafe(newName);
-        const header = card.querySelector('.color-size-header');
-        if (header) {
-            header.style.backgroundColor = color.backgroundColor;
-            header.style.color = color.textColor;
-            header.style.borderColor = color.borderColor;
-        }
-        const title = card.querySelector('.color-size-header h4');
-        if (title) title.innerHTML = `<i class="fas fa-palette"></i> ${escapeHtml(color.displayName)}`;
-    }
-
-    // the card's Remove button un-picks the colour in the one colour picker
-    function removeColorSizeItem(button) {
-        const card = button.closest('.color-size-item');
-        if (card) ItemForm.removeColor(card.getAttribute('data-color'), 'edit');
-    }
-
-    // Switching "same sizes" -> "different sizes" while editing: copies the
-    // quantities currently typed in the same-size grid into a card for
-    // every currently-selected color (so unsaved edits are not lost).
-    function convertSameToDifferentSizes() {
-        const container = document.getElementById('editColorSizeItems');
-        if (!container) return;
-
-        const colors = ItemForm.getSelectedColors('edit');
-        if (colors.length === 0) return; // nothing picked yet: cards appear when colours are picked
-
-        const sizesObj = {};
-        ItemForm.SIZES.forEach(size => {
-            sizesObj[`size${size}`] = parseInt(document.getElementById(`editSize${size}`)?.value) || 0;
-            sizesObj[`size${size}_pieces`] = parseInt(document.getElementById(`editSize${size}_pieces`)?.value) || 0;
-        });
-
-        container.innerHTML = '';
-        colors.forEach(colorName => {
-            container.insertAdjacentHTML('beforeend', colorSizeItemHTMLWithValues(colorName, sizesObj));
-        });
-        showNotification('Sizes copied to every color — change them per color below.', 'success');
-    }
-
     // ================= OPEN / CLOSE / POPULATE =================
 
-    // what the user typed in one block of size boxes -> { 28: {dozens, pieces}, ... }
-    function readSizeBoxes(getDozen, getPieces) {
-        const map = {};
-        ItemForm.SIZES.forEach(size => {
-            map[size] = {
-                dozens: getDozen(size) ? getDozen(size).value : '',
-                pieces: getPieces(size) ? getPieces(size).value : ''
-            };
-        });
-        return map;
+    // ---- price per dozen: the user can change it here (no need to wait for a code/json change) ----
+    // The hint compares the box with the app's price (qualities.json) of the selected quality.
+    function refreshPriceHint() {
+        const hint = document.getElementById('editPriceHint');
+        const useBtn = document.getElementById('editPriceUseApp');
+        const priceEl = document.getElementById('editPrice');
+        if (!hint || !priceEl) return;
+        const quality = document.getElementById('editQuality').value;
+        const app = Number(ItemForm.getQualityPrice(quality)) || 0;
+        const typed = priceEl.value === '' ? null : Number(priceEl.value);
+        useBtn.hidden = true;
+        hint.className = 'edit-price-hint';
+        if (!app) {
+            hint.classList.add('edit-price-warn');
+            hint.textContent = 'This quality is not in qualities.json (or has no price there), so type the price yourself.';
+        } else if (typed === null) {
+            hint.textContent = `App price is ₹${app} / dozen. Leave this box empty to keep the saved price.`;
+        } else if (typed === app) {
+            hint.textContent = `Same as the app price (₹${app} / dozen).`;
+        } else {
+            hint.classList.add('edit-price-diff');
+            hint.textContent = `This entry will use ₹${typed} / dozen. The app price of ${quality} is ₹${app}. The entry amount changes with this price.`;
+            useBtn.hidden = false;
+            useBtn.textContent = `Use app price (₹${app})`;
+        }
+    }
+
+    function useAppPrice() {
+        const app = Number(ItemForm.getQualityPrice(document.getElementById('editQuality').value)) || 0;
+        if (app > 0) { document.getElementById('editPrice').value = app; refreshPriceHint(); }
     }
 
     function open(id) {
@@ -409,6 +298,8 @@ var ItemModal = (() => {
         document.getElementById('editProductType').value = String(item.productType || '').toLowerCase();
         ItemForm.renderQualitySelector('edit', null, String(item.productType || '').toLowerCase());
         ItemForm.setQualitySilently(item.quality, 'edit');
+        document.getElementById('editPrice').value = Number(item.price) > 0 ? Number(item.price) : '';
+        refreshPriceHint();
         document.getElementById('editCupSize').value = (item.cupSize && item.cupSize !== 'N/A') ? item.cupSize : '';
         document.getElementById('editLotNumber').value = item.lotNumber || '';
         document.getElementById('editMaterial').value = item.material || '';
@@ -430,34 +321,11 @@ var ItemModal = (() => {
         const doneWhen = item.completedAt ? AlishanCalc.parseDate(item.completedAt) : null;
         doneInput.value = doneWhen && !isNaN(doneWhen) ? AlishanCalc.localDate(doneWhen) : '';
 
-        const cardBox = document.getElementById('editColorSizeItems');
-        if (cardBox) cardBox.innerHTML = '';          // never show the previous item's cards
-
-        // Always render the same-sizes grid structure (even if the
-        // item currently uses "different" mode) so switching the
-        // radio later has valid fields to show.
-        ItemForm.renderSizeGrid('editSameSizesContainer', 'edit');
-
-        if (item.sizeOption === 'same') {
-            document.querySelector('input[name="editSizeOption"][value="same"]').checked = true;
-            ItemForm.populateColorsForEdit(Array.isArray(item.colors) && typeof item.colors[0] === 'string' ? item.colors : [], 'edit');
-            ItemForm.populateSizeGrid('editSameSizesContainer', 'edit', item);
-            document.getElementById('editSameSizesContainer').style.display = 'block';
-            document.getElementById('editDifferentSizesContainer').style.display = 'none';
-        } else {
-            document.querySelector('input[name="editSizeOption"][value="different"]').checked = true;
-            ItemForm.populateColorsForEdit(Array.isArray(item.colors) && typeof item.colors[0] === 'object' ? item.colors : [], 'edit');
-
-            const container = document.getElementById('editColorSizeItems');
-            if (container) {
-                container.innerHTML = '';
-                (item.colors || []).forEach(colorObj => {
-                    if (colorObj) container.insertAdjacentHTML('beforeend', colorSizeItemHTMLWithValues(colorObj.name, colorObj.sizes));
-                });
-            }
-            document.getElementById('editSameSizesContainer').style.display = 'none';
-            document.getElementById('editDifferentSizesContainer').style.display = 'block';
-        }
+        // colours first (they fill the one colour picker), then the size groups of this entry
+        // (colours with the same sizes sit together in one group; a colour with its own sizes has its own group)
+        const colorNames = (Array.isArray(item.colors) ? item.colors : []).map(c => (typeof c === 'string' ? c : (c && c.name))).filter(Boolean);
+        ItemForm.populateColorsForEdit(colorNames, 'edit');
+        SizeGroups.load('edit', item);
 
         document.getElementById('editModal').style.display = 'flex';
         const body = document.querySelector('#editModal .edit-modal-body');
@@ -475,17 +343,16 @@ var ItemModal = (() => {
 
     async function submit() {
         const id = document.getElementById('editIndex').value;
-        const sizeOption = document.querySelector('input[name="editSizeOption"]:checked').value;
 
         const input = {
             productType: document.getElementById('editProductType').value,
             cupSize: document.getElementById('editCupSize').value,
             lotNumber: document.getElementById('editLotNumber').value,
             quality: document.getElementById('editQuality').value,
+            price: document.getElementById('editPrice').value,
             material: document.getElementById('editMaterial').value,
             weight: document.getElementById('editWeight').value,
             notes: document.getElementById('editNotes').value,
-            sizeOption,
             entry: {
                 date: document.getElementById('editEntryDate').value,
                 time: document.getElementById('editEntryTime').value
@@ -495,23 +362,7 @@ var ItemModal = (() => {
                 ? undefined : document.getElementById('editCompletedDate').value
         };
 
-        if (sizeOption === 'same') {
-            input.colors = ItemForm.getSelectedColors('edit');
-            input.sizes = readSizeBoxes(
-                size => document.getElementById(`editSize${size}`),
-                size => document.getElementById(`editSize${size}_pieces`)
-            );
-        } else {
-            const container = document.getElementById('editColorSizeItems');
-            const cards = container ? Array.from(container.getElementsByClassName('color-size-item')) : [];
-            input.colorSizes = cards.map(card => ({
-                name: card.getAttribute('data-color'),
-                sizes: readSizeBoxes(
-                    size => card.querySelector(`.edit-color-size-${size}`),
-                    size => card.querySelector(`.edit-color-size-${size}_pieces`)
-                )
-            }));
-        }
+        Object.assign(input, SizeGroups.read('edit'));      // sizeOption + colours + sizes (one group = same sizes, several = per-colour sizes)
 
         const result = await AlishanStore.updateItem(id, input);
         if (!result.ok) {
@@ -530,7 +381,7 @@ var ItemModal = (() => {
             showNotification('Item not found', 'error');
             return;
         }
-        if (!confirm(`Delete ${target.quality} ${target.productType} (Code ${target.code})?\n\nThis cannot be undone.`)) return;
+        if (!confirm(`Delete ${target.quality} ${target.productType} (Code ${target.code})?\n\nIt moves to Settings → Archives. You can restore it from there, or delete it for good.`)) return;
         const result = await AlishanStore.deleteItem(id);
         showNotification(result.ok ? result.message : result.error, result.ok ? 'success' : 'error');
     }
@@ -547,12 +398,7 @@ var ItemModal = (() => {
         submit,
         deleteItem,
         toggleStock,
-        toggleSizeOption,
-        updateEntryPreview,
-        handleSizeOptionChange,
-        removeColorSizeItem,
-        changeColorSizeItem,
-        convertSameToDifferentSizes
+        updateEntryPreview
     };
 })();
 

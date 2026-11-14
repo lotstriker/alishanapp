@@ -14,7 +14,7 @@
 var AlishanCalc = (() => {
     'use strict';
 
-    const SIZES = [28, 30, 32, 34, 36, 38, 40, 42, 44, 46];
+    const SIZES = [28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50];
     const DAY_MS = 24 * 60 * 60 * 1000;
 
     // ---- business rules: edit here and every page follows ----
@@ -487,6 +487,86 @@ var AlishanCalc = (() => {
     }
 
     // Everything an item card needs to show (so the card itself does no maths)
+    // ================= ARCHIVES (v96) =================
+    // A deleted entry is not thrown away: it moves, together with its payments, into the Archives
+    // (Settings -> Archives). From there it can be restored, or deleted for good. Deleting for good must leave
+    // NO shadow: its payments, its Quality History rows, the Recent Activity lines that name its code and its
+    // copy inside the automatic backups all go too. These functions only decide WHAT; db.js / archive.js do it.
+    const CODE_IN_TEXT = /\((\d{6})\)/g;
+
+    function makeArchiveRecord(item, itemPayments, now = new Date()) {
+        return {
+            id: item.id,
+            code: String(item.code || ''),
+            deletedAt: now.toISOString(),
+            item: JSON.parse(JSON.stringify(item)),
+            payments: (itemPayments || []).map(p => ({ ...p }))
+        };
+    }
+
+    // data = { inventory, archive, history (auditLog rows), activity (editHistory rows), payments }
+    function codeUsedElsewhere(record, data) {
+        const code = String(record.code || '');
+        if (!code) return true;                                   // nothing safe to match by code
+        return (data.inventory || []).some(i => String(i.code) === code && String(i.id) !== String(record.id))
+            || (data.archive || []).some(r => String(r.id) !== String(record.id) && String(r.code) === code);
+    }
+
+    // everything that must go when this archived entry is deleted for good
+    function purgePlan(record, data) {
+        const id = String(record.id);
+        const code = String(record.code || '');
+        const byCode = !codeUsedElsewhere(record, data);
+        return {
+            archiveId: record.id,
+            historyIds: (data.history || []).filter(h => String(h.qualityId) === id || (byCode && String(h.qualityCode) === code)).map(h => h.id),
+            activityIds: byCode ? (data.activity || []).filter(a => String(a.text || '').includes(`(${code})`)).map(a => a.id) : [],
+            paymentIds: (data.payments || []).filter(p => String(p.inventoryId) === id).map(p => p.id)
+        };
+    }
+
+    // one automatic-backup copy without that entry (and its payments)
+    function purgeBackup(backup, id) {
+        if (!backup || typeof backup !== 'object') return { backup, changed: false };
+        const inv = Array.isArray(backup.inventory) ? backup.inventory : [];
+        const pay = Array.isArray(backup.payments) ? backup.payments : [];
+        const inv2 = inv.filter(i => String(i.id) !== String(id));
+        const pay2 = pay.filter(p => String(p.inventoryId) !== String(id));
+        if (inv2.length === inv.length && pay2.length === pay.length) return { backup, changed: false };
+        const metadata = backup.metadata ? { ...backup.metadata, totalItems: inv2.length, totalPayments: pay2.length } : backup.metadata;
+        return { backup: { ...backup, inventory: inv2, payments: pay2, metadata }, changed: true };
+    }
+
+    // traces of entries that were deleted BEFORE Archives existed (they belong to no live or archived entry)
+    function leftoverPlan(data) {
+        const known = new Set([...(data.inventory || []), ...(data.archive || []).map(r => r.item || r)].map(i => String(i.id)));
+        const codes = new Set([...(data.inventory || []).map(i => String(i.code)), ...(data.archive || []).map(r => String(r.code))]);
+        const textCodes = (t) => { const out = []; String(t || '').replace(CODE_IN_TEXT, (m, c) => { out.push(c); return m; }); return out; };
+        return {
+            paymentIds: (data.payments || []).filter(p => !known.has(String(p.inventoryId))).map(p => p.id),
+            historyIds: (data.history || []).filter(h => h.qualityId !== undefined && h.qualityId !== null && !known.has(String(h.qualityId)) && !codes.has(String(h.qualityCode))).map(h => h.id),
+            activityIds: (data.activity || []).filter(a => { const cs = textCodes(a.text); return cs.length > 0 && cs.every(c => !codes.has(c)); }).map(a => a.id)
+        };
+    }
+
+    // a short line for the Archives list
+    function archiveSummary(record) {
+        const item = record.item || {};
+        const names = (Array.isArray(item.colors) ? item.colors : []).map(c => (typeof c === 'string' ? c : (c && c.name))).filter(Boolean);
+        return {
+            id: record.id,
+            code: record.code,
+            quality: item.quality || '',
+            productType: item.productType || '',
+            cupSize: item.cupSize && item.cupSize !== 'N/A' ? item.cupSize : '',
+            colors: names,
+            dozens: itemDozens(item),
+            amount: Number(item.totalAmount) || 0,
+            payments: (record.payments || []).length,
+            deletedAt: record.deletedAt
+        };
+    }
+
     function describeItem(item) {
         const colors = Array.isArray(item.colors) ? item.colors : [];
         const totals = itemTotals(item);
@@ -498,7 +578,8 @@ var AlishanCalc = (() => {
             amount: totals.amount,
             summary: 'No calculation available',
             sizes: [],
-            tables: []
+            tables: [],
+            groups: []
         };
         if (info.mode === 'same') {
             const perColor = sizesPieces(item) / 12;
@@ -528,6 +609,17 @@ var AlishanCalc = (() => {
                         )
                     }))
             }));
+            // Colours with exactly the same sizes are shown TOGETHER (one table for them), so an entry
+            // where only one colour has other sizes still reads as one card: [RED, BLACK] + [BLUE].
+            const groups = [];
+            info.tables.forEach(t => {
+                const key = t.sizes.map(z => `${z.size}:${z.displayValue}`).join('|');
+                let g = groups.find(x => x.key === key);
+                if (!g) { g = { key, names: [], eachDozens: t.totalDozens, totalDozens: 0, sizes: t.sizes }; groups.push(g); }
+                g.names.push(t.name);
+                g.totalDozens = round2(g.totalDozens + t.totalDozens);
+            });
+            info.groups = groups.map(({ key, ...g }) => g);
         }
         return info;
     }
@@ -820,10 +912,18 @@ var AlishanCalc = (() => {
             localDate(oldWhen) !== localDate(newWhen) ||
             localTime(oldWhen) !== localTime(newWhen);
 
-        // price comes from the quality; an unchanged quality keeps the item's own saved price
-        const price = (quality === current.quality && Number(current.price) > 0)
-            ? Number(current.price)
-            : ctx.priceOf(quality);
+        // price: a price typed in the Edit window wins (the user can correct it without waiting for qualities.json);
+        // an empty box keeps the item's own saved price when the quality is unchanged, else the quality's price
+        let price;
+        if (input.price !== undefined && input.price !== null && String(input.price).trim() !== '') {
+            const typed = Number(input.price);
+            if (!isFinite(typed) || typed <= 0) return fail('The price must be a number above 0.');
+            price = Math.round(typed * 100) / 100;
+        } else {
+            price = (quality === current.quality && Number(current.price) > 0)
+                ? Number(current.price)
+                : ctx.priceOf(quality);
+        }
 
         const updated = { ...current };
         SIZES.forEach(size => { delete updated[`size${size}`]; delete updated[`size${size}_pieces`]; });
@@ -1539,7 +1639,7 @@ var AlishanCalc = (() => {
             const v = obj[key];
             const unread = (x) => typeof x === 'string' && x.includes('?');
             if (!SIZES.includes(size)) {
-                if (v !== 0 && v !== '' && v !== null) problems.push(`${label}size ${key} is not an app size (28, 30 ... 46) — change it or remove it.`);
+                if (v !== 0 && v !== '' && v !== null) problems.push(`${label}size ${key} is not an app size (28, 30 ... 46, 48, 50) — change it or remove it.`);
                 return;
             }
             let dozens = '', pieces = '';
@@ -2062,7 +2162,7 @@ RULES
 
 2. ALL QUANTITIES ARE DOZENS. Numbers under the sizes, the line calculations and the totals are DOZENS, not pieces.
    "sizes" must be a direct object: { "30": 2, "32": 10, "34": 10 }
-   - Allowed sizes are only 28, 30, 32, 34, 36, 38, 40, 42, 44, 46.
+   - Allowed sizes are only 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50.
    - Half dozens are allowed: 2.5.
    - If pieces are written too, use { "dozens": 2, "pieces": 3 } for that size (pieces 0 to 11).
 
@@ -2122,6 +2222,7 @@ Return exactly: { "entries": [ ...one object per block... ] }`;
         SIZES, CONFIG, AGING_LEVELS, AGING_ORDER, round2, parseDate, splitPieces, colorName,
         // one entry
         sizesPieces, itemPieces, itemDozens, itemPrice, itemAmount, itemTotals, applyTotals, describeItem,
+        makeArchiveRecord, purgePlan, purgeBackup, leftoverPlan, archiveSummary,
         daysInStock, agingLevel, agingBucket: agingLevel, agingRange, agingTitle, agingBreakdownHTML,
         isAddedWithinDays, isLowStock, weekInfo,
         // dates of an entry

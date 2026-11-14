@@ -7,13 +7,13 @@ class GlobalThemeManager {
       'gold', 'purple', 'mint',
       'midnight-slate', 'forest-night',
       'carbon-flame', 'ash-orange', 'ember-forge', 'deep-teal', 'arctic-teal',
-      'red-inferno', 'royal-teal', 'github-dark', 'material-dark', 'teal-finance'
+      'red-inferno', 'royal-teal', 'github-dark', 'material-dark', 'teal-finance', 'rose-wine'
     ];
     this.darkThemes = [
       'dark-deep', 'dark-blue', 'gold',
       'midnight-slate', 'forest-night',
       'carbon-flame', 'ash-orange', 'ember-forge', 'deep-teal', 'arctic-teal',
-      'red-inferno', 'royal-teal', 'github-dark', 'material-dark', 'teal-finance'
+      'red-inferno', 'royal-teal', 'github-dark', 'material-dark', 'teal-finance', 'rose-wine'
     ];
     this.init();
   }

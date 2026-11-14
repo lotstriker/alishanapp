@@ -548,7 +548,7 @@ async function initPage() {
     // makes sure every file is there (re-requests a file that did not load); search + loader are optional
     if (typeof AlishanRequire === 'function' && !(await AlishanRequire({
         AlishanDB: 'db.js', AlishanCalc: 'calc.js', AlishanStore: 'store.js', CommonPagination: 'common-pagination.js',
-        ItemForm: 'item-form.js', ItemCard: 'item-card.js', ItemModal: 'item-modal.js'
+        ItemForm: 'item-form.js', SizeGroups: 'size-groups.js', ItemCard: 'item-card.js', ItemModal: 'item-modal.js'
     }, { AlishanSearch: 'search.js', AlishanLoader: 'loader.js', BulkImport: 'bulk-import.js' }))) return;
     const info = await AlishanStore.init();            // loads qualities, colours, inventory, payments
     if (info.referenceError) showNotification(info.referenceError, 'error');

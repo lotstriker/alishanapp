@@ -17,7 +17,7 @@
 | `dashboard.js`, `inventory.js`, `reports.html`, `report-views.js` | take input, show data | keep their own copy of the data, calculate, save |
 | `export-center.js` + `export-center.css` | Home Export Center (v74): shows data sets, filters, preview, formats, presets, history and ZIP restore; makes Excel / CSV / PDF / JSON / ZIP files. Rules come from `calc.js` (`exportFilterItems`, `exportSizeRows`, `exportTotals`, `exportInRange`) through `AlishanStore` | calculate, change quality or payment records (only ZIP restore changes data, after a safety backup) |
 | `settings-data-backup.js` | Settings > Data & Backup controls: save backup interval, create local safety backup, restore latest local backup | calculate business amounts or bypass IndexedDB |
-| `item-form.js`, `item-card.js`, `item-modal.js` | shared UI pieces (pickers, card, edit window) | calculate, save |
+| `item-form.js`, `size-groups.js`, `item-card.js`, `item-modal.js` | shared UI pieces (pickers, size groups editor, card, edit window) | calculate, save |
 
 ## Adding a search to a page
 ```html

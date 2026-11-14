@@ -1037,3 +1037,47 @@ body.ic-size-focus-active { overflow: hidden !important; }
     border-radius: 0.4rem !important;
     font-size: 0.72rem !important;
 }
+
+/* ============================================================
+   v94: colours that share one size table — each colour is its own small card in its own colours.
+   The header itself is neutral (theme colours), so it fits all 19 themes; the cards keep colours.json colours.
+   The cards are kept SMALL and the totals sit on the same row, so the header stays about as low as the
+   one-colour header (v94 fix: it was twice as high).
+   ============================================================ */
+.inventory-card .color-header.color-group-header {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 4px !important;
+    padding: 3px 6px !important;
+    min-height: 0;
+    background: var(--surface-soft, rgba(127, 127, 127, 0.1));
+    border: 1px solid var(--light-gray, rgba(127, 127, 127, 0.3));
+    color: var(--dark, inherit);
+    text-transform: none;
+}
+.inventory-card .cg-chips { display: flex; flex-wrap: wrap; gap: 2px; flex: 0 1 auto; min-width: 0; }
+.inventory-card .color-tag.cg-card {
+    margin: 0 !important;
+    border-radius: 5px;
+    border-width: 1px;
+    border-style: solid;
+    padding: 0 4px !important;
+    font-size: 9px !important;
+    line-height: 1.6 !important;
+    font-weight: 700;
+    letter-spacing: 0;
+    box-shadow: none;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.inventory-card .cg-summary {
+    flex: 0 1 auto;
+    font-size: 9px !important;
+    line-height: 1.3;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--accent-text, var(--primary, #4361ee));
+    text-transform: uppercase;
+}
+.inventory-card .color-group-header .ic-size-focus-trigger { margin-left: auto; padding: 1px 6px !important; min-height: 0 !important; }
+.inventory-card .color-group-header .ic-size-focus-trigger span { display: none; }

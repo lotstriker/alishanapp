@@ -23,10 +23,10 @@
 
 var AlishanDB = (() => {
     const DB_NAME = 'AlishanDB';
-    const DB_VERSION = 1;
+    const DB_VERSION = 2;          // v2 (v96): adds the 'archive' store; nothing else changes
     const STORES = [
         'inventory', 'payments', 'qualities', 'colors', 'settings',
-        'searchAnalytics', 'users', 'editHistory', 'auditLog'
+        'searchAnalytics', 'users', 'editHistory', 'auditLog', 'archive'
     ];
 
     let dbPromise = null;
@@ -212,6 +212,60 @@ var AlishanDB = (() => {
         },
 
         // ---- Payments (amount-received records) ----
+
+        // ---- Archives (v96): deleted entries wait here until they are restored or deleted for good ----
+        // delete from inventory + payments and write the archive record in ONE transaction
+        async archiveInventoryItem(record) {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(['inventory', 'payments', 'archive'], 'readwrite');
+                tx.objectStore('inventory').delete(record.id);
+                (record.payments || []).forEach(p => tx.objectStore('payments').delete(p.id));
+                tx.objectStore('archive').put(record);
+                tx.oncomplete = () => { notify('inventory'); notify('payments'); notify('archive'); resolve(true); };
+                tx.onerror = tx.onabort = () => reject(tx.error || new Error('Could not archive the entry'));
+            });
+        },
+        async getArchive() {
+            const rows = await getAll('archive');
+            return rows.sort((a, b) => String(b.deletedAt).localeCompare(String(a.deletedAt)));
+        },
+        // archive -> inventory + payments, in ONE transaction. resolves { ok } or { ok:false, error }
+        async restoreArchived(id) {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(['inventory', 'payments', 'archive'], 'readwrite');
+                let result = { ok: false, error: 'This entry is not in the Archives (any more).' };
+                const getRec = tx.objectStore('archive').get(id);
+                getRec.onsuccess = () => {
+                    const rec = getRec.result;
+                    if (!rec) return;
+                    const clash = tx.objectStore('inventory').get(rec.item.id);
+                    clash.onsuccess = () => {
+                        if (clash.result) { result = { ok: false, error: 'An entry with the same id is already in the inventory.' }; return; }
+                        tx.objectStore('inventory').put(rec.item);
+                        (rec.payments || []).forEach(p => tx.objectStore('payments').put(p));
+                        tx.objectStore('archive').delete(id);
+                        result = { ok: true, item: rec.item };
+                    };
+                };
+                tx.oncomplete = () => { if (result.ok) { notify('inventory'); notify('payments'); notify('archive'); } resolve(result); };
+                tx.onerror = tx.onabort = () => reject(tx.error || new Error('Could not restore the entry'));
+            });
+        },
+        // remove records by key from one store (used when an archived entry is deleted for good)
+        async removeMany(store, ids) {
+            if (!ids || !ids.length) return true;
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(store, 'readwrite');
+                ids.forEach(id => tx.objectStore(store).delete(id));
+                tx.oncomplete = () => { notify(store); resolve(true); };
+                tx.onerror = tx.onabort = () => reject(tx.error || new Error('Could not delete'));
+            });
+        },
+        async getAllFrom(store) { return getAll(store); },
+
         async getPayments() {
             return getAll('payments');
         },
@@ -358,6 +412,7 @@ var ALISHAN_FILES = [
     ['AlishanStore', 'store.js', ['AlishanDB', 'AlishanCalc']],
     ['AlishanSearch', 'search.js', ['AlishanStore', 'AlishanCalc']],
     ['ItemForm', 'item-form.js', ['AlishanCalc', 'AlishanStore']],
+    ['SizeGroups', 'size-groups.js', ['AlishanCalc', 'ItemForm']],
     ['ItemCard', 'item-card.js', []],
     ['ItemModal', 'item-modal.js', []],
     ['BulkImport', 'bulk-import.js', ['AlishanStore', 'AlishanCalc', 'ItemForm']]

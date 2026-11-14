@@ -321,3 +321,23 @@ Every delivered update must change the version of the project ZIP file.
 
 Any task that changes a screen must look at that screen in a real browser at 390, 360 and 320 px wide before delivery (script tests cannot see layout). The handover report must say what was looked at and what was not. See rule 9 in section 0 of `PROJECT_SOURCE_OF_TRUTH.md` for the CSS rules learned from v74–v77.
 
+
+## 17. The Version log is compulsory — 2026-11-11 (added; nothing above was changed)
+
+1. Every delivered ZIP has its row in the Version log (section 10 of `PROJECT_SOURCE_OF_TRUTH.md`), added in the same task. No row, no delivery.
+2. Rows are consecutive. Never skip, delete, reorder or reuse a version number. A task is not complete if the log has a gap.
+3. Each row has: version, ZIP file name with the same number, date, change ID(s) that exist in the Source of Truth, and a summary.
+4. Before delivery run `node --test tests/*.test.js`. `tests/version-log.test.js` must pass; it also checks that the latest row equals the version shown in `README.md` and in the User Guide footer.
+5. If a gap or a second ZIP with the same number is found, do not hide it: restore the row from real history, add a note, record the repair as a Fix, and tell the owner in the handover report.
+6. The handover report (section 7) states the new ZIP file name and the new Version log row.
+
+
+## 18. The User Guide is compulsory — 2026-11-11 (added; nothing above was changed)
+
+1. If a task adds a feature or changes something a user can see or must do differently, the in-app User Guide (`frontend/setting.html`, "Help centre") is updated in the SAME task. A feature without its guide text is not finished and must not be delivered.
+2. Write for the shop user: simple Hinglish, numbered steps, one small example, what the user will see, and the common mistakes (a question-and-answer box is welcome). Do not put developer wording in the guide: no ZIP names, change IDs, "implemented", "audit", "current build".
+3. Every release: add a "Naya kya hai?" entry (topic 30) headed `vNN — date`; fix every topic, example and screenshot that the change makes wrong (retake screenshots with the real app, numbered without gaps, and add them to `sw.js`); keep the footer `App version: vNN · User Guide version: vNN · Last verified: <date>` equal to the latest Version log row.
+4. Never document a step for a feature the build does not have.
+5. Run `node --test tests/*.test.js`. `tests/user-guide.test.js` must pass (it checks the What's-new entry, the footer version and the no-developer-wording rule).
+6. The handover report (section 7) lists the guide topics that were added or changed.
+

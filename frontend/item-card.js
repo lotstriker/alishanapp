@@ -90,8 +90,8 @@ var ItemCard = (() => {
 
         closeSizeFocus();
         let selectedColor = null;
-        if (info.mode === 'different') selectedColor = info.tables[Number(colorIndex)];
-        const colorsTitle = info.mode === 'same' ? info.colorNames.join(' · ') : (selectedColor ? selectedColor.name : '');
+        if (info.mode === 'different') selectedColor = info.groups[Number(colorIndex)];      // a group = colours with the same sizes
+        const colorsTitle = info.mode === 'same' ? info.colorNames.join(' · ') : (selectedColor ? selectedColor.names.join(' · ') : '');
         const sizes = info.mode === 'same' ? info.sizes : (selectedColor ? selectedColor.sizes : []);
         const overlay = document.createElement('section');
         overlay.className = 'ic-size-focus';
@@ -101,10 +101,10 @@ var ItemCard = (() => {
         overlay.innerHTML = `
             <header class="ic-size-focus-head">
                 <div class="ic-size-focus-title">
-                    <span class="ic-size-focus-eyebrow">${info.mode === 'same' ? 'COLOURS' : 'COLOUR'}</span>
+                    <span class="ic-size-focus-eyebrow">${info.mode === 'same' || (selectedColor && selectedColor.names.length > 1) ? 'COLOURS' : 'COLOUR'}</span>
                     <div class="ic-size-focus-title-row">
                         <h2>${escapeHtml(colorsTitle || 'N/A')}</h2>
-                        ${selectedColor ? `<span class="ic-size-focus-total">${AlishanCalc.fmtDozens(selectedColor.totalDozens)} Dozen</span>` : ''}
+                        ${selectedColor ? `<span class="ic-size-focus-total">${selectedColor.names.length > 1 ? `${AlishanCalc.fmtDozens(selectedColor.eachDozens)} each · ` : ''}${AlishanCalc.fmtDozens(selectedColor.totalDozens)} Dozen</span>` : ''}
                     </div>
                 </div>
                 <button type="button" class="ic-size-focus-close" aria-label="Close size view"><i class="fas fa-times"></i><span>Close</span></button>
@@ -153,25 +153,37 @@ var ItemCard = (() => {
                 </div>`;
         }
         if (info.mode === 'different') {
-            // every colour: its coloured header + ONLY the sizes that were filled in
-            // (the same look as the same-colour card)
+            // one table per GROUP of colours with the same sizes: its coloured header + ONLY the sizes that were filled in
             return `
                 <div class="color-size-tables">
-                    ${info.tables.map(t => `
-                        <div class="color-size-table">
-                            <div class="color-header color-${t.name.toLowerCase()}">
+                    ${info.groups.map((g, i) => {
+                        const names = g.names.map(n => escapeHtml(n)).join(' · ');
+                        const many = g.names.length > 1;
+                        // Colours that share one table (same sizes): every colour is its own small card in ITS OWN colours
+                        // (colours.json, same look as the COLORS row above), on a neutral theme-aware header.
+                        // A colour that has a table of its own keeps the one-colour header (its colour as the header colour).
+                        const head = many ? `
+                            <div class="color-header color-group-header">
+                                <div class="cg-chips">${g.names.map(n => `<span class="color-tag cg-card color-${String(n).toLowerCase()}">${escapeHtml(n)}</span>`).join('')}</div>
+                                <span class="ic-color-header-label cg-summary">EACH ${AlishanCalc.fmtDozens(g.eachDozens)} · TOTAL ${AlishanCalc.fmtDozens(g.totalDozens)} DZ</span>
+                                <button type="button" class="ic-size-focus-trigger" data-ic-focus="color" data-color-index="${i}" aria-label="Open ${names} size view" title="Open in large view"><i class="fas fa-eye"></i><span>Large view</span></button>
+                            </div>` : `
+                            <div class="color-header color-${String(g.names[0]).toLowerCase()}">
                                 <i class="fas fa-circle" style="color: inherit;"></i>
-                                <span class="ic-color-header-label">${escapeHtml(t.name)} - TOTAL: ${AlishanCalc.fmtDozens(t.totalDozens)} DOZENS</span>
-                                <button type="button" class="ic-size-focus-trigger" data-ic-focus="color" data-color-index="${info.tables.indexOf(t)}" aria-label="Open ${escapeHtml(t.name)} size view" title="Open this colour in large view"><i class="fas fa-eye"></i><span>Large view</span></button>
-                            </div>
+                                <span class="ic-color-header-label">${names} - TOTAL: ${AlishanCalc.fmtDozens(g.totalDozens)} DOZENS</span>
+                                <button type="button" class="ic-size-focus-trigger" data-ic-focus="color" data-color-index="${i}" aria-label="Open ${names} size view" title="Open in large view"><i class="fas fa-eye"></i><span>Large view</span></button>
+                            </div>`;
+                        return `
+                        <div class="color-size-table">${head}
                             <div class="size-chart-simple">
-                                ${t.sizes.map(s => `
+                                ${g.sizes.map(s => `
                                     <div class="size-item-simple">
                                         <div class="size-label">Size ${s.size}</div>
                                         <div class="size-value">${escapeHtml(s.displayValue || s.value)}</div>
                                     </div>`).join('') || '<div class="ic-none">No sizes filled in</div>'}
                             </div>
-                        </div>`).join('')}
+                        </div>`;
+                    }).join('')}
                 </div>`;
         }
         return '';

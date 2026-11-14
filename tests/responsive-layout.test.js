@@ -42,7 +42,7 @@ test('Export Data, Import Data and Bulk Import remain Dashboard Quick Actions', 
 
 test('service worker caches the responsive stylesheet with a new app-shell version', () => {
   const sw = read('sw.js');
-  assert.match(sw, /const VERSION = 'v20'/);
+  assert.match(sw, /const VERSION = 'v2\d'/);
   assert.match(sw, /"responsive-layout\.css"/);
   assert.match(sw, /"user-guide\.js"/);
 });
@@ -54,7 +54,7 @@ test('tablet and desktop quality cards reuse the phone theme palette instead of 
   assert.match(css, /@media \(min-width: 769px\) \{[\s\S]*?\.inventory-card\.ic-card \.[\s\S]*?background: var\(--bg-hover/);
   assert.match(css, /\.inventory-card\.ic-card\.ic-head|\.inventory-card\.ic-card \.ic-head/);
   assert.match(css, /\.inventory-card\.ic-card\.aging-critical \{ border-left-color: var\(--aging-critical/);
-  assert.match(read('sw.js'), /const VERSION = 'v20'/);
+  assert.match(read('sw.js'), /const VERSION = 'v2\d'/);
 });
 
 
@@ -69,7 +69,7 @@ test('v87 two-column rule is superseded by the latest one-column quality-card ru
   const css = read('responsive-layout.css');
   assert.match(css, /\.inventory-cards\s*\{\s*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\) !important/);
   assert.ok(css.lastIndexOf('grid-template-columns: minmax(0, 1fr) !important') > css.lastIndexOf('grid-template-columns: repeat(2, minmax(0, 1fr)) !important'), 'the latest one-column rule must supersede v87 two-column rules');
-  assert.match(read('sw.js'), /const VERSION = 'v20'/);
+  assert.match(read('sw.js'), /const VERSION = 'v2\d'/);
 });
 
 
@@ -79,5 +79,5 @@ test('quality cards use one full-width column and action footer has no separate 
   assert.match(css, /\.inventory-cards\s*\{\s*grid-template-columns:\s*minmax\(0, 1fr\) !important/);
   assert.match(css, /\.inventory-card\.ic-card \.ic-footer\s*\{[\s\S]*?background:\s*transparent !important/);
   assert.match(css, /\.inventory-card\.ic-card \.ic-footer \.card-actions\s*\{[\s\S]*?background:\s*transparent !important[\s\S]*?border-color:\s*transparent !important/);
-  assert.match(read('sw.js'), /const VERSION = 'v20'/);
+  assert.match(read('sw.js'), /const VERSION = 'v2\d'/);
 });

@@ -291,6 +291,7 @@ var AlishanStore = (() => {
             'Quality': item.quality || '', 'Product Type': item.productType || '',
             'Cup': item.cupSize || '', 'Lot Number': item.lotNumber || '',
             'Maal Gaya': item.maalGaya || item.maalGayaTo || '',
+            'Price / Dozen (₹)': Number(item.price) > 0 ? item.price : '',
             'Material / Meter': item.material || '', 'Weight': item.weight || '',
             'Notes': item.notes || '', 'Status': item.inStock === false ? 'Complete' : 'Incomplete', 'Completion Date': item.completedAt ? C.fmtDate(item.completedAt) : '',   // Complete = out of stock (ALISHAN-CHG-2026-11-02-005)
             'Colours': (item.colors || []).map(c => typeof c === 'object' ? c.name : c).join(', ')
@@ -372,28 +373,29 @@ var AlishanStore = (() => {
         return built;
     }
 
+    // "Delete" moves the entry (with its payments) into the Archives — nothing is lost.
+    // It leaves the inventory, totals, reports and pending amounts at once; Settings -> Archives can restore it
+    // or delete it for good (archive.js). (v96)
     async function deleteItem(id) {
         const idx = items.findIndex(i => String(i.id) === String(id));
         if (idx < 0) return fail('Item not found');
         const backup = items.slice();
         const removed = items[idx];
+        const itsPayments = payments.filter(p => String(p.inventoryId) === String(removed.id));
+        const record = C.makeArchiveRecord(removed, itsPayments);
         items.splice(idx, 1);
         try {
-            await AlishanDB.deleteInventoryItem(removed.id);  // only this entry is removed
+            await AlishanDB.archiveInventoryItem(record);      // inventory + payments -> archive, ONE transaction
         } catch (err) {
-            console.error('Failed to save inventory:', err);
+            console.error('Failed to archive the entry:', err);
             items = backup;
             return fail('Could not save your changes! Please try again.');
         }
-        await writeQualityHistory(removed, 'Quality Deleted', qualitySnapshot(removed), null);
-        // its payments are kept (not shown) — they were never deleted from storage
-        const moved = payments.filter(p => String(p.inventoryId) === String(removed.id));
         payments = payments.filter(p => String(p.inventoryId) !== String(removed.id));
-        orphanPayments = orphanPayments.concat(moved);
-
-        logActivity('delete', `Deleted ${removed.quality} ${removed.productType} (${removed.code})`);
+        await writeQualityHistory(removed, 'Quality Deleted', qualitySnapshot(removed), null);
+        logActivity('delete', `Moved ${removed.quality} ${removed.productType} (${removed.code}) to Archives`);
         emit('delete');
-        return { ok: true, item: removed, message: 'Item deleted successfully' };
+        return { ok: true, item: removed, message: 'Moved to Archives. You can restore it from Settings → Archives.' };
     }
 
     // In Stock <-> Out of Stock (calc.js decides that out of stock leaves Aging)
@@ -414,7 +416,7 @@ var AlishanStore = (() => {
             return fail('Could not save your changes! Please try again.');
         }
         await writeQualityHistory(item, item.inStock ? 'Quality Marked Incomplete' : 'Quality Completed', beforeSnapshot, qualitySnapshot(item));
-        logActivity('stock', `${item.quality} ${item.productType} marked ${item.inStock ? 'In Stock' : 'Out of Stock'}`);
+        logActivity('stock', `${item.quality} ${item.productType} (${item.code}) marked ${item.inStock ? 'In Stock' : 'Out of Stock'}`);
         emit('stock');
         return { ok: true, item, message: `Item marked as ${item.inStock ? 'In Stock' : 'Out of Stock'}` };
     }
@@ -439,7 +441,7 @@ var AlishanStore = (() => {
             return fail('Could not save the completion date! Please try again.');
         }
         await writeQualityHistory(item, 'Quality Updated', beforeSnapshot, qualitySnapshot(item));
-        logActivity('edit', `${item.quality} ${item.productType} completion date set`);
+        logActivity('edit', `${item.quality} ${item.productType} (${item.code}) completion date set`);
         emit('stock');
         return { ok: true, item, message: 'Completion date saved' };
     }

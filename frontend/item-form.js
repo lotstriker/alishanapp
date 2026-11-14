@@ -223,6 +223,8 @@ var ItemForm = (() => {
         }
         if (displayEl) displayEl.style.display = 'block';
 
+        document.dispatchEvent(new CustomEvent('alishan:quality-selected', { detail: { prefix, name } }));   // the Edit window uses this to offer the new quality's price
+
         if (typeof showNotification === 'function') {
             showNotification(`Quality selected: ${name}`, 'success');
         }
@@ -303,6 +305,15 @@ var ItemForm = (() => {
         const categoriesEl = document.getElementById(ids.categories);
         if (!hiddenSelect) return;
 
+        // An entry saved with a quality that is not in qualities.json (renamed, removed, or under another product type)
+        // must still be editable: the hidden select gets that one name as an extra choice. Without it the select
+        // would be empty and the Update button would silently do nothing. (ALISHAN-CHG-2026-11-12-001)
+        if (name && !Array.from(hiddenSelect.options).some(o => o.value === name)) {
+            const extra = document.createElement('option');
+            extra.value = name;
+            extra.textContent = name;
+            hiddenSelect.appendChild(extra);
+        }
         hiddenSelect.value = name;
         if (categoriesEl) {
             categoriesEl.querySelectorAll('.quality-option.selected').forEach(opt => opt.classList.remove('selected'));
@@ -311,7 +322,7 @@ var ItemForm = (() => {
         }
         if (textEl) {
             const price = getQualityPrice(name);
-            textEl.textContent = name ? (price > 0 ? `${name} (₹${price} / dozen)` : `${name} (price not set in qualities.json)`) : '';
+            textEl.textContent = name ? (price > 0 ? `${name} (₹${price} / dozen)` : `${name} (not in qualities.json, or its price is not set)`) : '';
         }
         if (displayEl) displayEl.style.display = name ? 'block' : 'none';
     }
@@ -757,6 +768,7 @@ var ItemForm = (() => {
         selectQuality,
         filterQuality,
         setQualitySilently,
+        getQualityPrice,
         loadColors,
         getColorData,
         getColorStyle,

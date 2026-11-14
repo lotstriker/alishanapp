@@ -18,45 +18,7 @@ let itemsPerPage = 50;
 // the words in the search box (search.js is optional: without it nothing is searched)
 const currentSearch = () => (typeof AlishanSearch !== 'undefined' ? AlishanSearch.getTerm() : '');
 
-// ================= DIFFERENT SIZES: one card per colour =================
-
-function colorSizeCardHTML(colorName) {
-    const color = ItemForm.getColorStyleSafe(colorName);
-    const cells = ItemForm.SIZES.map(size => ItemForm.sizeCellHTML(size, {
-        dozenClass: `color-size-${size}`,
-        piecesClass: `color-size-${size}_pieces`,
-        color: colorName
-    })).join('');
-    return `
-        <div class="color-size-item" data-color="${escapeHtml(colorName)}">
-            <div class="color-size-header" style="background-color: ${color.backgroundColor}; color: ${color.textColor}; border-color: ${color.borderColor}">
-                <h4><i class="fas fa-palette"></i> ${escapeHtml(color.displayName)}</h4>
-                <button type="button" class="remove-color-btn" onclick="removeColorSizeItemByElement(this)">Remove</button>
-            </div>
-            <div class="size-grid">${cells}</div>
-        </div>`;
-}
-
-function isDifferentSizesMode() {
-    const diff = document.querySelector('input[name="sizeOption"][value="different"]');
-    return !!(diff && diff.checked);
-}
-
-// ONE colour picker does everything: in "different sizes" mode a size card appears for
-// every colour picked in the "Colors" box above (and goes when the colour is un-picked).
-function syncColorSizeCards() {
-    if (!isDifferentSizesMode()) return;
-    const chosen = ItemForm.getSelectedColors('');
-    ItemForm.syncColorCards(document.getElementById('colorSizeItems'), chosen, colorSizeCardHTML);
-    const hint = document.getElementById('colorSizeHint');
-    if (hint) hint.style.display = chosen.length ? 'none' : '';
-}
-
-// the card's Remove button un-picks the colour in the one colour picker
-function removeColorSizeItemByElement(button) {
-    const card = button.closest('.color-size-item');
-    if (card) ItemForm.removeColor(card.getAttribute('data-color'), '');
-}
+// Size quantities (same sizes / a colour with its own sizes) are handled by size-groups.js (SizeGroups).
 
 function resetQualitySelector() {
     const searchInput = document.getElementById('qualitySearch');
@@ -69,17 +31,6 @@ function resetQualitySelector() {
 
     document.querySelectorAll('.quality-option.selected').forEach(opt => opt.classList.remove('selected'));
     ItemForm.filterQuality('');
-}
-
-function toggleSizeOption() {
-    const same = document.querySelector('input[name="sizeOption"][value="same"]');
-    const sameBox = document.getElementById('sameSizesContainer');
-    const diffBox = document.getElementById('differentSizesContainer');
-    if (same && sameBox && diffBox) {
-        sameBox.style.display = same.checked ? 'block' : 'none';
-        diffBox.style.display = same.checked ? 'none' : 'block';
-    }
-    syncColorSizeCards();      // different sizes: one card per colour picked above
 }
 
 // ================= ENTRY DATE (new entry / old entry) — form only =================
@@ -182,12 +133,6 @@ function readSizeBoxes(getDozen, getPieces) {
 async function addInventoryItem(e) {
     e.preventDefault();
 
-    const sizeOption = document.querySelector('input[name="sizeOption"]:checked');
-    if (!sizeOption) {
-        showNotification('Please select a size option', 'error');
-        return;
-    }
-
     const input = {
         productType: document.getElementById('productType').value,
         cupSize: document.getElementById('cupSize').value,
@@ -195,28 +140,12 @@ async function addInventoryItem(e) {
         material: document.getElementById('material').value,
         weight: document.getElementById('weight').value,
         notes: document.getElementById('notes').value,
-        sizeOption: sizeOption.value,
         entry: isOldEntryMode()
             ? { mode: 'old', date: document.getElementById('entryDate').value, time: document.getElementById('entryTime').value }
             : { mode: 'now' }
     };
 
-    if (sizeOption.value === 'same') {
-        input.colors = ItemForm.getSelectedColors('');
-        input.sizes = readSizeBoxes(
-            size => document.getElementById(`size${size}`),
-            size => document.getElementById(`size${size}_pieces`)
-        );
-    } else {
-        const colorSizeItems = document.getElementById('colorSizeItems');
-        input.colorSizes = Array.from(colorSizeItems ? colorSizeItems.getElementsByClassName('color-size-item') : []).map(card => ({
-            name: card.getAttribute('data-color'),
-            sizes: readSizeBoxes(
-                size => card.querySelector(`.color-size-${size}`),
-                size => card.querySelector(`.color-size-${size}_pieces`)
-            )
-        }));
-    }
+    Object.assign(input, SizeGroups.read(''));      // sizeOption + colours + sizes (one group = same sizes, several groups = per-colour sizes)
 
     const result = await AlishanStore.addItem(input);
     if (!result.ok) {
@@ -226,14 +155,10 @@ async function addInventoryItem(e) {
 
     // reset the form (the list redraws itself: the page listens to the store)
     document.getElementById('productForm').reset();
-    const sameSizesOption = document.querySelector('input[name="sizeOption"][value="same"]');
-    if (sameSizesOption) sameSizesOption.checked = true;
-    toggleSizeOption();
     initManualDateTime();
     ItemForm.resetColorSelector('');
+    SizeGroups.reset('');
     resetQualitySelector();
-    const colorSizeItems = document.getElementById('colorSizeItems');
-    if (colorSizeItems) colorSizeItems.innerHTML = '';
 
     showNotification(result.message, 'success');
 }
@@ -858,7 +783,7 @@ async function initApp() {
     // makes sure every file is there (re-requests a file that did not load); search + loader are optional
     if (typeof AlishanRequire === 'function' && !(await AlishanRequire({
         AlishanDB: 'db.js', AlishanCalc: 'calc.js', AlishanStore: 'store.js',
-        ItemForm: 'item-form.js', ItemCard: 'item-card.js', ItemModal: 'item-modal.js'
+        ItemForm: 'item-form.js', SizeGroups: 'size-groups.js', ItemCard: 'item-card.js', ItemModal: 'item-modal.js'
     }, { AlishanSearch: 'search.js', AlishanLoader: 'loader.js' }))) return;
     const info = await AlishanStore.init();            // loads qualities, colours, inventory, payments
     if (info.referenceError) showNotification(info.referenceError, 'error');
@@ -867,7 +792,6 @@ async function initApp() {
     ItemModal.inject();                                 // the shared Edit modal
     await ItemForm.loadColors();                        // draws the colour dropdowns
     ItemForm.initColorSelectors(['', 'edit']);
-    ItemForm.onColorsChange('', syncColorSizeCards);      // size cards follow the one colour picker
 
     const productType = document.getElementById('productType');
     if (productType) {
@@ -882,12 +806,8 @@ async function initApp() {
     if (productForm) productForm.addEventListener('submit', addInventoryItem);
 
     initManualDateTime();
-    ItemForm.renderSizeGrid('sameSizesContainer', '');
-    const sizeOptions = document.querySelectorAll('input[name="sizeOption"]');
-    sizeOptions.forEach(option => option.addEventListener('change', toggleSizeOption));
-    const sameSizesOption = document.querySelector('input[name="sizeOption"][value="same"]');
-    if (sameSizesOption) sameSizesOption.checked = true;
-    toggleSizeOption();
+    SizeGroups.init('');                                // the size groups follow the one colour picker
+    if (productForm) productForm.addEventListener('reset', () => setTimeout(() => { ItemForm.resetColorSelector(''); SizeGroups.reset(''); }, 0));
 
     if (typeof AlishanSearch !== 'undefined' && document.getElementById('alishan-search')) AlishanSearch.init({ onSearch, enableAdvanced: false });   // Home: search bar only; filters/sort stay on Inventory
 

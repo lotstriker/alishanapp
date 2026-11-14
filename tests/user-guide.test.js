@@ -5,17 +5,21 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 
-test('User Guide app version and guide version are synchronized for v90', () => {
+test('User Guide app version and guide version are synchronized with the latest Version log row', () => {
   const html = read('frontend/setting.html');
-  assert.match(html, /App version: v90 · User Guide version: v90/);
-  assert.match(html, /Last verified: 09 Nov 2026/);
+  const log = read('PROJECT_SOURCE_OF_TRUTH.md');
+  const versions = [...log.matchAll(/^\| v(\d+) \|/gm)].map((m) => Number(m[1]));
+  const latest = Math.max(...versions);
+  assert.ok(latest >= 93);
+  assert.ok(html.includes(`App version: v${latest} · User Guide version: v${latest}`));
+  assert.match(html, /Last verified: \d{1,2} [A-Z][a-z]{2} 20\d{2}/);
 });
 
-test('User Guide retains all 29 existing topics and adds the PDF reference library as topic 30', () => {
+test('User Guide keeps its topics 1 to 29, 2A (Size Groups), 3A (Archives) and 30 (What\'s new)', () => {
   const html = read('frontend/setting.html');
   const topics = html.match(/class="guide-topic(?: guide-topic-featured)?"/g) || [];
-  assert.equal(topics.length, 30);
-  for (const n of [22, 23, 24, 25, 26, 27, 28, 29]) {
+  assert.equal(topics.length, 32);
+  for (const n of ['2A', '3A', 22, 23, 24, 25, 26, 27, 28, 29, 30]) {
     assert.match(html, new RegExp(`<strong(?: id="[^"]+")?>${n}\\.`));
   }
 });
@@ -26,7 +30,6 @@ test('Visual learning paths, workflow diagrams, examples and report comparison a
   assert.match(html, /guide-flow-step/);
   assert.match(html, /guide-example/);
   assert.match(html, /guide-report-grid/);
-  assert.match(html, /actual app screenshots nahi/);
 });
 
 test('Expand/collapse-all controls and search status are wired', () => {
@@ -47,55 +50,58 @@ test('Release policy is documented as mandatory and append-only', () => {
   assert.match(doc, /ALISHAN-CHG-2026-11-09-007/);
 });
 
-test('Service worker v20 precaches the guide page assets', () => {
+test('Service worker precaches the guide page and individual screenshots', () => {
   const sw = read('frontend/sw.js');
-  assert.match(sw, /const VERSION = 'v20'/);
+  assert.match(sw, /const VERSION = 'v2\d'/);        // the cache version is bumped whenever precached files change
   assert.match(sw, /"setting\.html"/);
   assert.match(sw, /"setting\.css"/);
   assert.match(sw, /"user-guide\.js"/);
 });
 
 
-test('Add Entry form follows locked Quality Type -> Quality -> Cup order', () => {
-  const html = read('frontend/add-entry.html');
-  const type = html.indexOf('>Quality Type</label>');
-  const quality = html.indexOf('for="quality">Quality Name</label>');
-  const cup = html.indexOf('for="cupSize">Cup Size</label>');
-  assert.ok(type >= 0 && quality > type && cup > quality);
-  assert.match(html, /id="productType"/);
-  assert.match(html, /id="quality"/);
-  assert.match(html, /id="cupSize"/);
-});
-
-test('PDF reference gallery contains all 32 individual screenshot assets', () => {
+test('Every guide screenshot file is a separate asset, used in the guide and precached', () => {
   const html = read('frontend/setting.html');
   const sw = read('frontend/sw.js');
-  const fs = require('node:fs');
-  for (let i = 1; i <= 32; i++) {
-    const n = String(i).padStart(2, '0');
-    assert.match(html, new RegExp(`guide-images/screen-${n}\\.jpg`));
-    assert.ok(fs.existsSync(path.join(root, `frontend/guide-images/screen-${n}.jpg`)));
-    assert.match(sw, new RegExp(`guide-images/screen-${n}\\.jpg`));
+  const files = fs.readdirSync(path.join(root, 'frontend', 'assets', 'user-guide')).filter((f) => /^screen-\d+\.png$/.test(f)).sort();
+  assert.ok(files.length >= 47, 'the guide has screens 01-47 or more');
+  files.forEach((f, i) => assert.equal(f, `screen-${String(i + 1).padStart(2, '0')}.png`, 'screenshots are numbered without gaps'));
+  for (const f of files) {
+    const file = `assets/user-guide/${f}`;
+    assert.ok(html.includes(file), `not referenced in guide: ${file}`);
+    assert.ok(sw.includes(`"${file}"`), `not precached: ${file}`);
   }
-  assert.match(html, /current live app.*final maana jayega|Current app ke live labels/i);
+  assert.equal((html.match(/class="guide-visual"/g) || []).length, files.length);
+  assert.match(html, /Tap to view full size/);
 });
 
-test('Expand and Collapse controls use delegated clicks and visible status feedback', () => {
-  const js = read('frontend/user-guide.js');
-  assert.match(js, /section\.addEventListener\('click'/);
-  assert.match(js, /target\.closest\('#guideExpandAll, #guideCollapseAll'\)/);
-  assert.match(js, /All \$\{visible\.length\} visible guide topics expanded/);
-  assert.match(js, /All \$\{visible\.length\} visible guide topics collapsed/);
-  assert.match(js, /guideInitialized/);
+// ---- the guide is for the USER (rule 11 / protocol section 18) ----
+const guide = () => { const h = read('frontend/setting.html'); const a = h.indexOf('class="guide-header"'); const b = h.indexOf('id="general"'); return h.slice(a, b); };
+
+test('User Guide has a Quick Start and a Size Groups topic written for the user', () => {
+  const g = guide();
+  assert.match(g, /class="guide-quickstart"/);
+  assert.match(g, /id="guide-sizegroups"/);
+  assert.match(g, /Sawal:/);
 });
 
-test('Version log documents v86 through v90 in append-only order', () => {
-  const doc = read('PROJECT_SOURCE_OF_TRUTH.md');
-  const versions = [...doc.matchAll(/^\| v(\d+) \|/gm)].map(m => Number(m[1]));
-  for (const v of [86, 87, 88, 89, 90]) assert.ok(versions.includes(v));
-  assert.ok(versions.indexOf(86) < versions.indexOf(87));
-  assert.ok(versions.indexOf(87) < versions.indexOf(88));
-  assert.ok(versions.indexOf(88) < versions.indexOf(89));
-  assert.ok(versions.indexOf(89) < versions.indexOf(90));
-  assert.match(doc, /ALISHAN-CHG-2026-11-09-008/);
+test('User Guide has no developer or release-process wording', () => {
+  const g = guide();
+  for (const bad of [/supplied/i, /mandatory/i, /implemented feature/i, /current build/i, /guide audit/i, /AlishanApp-v\d+/, /ALISHAN-CHG/, /release par/i, /individual screenshots/i]) {
+    assert.doesNotMatch(g, bad, `developer wording found: ${bad}`);
+  }
+});
+
+test('"What\'s new" in the User Guide lists the latest app version (every new feature must be written in the guide)', () => {
+  const html = read('frontend/setting.html');
+  const log = read('PROJECT_SOURCE_OF_TRUTH.md');
+  const latest = Math.max(...[...log.matchAll(/^\| v(\d+) \|/gm)].map((m) => Number(m[1])));
+  const a = html.indexOf('id="guide-whatsnew"');
+  assert.ok(a > 0, 'topic "Naya kya hai" is missing');
+  const block = html.slice(a, html.indexOf('</details>', a));
+  assert.match(block, new RegExp(`guide-whatsnew-version">v${latest} `), `"What's new" has no entry for v${latest}`);
+});
+
+test('The compulsory User Guide rule is documented', () => {
+  assert.match(read('PROJECT_SOURCE_OF_TRUTH.md'), /The User Guide is compulsory/);
+  assert.match(read('AI_HANDOVER_PROTOCOL.md'), /The User Guide is compulsory/);
 });

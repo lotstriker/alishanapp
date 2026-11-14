@@ -47,6 +47,7 @@ class CompleteSettingsManager {
             { id: 'deep-teal', name: 'Deep Teal' },
             { id: 'arctic-teal', name: 'Arctic Teal' },
             { id: 'red-inferno', name: 'Red Inferno' },
+            { id: 'rose-wine', name: 'Rose Wine' },
             { id: 'royal-teal', name: 'Royal Teal' },
             { id: 'github-dark', name: 'GitHub Dark' },
             { id: 'material-dark', name: 'Material Dark' },

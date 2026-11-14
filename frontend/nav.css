@@ -1,37 +1,48 @@
 /* ============================================================
    nav.css — SINGLE shared site-wide navigation system.
-   Used by index.html, inventory.html, reports.html, setting.html.
-   Colors are hardcoded here (not var(--primary) etc.) on purpose:
-   each page currently defines DIFFERENT --primary/--secondary
-   values, so relying on them made the navbar look slightly
-   different per page. Hardcoding guarantees one identical look
-   everywhere, per the "one shared navbar" rule.
+   Used by every page (the top bar is the same everywhere).
 
-   Style: dark "docked folder tab" bar (v.2 reference). Tabs sit
-   low inside the bar by default; on hover/active they grow taller
-   from the top so they visibly pop up out of the row, bottom
-   always pinned to the bar's baseline. The active tab's background
-   is the current PAGE's own background color, so it reads as
-   fusing straight into the page beneath it.
+   v93 header: a colour gradient bar with a thin accent stripe on top, the ALISHAN hanger-A logo and a bold wordmark.
+   The colours come from the chosen THEME (see "HEADER COLOURS PER THEME" at the end of this file): every theme has its
+   own bar gradient, text colour, accent and logo ink. A test (tests/header-theme.test.js) checks that text, accent and
+   background are never too close to each other. The logo/wordmark font is "Alishan Sans" (Inter, bundled in fonts/).
+
+   Style: "docked folder tab" bar. Tabs sit low inside the bar by default; on hover/active they grow taller from the
+   top so they pop up out of the row, bottom pinned to the bar's baseline. The active tab's background is the current
+   PAGE's own background colour, so it reads as fusing straight into the page beneath it.
    ============================================================ */
 
+@font-face { font-family: 'Alishan Sans'; font-weight: 600; font-style: normal; font-display: swap; src: url('fonts/inter-600.woff') format('woff'); }
+@font-face { font-family: 'Alishan Sans'; font-weight: 700; font-style: normal; font-display: swap; src: url('fonts/inter-700.woff') format('woff'); }
+@font-face { font-family: 'Alishan Sans'; font-weight: 800; font-style: normal; font-display: swap; src: url('fonts/inter-800.woff') format('woff'); }
+
 :root {
-    --nav-bg: #121214;
-    --nav-tab-active-bg: #1e1e24;
-    --nav-text-dim: rgba(255, 255, 255, 0.55);
+    /* default palette (= Light Default theme); every theme overrides these at the end of this file */
+    --nav-bg-a: #1f2470;
+    --nav-bg-b: #2f3fb8;
+    --nav-bg: #1f2470;
+    --nav-menu-bg: #181c58;
     --nav-text: #ffffff;
-    --nav-accent: #6c8cff;
+    --nav-text-dim: rgba(255, 255, 255, 0.78);
+    --nav-accent: #ffd166;
+    --nav-ink: #1b1640;
+    --nav-tab-active-bg: #181c58;
     --nav-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --nav-font: 'Alishan Sans', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
 .site-topbar {
     background: var(--nav-bg);
+    background-image: linear-gradient(100deg, var(--nav-bg-a) 0%, var(--nav-bg-b) 100%);
     color: var(--nav-text);
+    border-top: 3px solid var(--nav-accent);
     position: sticky;
     top: 0;
     z-index: 1000;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.32);
 }
+
+.site-topbar, .site-topbar *:not(i) { font-family: var(--nav-font); }   /* the header uses its own font everywhere, icons keep their icon font */
 
 .site-topbar-inner {
     max-width: 1400px;
@@ -48,24 +59,41 @@
 .site-topbar .logo {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-weight: 700;
-    font-size: 1.05rem;
+    gap: 0.65rem;
     color: var(--nav-text);
     text-decoration: none;
     white-space: nowrap;
-    padding-bottom: 0.6rem;
-    opacity: 0.95;
-    transition: opacity 0.18s ease;
+    padding-bottom: 0.5rem;
+    transition: transform 0.18s ease, opacity 0.18s ease;
 }
 
-.site-topbar a.logo:hover {
-    opacity: 1;
+.site-topbar a.logo:hover { transform: translateY(-1px); }
+
+.site-topbar .logo-mark {
+    width: 34px;
+    height: 34px;
+    flex: none;
+    display: block;
+    border-radius: 9px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.14);
 }
 
-.site-topbar .logo i {
-    font-size: 1.15rem;
+.site-topbar .logo-text { display: flex; flex-direction: column; line-height: 1; gap: 5px; }
+/* the ALISHAN lettering of the brand logo, drawn as a mask so it takes the text colour of the theme */
+.site-topbar .logo-wordmark {
+    display: block;
+    height: 21px;
+    aspect-ratio: 640 / 158;
+    background-color: var(--nav-text);
+    -webkit-mask: url('icons/wordmark.png') left center / contain no-repeat;
+    mask: url('icons/wordmark.png') left center / contain no-repeat;
+}
+.site-topbar .logo-text small {
+    font-weight: 600;
+    font-size: 0.5rem;
+    letter-spacing: 0.2em;
     color: var(--nav-accent);
+    white-space: nowrap;
 }
 
 /* ===== Right-side cluster: tabs + optional utility actions + hamburger ===== */
@@ -153,7 +181,7 @@
    icon picks up the accent color as a small branded touch. */
 .site-nav-links a.active {
     padding-top: calc(0.5rem + 8px);
-    color: var(--nav-active-text, #17171b);
+    color: var(--nav-active-text, var(--text-primary, #17171b));
     background-color: var(--page-bg, var(--nav-tab-active-bg));
     z-index: 2;
 }
@@ -190,7 +218,7 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    background: var(--nav-tab-active-bg);
+    background: var(--nav-menu-bg);
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.25s ease;
@@ -231,13 +259,22 @@
         min-height: 40px;
     }
 
-    .logo {
+    .site-topbar .logo {
         padding-bottom: 0 !important;
-        font-size: 0.95rem !important;
+        gap: 0.5rem;
     }
 
-    .logo i {
-        font-size: 1.05rem !important;
+    .site-topbar .logo-mark {
+        width: 30px;
+        height: 30px;
+    }
+
+    .site-topbar .logo-wordmark {
+        height: 18px;
+    }
+
+    .site-topbar .logo-text small {
+        font-size: 0.44rem;
     }
 
     .site-nav-links {
@@ -257,4 +294,106 @@
     .site-mobile-nav {
         display: block;
     }
+}
+
+/* ===== HEADER COLOURS PER THEME (v93) — bar gradient a→b, text, accent (logo, stripe, tagline) and logo ink ===== */
+.theme-light-default .site-topbar {
+    --nav-bg-a: #1f2470; --nav-bg-b: #2f3fb8; --nav-bg: #1f2470; --nav-menu-bg: #222d84;
+    --nav-text: #ffffff; --nav-text-dim: rgba(255, 255, 255, 0.78);
+    --nav-accent: #ffd166; --nav-ink: #1b1640; --nav-tab-active-bg: #222d84;
+}
+.theme-light-warm .site-topbar {
+    --nav-bg-a: #5a1c0c; --nav-bg-b: #84400a; --nav-bg: #5a1c0c; --nav-menu-bg: #5f2e07;
+    --nav-text: #fff7ed; --nav-text-dim: rgba(255, 247, 237, 0.78);
+    --nav-accent: #fcd34d; --nav-ink: #3b1707; --nav-tab-active-bg: #5f2e07;
+}
+.theme-dark-deep .site-topbar {
+    --nav-bg-a: #0d0d12; --nav-bg-b: #23233a; --nav-bg: #0d0d12; --nav-menu-bg: #19192a;
+    --nav-text: #ffffff; --nav-text-dim: rgba(255, 255, 255, 0.78);
+    --nav-accent: #8b9cff; --nav-ink: #0d0d12; --nav-tab-active-bg: #19192a;
+}
+.theme-dark-blue .site-topbar {
+    --nav-bg-a: #0a2342; --nav-bg-b: #12508f; --nav-bg: #0a2342; --nav-menu-bg: #0d3a67;
+    --nav-text: #ffffff; --nav-text-dim: rgba(255, 255, 255, 0.78);
+    --nav-accent: #5ec8ff; --nav-ink: #061a30; --nav-tab-active-bg: #0d3a67;
+}
+.theme-gold .site-topbar {
+    --nav-bg-a: #1c1503; --nav-bg-b: #4a3606; --nav-bg: #1c1503; --nav-menu-bg: #352704;
+    --nav-text: #fff4cc; --nav-text-dim: rgba(255, 244, 204, 0.78);
+    --nav-accent: #ffd700; --nav-ink: #1c1503; --nav-tab-active-bg: #352704;
+}
+.theme-purple .site-topbar {
+    --nav-bg-a: #3b0764; --nav-bg-b: #6d28d9; --nav-bg: #3b0764; --nav-menu-bg: #4e1d9c;
+    --nav-text: #ffffff; --nav-text-dim: rgba(255, 255, 255, 0.78);
+    --nav-accent: #f0abfc; --nav-ink: #2a0548; --nav-tab-active-bg: #4e1d9c;
+}
+.theme-mint .site-topbar {
+    --nav-bg-a: #043d2f; --nav-bg-b: #0a5f55; --nav-bg: #043d2f; --nav-menu-bg: #07443d;
+    --nav-text: #ecfdf5; --nav-text-dim: rgba(236, 253, 245, 0.78);
+    --nav-accent: #5eead4; --nav-ink: #04362a; --nav-tab-active-bg: #07443d;
+}
+.theme-midnight-slate .site-topbar {
+    --nav-bg-a: #101c2b; --nav-bg-b: #223e58; --nav-bg: #101c2b; --nav-menu-bg: #182d3f;
+    --nav-text: #eef4fa; --nav-text-dim: rgba(238, 244, 250, 0.78);
+    --nav-accent: #91AFC8; --nav-ink: #0c1621; --nav-tab-active-bg: #182d3f;
+}
+.theme-forest-night .site-topbar {
+    --nav-bg-a: #0c2018; --nav-bg-b: #1d4a38; --nav-bg: #0c2018; --nav-menu-bg: #153528;
+    --nav-text: #ecf7f0; --nav-text-dim: rgba(236, 247, 240, 0.78);
+    --nav-accent: #8DB6A2; --nav-ink: #08150f; --nav-tab-active-bg: #153528;
+}
+.theme-carbon-flame .site-topbar {
+    --nav-bg-a: #0f0f10; --nav-bg-b: #2b1b14; --nav-bg: #0f0f10; --nav-menu-bg: #1f130e;
+    --nav-text: #ffffff; --nav-text-dim: rgba(255, 255, 255, 0.78);
+    --nav-accent: #FF4D00; --nav-ink: #0f0f10; --nav-tab-active-bg: #1f130e;
+}
+.theme-ash-orange .site-topbar {
+    --nav-bg-a: #1d1917; --nav-bg-b: #46322b; --nav-bg: #1d1917; --nav-menu-bg: #32241f;
+    --nav-text: #fff4ee; --nav-text-dim: rgba(255, 244, 238, 0.78);
+    --nav-accent: #FB5102; --nav-ink: #1d1917; --nav-tab-active-bg: #32241f;
+}
+.theme-ember-forge .site-topbar {
+    --nav-bg-a: #2b1204; --nav-bg-b: #7a2e0a; --nav-bg: #2b1204; --nav-menu-bg: #582107;
+    --nav-text: #fff6e0; --nav-text-dim: rgba(255, 246, 224, 0.78);
+    --nav-accent: #FBB715; --nav-ink: #2b1204; --nav-tab-active-bg: #582107;
+}
+.theme-deep-teal .site-topbar {
+    --nav-bg-a: #052b2e; --nav-bg-b: #0c4d52; --nav-bg: #052b2e; --nav-menu-bg: #09373b;
+    --nav-text: #f0fbfa; --nav-text-dim: rgba(240, 251, 250, 0.78);
+    --nav-accent: #E99320; --nav-ink: #052b2e; --nav-tab-active-bg: #09373b;
+}
+.theme-arctic-teal .site-topbar {
+    --nav-bg-a: #052630; --nav-bg-b: #0a4f59; --nav-bg: #052630; --nav-menu-bg: #073940;
+    --nav-text: #f0fcfd; --nav-text-dim: rgba(240, 252, 253, 0.78);
+    --nav-accent: #FC931F; --nav-ink: #062c35; --nav-tab-active-bg: #073940;
+}
+.theme-red-inferno .site-topbar {
+    --nav-bg-a: #2a0509; --nav-bg-b: #7f1d27; --nav-bg: #2a0509; --nav-menu-bg: #5b151c;
+    --nav-text: #fff1f2; --nav-text-dim: rgba(255, 241, 242, 0.78);
+    --nav-accent: #FF6B78; --nav-ink: #2a0509; --nav-tab-active-bg: #5b151c;
+}
+.theme-royal-teal .site-topbar {
+    --nav-bg-a: #072729; --nav-bg-b: #174a4d; --nav-bg: #072729; --nav-menu-bg: #113537;
+    --nav-text: #f2fbfb; --nav-text-dim: rgba(242, 251, 251, 0.78);
+    --nav-accent: #E4D329; --nav-ink: #082c2e; --nav-tab-active-bg: #113537;
+}
+.theme-github-dark .site-topbar {
+    --nav-bg-a: #0d1117; --nav-bg-b: #1c2330; --nav-bg: #0d1117; --nav-menu-bg: #141923;
+    --nav-text: #f0f6fc; --nav-text-dim: rgba(240, 246, 252, 0.78);
+    --nav-accent: #4493F8; --nav-ink: #0d1117; --nav-tab-active-bg: #141923;
+}
+.theme-material-dark .site-topbar {
+    --nav-bg-a: #112527; --nav-bg-b: #244245; --nav-bg: #112527; --nav-menu-bg: #1a3032;
+    --nav-text: #effafa; --nav-text-dim: rgba(239, 250, 250, 0.78);
+    --nav-accent: #80CBC4; --nav-ink: #0c1b1d; --nav-tab-active-bg: #1a3032;
+}
+.theme-teal-finance .site-topbar {
+    --nav-bg-a: #0a2c2c; --nav-bg-b: #15524f; --nav-bg: #0a2c2c; --nav-menu-bg: #0f3b39;
+    --nav-text: #f0fbfb; --nav-text-dim: rgba(240, 251, 251, 0.78);
+    --nav-accent: #6fd6d6; --nav-ink: #082222; --nav-tab-active-bg: #0f3b39;
+}
+.theme-rose-wine .site-topbar {
+    --nav-bg-a: #3a0f1d; --nav-bg-b: #6e1f36; --nav-bg: #3a0f1d; --nav-menu-bg: #4f1627;
+    --nav-text: #fff1ec; --nav-text-dim: rgba(255, 241, 236, 0.78);
+    --nav-accent: #e8b4a0; --nav-ink: #2a0a14; --nav-tab-active-bg: #4f1627;
 }
