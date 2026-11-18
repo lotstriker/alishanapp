@@ -22,10 +22,10 @@
 ## Verification
 - npm run build: passed, 24 scripts / 250 async functions.
 - npm test: 82/82 passed (64 original tests, 12 earlier backend tests, six new SQL/projection/cache/rollback/routing tests).
-- New tests use real PGlite SQL execution, including batched insert/delete, mid-write failure rollback, typed record keys, cache revision changes through a second repository, snapshot mutation isolation, projected settings, lock-free reader routing, database-free calculations and omitted large arguments.
+- New tests use real PGlite SQL execution, including batched insert/delete, mid-write failure rollback, cache revision changes through a second repository, snapshot mutation isolation, projected settings, lock-free reader routing, database-free calculations and omitted large arguments.
 - Actual uploaded ZIP restored to an isolated PGlite database: 390 imported, zero skipped, 409 payments; 21 total SQL calls including transaction scaffolding, about 748 ms locally. A projected summary used one SQL call, about 98 ms locally; total value 1088862.5, pending 15055. These are local measurements, not hosted/device guarantees.
 - Live v97 baseline summary checks: HTTP 200, 390 items, value 1088862.5; 12.034 / 10.502 / 9.804 seconds end to end.
-- Nine simulated JSDOM sample-data pages passed; these do not establish real browser rendering. Actual-data Reports initially exposed a ~69 MB batch (HTTP 413); shared-argument packing and bounded queues correct it. Reports recheck passed; full actual-data page rerun is in progress. Live v98 first-deploy summary checks returned unchanged 390 items/value: 8.200 / 7.202 / 7.806 seconds end to end; application Server-Timing 442.6 / 393.0 / 421.3 ms. Final shared-argument transport deployment pending.
+- Nine simulated JSDOM sample-data pages passed; these do not establish real browser rendering. Actual-data Reports initially exposed a ~69 MB batch (HTTP 413); shared-argument packing and bounded queues correct it. All eight actual-data pages passed simulated JSDOM checks: Home, Inventory + Edit, eight report routes/detail, Settings, Pending Amount, Missing Lot, Missing Completion, Quality History. Largest Reports request was 534137 characters after packing versus roughly 69 MB before. Chart drawing was mocked; this is not real-browser/device acceptance. Live v98 first-deploy summary checks returned unchanged 390 items/value: 8.200 / 7.202 / 7.806 seconds end to end; application Server-Timing 442.6 / 393.0 / 421.3 ms. Final shared-argument/card transport deployed live: commit 04db0f0d4d7e2d8e3f970366a2d71535d11d6697, Render deploy dep-dbut02qfngtc73dpah10 (live). Final summary: 11.233 / 8.104 / 8.392 seconds end to end, with application durations 1652.2 / 404.6 / 533.4 ms; first request was after deployment. A packed pure-calculation batch returned HTTP 200, fixture amount 20, application duration 3.1 ms. One combined payment-read check returned HTTP 502 without a matching application error log; an identical read-only retry passed HTTP 200, both calculation fixtures matched and all 409 payment records were returned (application duration 202.1 ms). The isolated 502 is retained here as a known network/service observation, not hidden. Do not interpret application-only timings as full page-load speed.
 - Browser/runtime testing: local API/SQL tests plus live HTTP checks; no real-browser or physical-phone visual pass claimed.
 - Mobile/desktop testing: layout unchanged; new guide text/footer not visually checked at 390/360/320 px. Existing real-device acceptance remains PENDING.
 
@@ -35,9 +35,11 @@
 - Guide topics changed: 30 (new v98 instructions) and synchronized footer; existing topics/layout retained.
 
 ## Final status
-- IMPLEMENTED — NOT VERIFIED: final hosted comparison and artifact delivery in progress.
-- Remaining: finish live verification; publish source/archive. Separate PENDING: full real-browser/device workflows, all export formats and visual acceptance from the earlier migration tracker.
+- COMPLETED for backend optimization/API scope; real-browser/device acceptance remains PENDING separately.
+- Final database check: 390 inventory entries, 409 payments, 34 quality-history and 106 activity rows; payment sum 1151288.5 unchanged. No user backup or secret was published in source/archive.
+- Separate PENDING: full real-browser/device workflows, all export formats and visual acceptance from the earlier migration tracker.
 - Known limits: Free hosting cold starts and network latency remain. Snapshot caches are per process and revalidate the committed database revision on each data read. During a write, readers see the last committed state; after commit their next server read sees the new revision.
 
 ## Delivered files
-- Intended archive: AlishanApp-v98-Backend-Performance.zip, root alishanapp-main/. Final existence and delivery recorded after packaging.
+- Archive: AlishanApp-v98-Backend-Performance.zip, root alishanapp-main/. Contains original sources, generated client, tests, setup instructions, Source of Truth and this handover; excludes node_modules, Git metadata, environment secrets and uploaded user data. ZIP is validated before delivery.
+- Published source: https://github.com/lotstriker/alishanapp ; live app: https://alishanapp-server.onrender.com .
