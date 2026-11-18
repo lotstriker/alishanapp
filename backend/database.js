@@ -51,8 +51,32 @@ function createDatabase(state) {
   return db;
 }
 class PostgresRepository {
-  constructor(pool,workspace='alishan'){this.pool=pool;this.workspace=workspace;}
+  constructor(pool,workspace='alishan'){this.pool=pool;this.workspace=workspace;this.readCache=new Map();}
   async ready(){await this.pool.query('SELECT 1 FROM alishan_private.workspaces LIMIT 1');}
+  // One MVCC statement: readers never take the workspace write lock. Revision and
+  // projected records come from the same committed snapshot, even during a restore.
+  async read(fn,selection={stores,settings:null}){
+    const cacheKey=JSON.stringify(selection),cached=this.readCache.get(cacheKey);
+    const result=await this.pool.query(`SELECT w.revision,
+      CASE WHEN w.revision=$2::bigint THEN NULL ELSE COALESCE((
+        SELECT jsonb_agg(jsonb_build_object('store',r.store,'payload',r.payload))
+        FROM alishan_private.records r WHERE r.workspace_id=w.id
+        AND r.store=ANY($3::text[]) AND (r.store<>'settings' OR $4::text[] IS NULL OR r.payload->>'key'=ANY($4::text[]))
+      ),'[]'::jsonb) END AS records
+      FROM alishan_private.workspaces w WHERE w.id=$1`,
+      [this.workspace,cached?.revision??-1,selection.stores,selection.settings]);
+    const row=result.rows[0];let state;
+    if(!row)state=blank();
+    else if(row.records===null&&cached)state=cached.state;
+    else{state=blank();for(const r of row.records||[])state[r.store].push(r.payload);
+      // Do not replace a newer cached snapshot if an older concurrent read finishes later.
+      if(!cached||Number(row.revision)>=Number(cached.revision)){
+        if(this.readCache.size>=32)this.readCache.clear();
+        this.readCache.set(cacheKey,{revision:row.revision,state});
+      }
+    }
+    return fn(structuredClone(state),Number(row?.revision||0));
+  }
   async transaction(fn){
     const client=await this.pool.connect();
     try{
@@ -68,11 +92,18 @@ class PostgresRepository {
       let changed=false;
       for(const s of stores){
         const old=new Map(before[s].map(r=>[keyText(keyOf(s,r)),JSON.stringify(r)]));
-        for(const row of state[s]){const key=keyText(keyOf(s,row)),json=JSON.stringify(row);if(old.get(key)!==json){await client.query('INSERT INTO alishan_private.records(workspace_id,store,record_key,payload) VALUES($1,$2,$3,$4::jsonb) ON CONFLICT(workspace_id,store,record_key) DO UPDATE SET payload=EXCLUDED.payload',[this.workspace,s,key,json]);changed=true;}old.delete(key);}
-        for(const key of old.keys()){await client.query('DELETE FROM alishan_private.records WHERE workspace_id=$1 AND store=$2 AND record_key=$3',[this.workspace,s,key]);changed=true;}
+        const updates=[];
+        for(const row of state[s]){const key=keyText(keyOf(s,row)),json=JSON.stringify(row);if(old.get(key)!==json)updates.push({record_key:key,payload:row});old.delete(key);}
+        // Bounded multi-row writes replace hundreds of network round trips.
+        for(let offset=0;offset<updates.length;offset+=100){
+          await client.query(`INSERT INTO alishan_private.records(workspace_id,store,record_key,payload)
+            SELECT $1,$2,x.record_key,x.payload FROM jsonb_to_recordset($3::jsonb) AS x(record_key text,payload jsonb)
+            ON CONFLICT(workspace_id,store,record_key) DO UPDATE SET payload=EXCLUDED.payload`,[this.workspace,s,JSON.stringify(updates.slice(offset,offset+100))]);changed=true;
+        }
+        if(old.size){await client.query('DELETE FROM alishan_private.records WHERE workspace_id=$1 AND store=$2 AND record_key=ANY($3::text[])',[this.workspace,s,[...old.keys()]]);changed=true;}
       }
       if(changed)await client.query('UPDATE alishan_private.workspaces SET revision=revision+1 WHERE id=$1',[this.workspace]);
-      await client.query('COMMIT');return result;
+      await client.query('COMMIT');if(changed)this.readCache.clear();return result;
     }catch(e){await client.query('ROLLBACK').catch(()=>{});throw e;}finally{client.release();}
   }
 }

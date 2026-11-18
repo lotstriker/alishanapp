@@ -7,14 +7,15 @@ const root=path.resolve(__dirname,'../frontend');
 const source=name=>fs.readFileSync(path.join(root,name),'utf8');
 const sources=Object.fromEntries(['calc.js','store.js','report-engine.js','archive.js','size-groups.js','advanced-search.js'].map(n=>[n,source(n)]));
 const reference=Object.fromEntries(['qualities.json','colors.json'].map(n=>[n,JSON.parse(source(n))]));
-async function domain(state){
+const scripts=Object.fromEntries(Object.entries(sources).map(([n,s])=>[n,new vm.Script(s,{filename:n})]));
+async function domain(state,{readOnly=false}={}){
  const db=createDatabase(state);const idleJobs=[];
  const context=vm.createContext({console,Date,Map,Set,Math,JSON,Number,String,Boolean,Array,Object,RegExp,Promise,structuredClone,AlishanDB:db,
    window:{requestIdleCallback(fn){idleJobs.push(fn);}}, setTimeout(){return 0;},clearTimeout(){},setInterval(){return 0;},clearInterval(){},
    fetch:async file=>({ok:!!reference[file],json:async()=>structuredClone(reference[file])})});
- for(const name of ['calc.js','store.js','report-engine.js','archive.js','size-groups.js'])new vm.Script(sources[name],{filename:name}).runInContext(context,{timeout:2000});
+ for(const name of ['calc.js','store.js','report-engine.js','archive.js','size-groups.js'])scripts[name].runInContext(context,{timeout:2000});
  await context.window.AlishanStore.init();
- for(const job of idleJobs)await job();
+ if(!readOnly)for(const job of idleJobs)await job();
  const S=context.window.AlishanStore;
  S.restoreComplete=async payload=>{
    if(!payload||!payload.backup)return {ok:false,error:'Invalid complete backup'};
@@ -30,7 +31,7 @@ async function domain(state){
    if(extras.settings&&typeof extras.settings==='object'&&!Array.isArray(extras.settings))await db.putAll('settings',Object.entries(extras.settings).filter(([key])=>key!=='fullRestoreSafetyBackups').map(([key,value])=>({key,value})));
    await db.setSetting('fullRestoreSafetyBackups',[...safety,record].slice(-3));return result;
  };
- const search={apply(items,options,term){context.localStorage={getItem:()=>JSON.stringify(options)};context.window.AlishanSearch={getTerm:()=>term};new vm.Script(sources['advanced-search.js']).runInContext(context,{timeout:2000});return context.window.AlishanAdvancedSearch.apply(items);}};
+ const search={apply(items,options,term){context.localStorage={getItem:()=>JSON.stringify(options)};context.window.AlishanSearch={getTerm:()=>term};scripts['advanced-search.js'].runInContext(context,{timeout:2000});return context.window.AlishanAdvancedSearch.apply(items);}};
  return {Views:{...require('./views')(context.window.AlishanCalc,context.window.AlishanStore),...require('./dashboard-rules')(context.window.AlishanCalc,context.window.AlishanStore)},Search:search,Calc:context.window.AlishanCalc,Store:context.window.AlishanStore,Reports:context.window.ReportEngine,Archive:context.window.AlishanArchive,Groups:vm.runInContext('makeCore(AlishanCalc.SIZES, AlishanCalc.splitPieces)',context),DB:db};
 }
 const blocked=new Set(['constructor','__proto__','prototype','subscribe','onChange']);

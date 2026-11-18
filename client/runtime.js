@@ -12,7 +12,7 @@
  async function flush(){
   const batch=pending;pending=[];scheduled=false;
   try{
-   const response=await fetch('/api/batch',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(batch.map(x=>({target:x.target,method:x.method,args:encode(x.args)}))),signal:AbortSignal.timeout(45000)});
+   const response=await fetch('/api/batch',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(batch.map(x=>({target:x.target,method:x.method,args:encode(x.args)}))),signal:AbortSignal.timeout(batch.some(x=>['restoreComplete','importBackup','restoreComplete','restoreBackup','importEntries'].includes(x.method))?180000:45000)});
    if(!response.ok)throw new Error(response.status===401?'Please sign in again.':'Server connection failed. Please try again.');
    const output=decode(await response.json());if(!Array.isArray(output)||output.length!==batch.length)throw new Error('Invalid server response. Please retry.');
    output.forEach((r,i)=>{if(r.error)batch[i].reject(new Error(r.error));else{
@@ -21,12 +21,12 @@
    }});
   }catch(e){batch.forEach(x=>x.reject(e));}
  }
- const mutations=new Set(['addItem','updateItem','deleteItem','toggleStock','setCompletionDate','addPayment','deletePayment','importEntries','undoImport','importBackup','restoreBackup','restore','deleteForever','cleanLeftovers','saveInventory','replaceInventoryAndPayments']);
+ const mutations=new Set(['addItem','updateItem','deleteItem','toggleStock','setCompletionDate','addPayment','deletePayment','importEntries','undoImport','importBackup','restoreComplete','restoreBackup','restore','deleteForever','cleanLeftovers','saveInventory','replaceInventoryAndPayments']);
  function call(target,method,args){
   const pure=target==='Calc'||target==='Reports';
   const key=pure?JSON.stringify([target,method,Math.floor(Date.now()/60000),encode(args)]):null;
   if(key&&cache.has(key))return cache.get(key);
-  const promise=new Promise((resolve,reject)=>{pending.push({target,method,args,resolve,reject});if(!scheduled){scheduled=true;queueMicrotask(flush);}}).then(r=>{
+  const promise=new Promise((resolve,reject)=>{pending.push({target,method,args,resolve,reject});if(!scheduled){scheduled=true;setTimeout(flush,0);}}).then(r=>{
    if(mutations.has(method)&&r?.ok!==false){changed();if(channel)channel.postMessage('changed');}
    return r;
   });
