@@ -9,10 +9,26 @@
  if(channel)channel.onmessage=changed;
  function reportError(e){console.error(e);if(typeof window.showNotification==='function')window.showNotification(e.message||'Server connection failed','error');}
  window.addEventListener('unhandledrejection',e=>{reportError(e.reason);});
+ // Scope arrays recur across weekly/report requests. Send each large argument
+ // once per HTTP batch; the server expands it before executing the original rules.
+ function pack(batch){
+  const shared=[],seen=new Map();
+  const calls=batch.map(x=>({target:x.target,method:x.method,args:x.args.map(arg=>{
+    const encoded=encode(arg);if(!encoded||typeof encoded!=='object')return encoded;
+    const key=JSON.stringify(encoded);if(key.length<1024)return encoded;
+    let index=seen.get(key);if(index===undefined){index=shared.length;seen.set(key,index);shared.push(encoded);}
+    return {$alishan:'batchArg',value:index};
+  })}));
+  return JSON.stringify({calls,shared});
+ }
  async function flush(){
-  const batch=pending;pending=[];scheduled=false;
+  const queued=pending;pending=[];scheduled=false;
+  // Preserve each batch's execution order and stay below the API call limit.
+  for(let start=0;start<queued.length;start+=500)await sendBatch(queued.slice(start,start+500));
+ }
+ async function sendBatch(batch){
   try{
-   const response=await fetch('/api/batch',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(batch.map(x=>({target:x.target,method:x.method,args:encode(x.args)}))),signal:AbortSignal.timeout(batch.some(x=>['restoreComplete','importBackup','restoreComplete','restoreBackup','importEntries'].includes(x.method))?180000:45000)});
+   const response=await fetch('/api/batch',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:pack(batch),signal:AbortSignal.timeout(batch.some(x=>['restoreComplete','importBackup','restoreBackup','importEntries'].includes(x.method))?180000:45000)});
    if(!response.ok)throw new Error(response.status===401?'Please sign in again.':'Server connection failed. Please try again.');
    const output=decode(await response.json());if(!Array.isArray(output)||output.length!==batch.length)throw new Error('Invalid server response. Please retry.');
    output.forEach((r,i)=>{if(r.error)batch[i].reject(new Error(r.error));else{

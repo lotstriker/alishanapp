@@ -36,3 +36,23 @@ test('API reads bypass a blocked writer; pure calculations do not touch the data
  assert.equal((await call('Store','summary')).result.totalItems,0);assert.equal(reads,1);assert.equal(writes,0);
  const result=await call('Calc','itemTotals',[{colors:['BLACK'],sizeOption:'same',size32:2,price:10,notes:'x'.repeat(100000)}]);assert.equal(result.result.amount,20);assert.equal(result.args,undefined);assert.equal(reads,1);assert.equal(writes,0);
 });
+
+test('client deduplicates repeated report scopes and bounds large call queues',async()=>{
+ const vm=require('node:vm'),wire=require('../backend/wire');const sent=[];
+ const context={ALISHAN_WIRE:wire,ALISHAN_META:Object.fromEntries(['Calc','Store','Reports','Archive','Groups','DB'].map(k=>[k,{}])),console,structuredClone,Date,Map,Set,Promise,AbortSignal,setTimeout,addEventListener(){},fetch:async(url,options)=>{
+   const body=JSON.parse(options.body);sent.push({bytes:Buffer.byteLength(options.body),count:body.calls.length,shared:body.shared.length});
+   return {ok:true,json:async()=>body.calls.map(c=>({result:c.args[1]}))};
+ }};context.window=context;vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../client/runtime.js'),'utf8'),context);
+ const scope=Array.from({length:390},(_,id)=>({id,notes:'x'.repeat(1000)}));
+ const results=await Promise.all(Array.from({length:1201},(_,i)=>context.AlishanRemote.call('Store','weeklyReport',[scope,i])));
+ assert.deepEqual(sent.map(x=>x.count),[500,500,201]);assert.ok(sent.every(x=>x.shared===1&&x.bytes<600000));assert.equal(results[1200],1200);
+});
+
+test('API expands shared arguments before execution and refuses invalid references without writes',async t=>{
+ const repo={ready:async()=>{},transaction:async()=>{throw new Error('unexpected write');}};
+ const server=createApp({repository:repo,username:'test',password:'test-only-password-123456789'}).listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));t.after(()=>server.close());
+ const url='http://127.0.0.1:'+server.address().port+'/api/batch',headers={'Content-Type':'application/json',Authorization:'Basic '+Buffer.from('test:test-only-password-123456789').toString('base64')};
+ const body={shared:[{colors:['BLACK'],sizeOption:'same',size32:2,price:10}],calls:[{target:'Calc',method:'itemTotals',args:[{$alishan:'batchArg',value:0}]}]};
+ let response=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});assert.equal(response.status,200);assert.equal((await response.json())[0].result.amount,20);
+ body.calls[0].args[0].value=3;response=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});assert.equal(response.status,400);
+});

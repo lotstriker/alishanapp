@@ -43,6 +43,18 @@ function createApp({repository,username,password}){
    const started=performance.now();const output=await run([req.body]);res.set('Server-Timing',`app;dur=${(performance.now()-started).toFixed(1)}`);res.json(encode(output.results[0]));
  }catch(e){next(e);}});
  app.post('/api/batch',async(req,res,next)=>{try{
+   // Batch argument references are request-local, bounded by the JSON body limit.
+   // Expand before opening any transaction; no cache tokens or retrying writes.
+   if(req.body&&!Array.isArray(req.body)&&Array.isArray(req.body.calls)&&Array.isArray(req.body.shared)){
+     const {calls,shared}=req.body;
+     if(shared.length>1000||calls.length>1000)return res.status(400).json({error:'Invalid batch'});
+     for(const c of calls)if(Array.isArray(c?.args))c.args=c.args.map(arg=>{
+       if(arg?.$alishan!=='batchArg')return arg;
+       if(!Number.isInteger(arg.value)||arg.value<0||arg.value>=shared.length)throw Object.assign(new Error('Invalid batch argument'),{status:400});
+       return shared[arg.value];
+     });
+     req.body=calls;
+   }
    if(!Array.isArray(req.body)||req.body.length<1||req.body.length>1000||!req.body.every(valid))return res.status(400).json({error:'Invalid batch'});
    const started=performance.now();const output=await run(req.body);res.set('Server-Timing',`app;dur=${(performance.now()-started).toFixed(1)}`);res.json(encode(output.results||[]));
  }catch(e){next(e);}});

@@ -14,16 +14,17 @@
 - Added single-statement MVCC projected reads with revision-validated, bounded snapshots; no reader write lock. Copies isolate callers. Writes retain workspace lock and original canonical validation.
 - Pure calculation/group/reference operations skip database loading. Reused compiled VM scripts; backup maintenance persists on the background/write path.
 - Changed-row writes use batches of up to 100; deleted keys batch per store. No schema change or new dependency.
+- Request-local shared arguments transmit identical large report scopes once per batch, with a 500-call queue bound; the server validates/expands them before executing the same methods. No persistent reference token or automatic write retry is introduced.
 - Ordinary responses omit argument copies. Groups keep argument mutation transport. Complete restore uses a three-minute response window and clears client cache; uncertain writes are not automatically retried.
 - README/package versions, Source of Truth version row/history/tracker and User Guide topic 30/footer updated. No layout/CSS changes, paid upgrade, database replacement or formula changes.
 
 ## Verification
 - npm run build: passed, 24 scripts / 250 async functions.
-- npm test: 80/80 passed (64 original tests, 12 earlier backend tests, four new SQL/projection/cache/rollback/routing tests).
+- npm test: 82/82 passed (64 original tests, 12 earlier backend tests, six new SQL/projection/cache/rollback/routing tests).
 - New tests use real PGlite SQL execution, including batched insert/delete, mid-write failure rollback, typed record keys, cache revision changes through a second repository, snapshot mutation isolation, projected settings, lock-free reader routing, database-free calculations and omitted large arguments.
 - Actual uploaded ZIP restored to an isolated PGlite database: 390 imported, zero skipped, 409 payments; 21 total SQL calls including transaction scaffolding, about 748 ms locally. A projected summary used one SQL call, about 98 ms locally; total value 1088862.5, pending 15055. These are local measurements, not hosted/device guarantees.
 - Live v97 baseline summary checks: HTTP 200, 390 items, value 1088862.5; 12.034 / 10.502 / 9.804 seconds end to end.
-- Simulated JSDOM page smoke checks in progress; these do not establish real browser rendering. Live v98 measurement in progress.
+- Nine simulated JSDOM sample-data pages passed; these do not establish real browser rendering. Actual-data Reports initially exposed a ~69 MB batch (HTTP 413); shared-argument packing and bounded queues correct it. Reports recheck passed; full actual-data page rerun is in progress. Live v98 first-deploy summary checks returned unchanged 390 items/value: 8.200 / 7.202 / 7.806 seconds end to end; application Server-Timing 442.6 / 393.0 / 421.3 ms. Final shared-argument transport deployment pending.
 - Browser/runtime testing: local API/SQL tests plus live HTTP checks; no real-browser or physical-phone visual pass claimed.
 - Mobile/desktop testing: layout unchanged; new guide text/footer not visually checked at 390/360/320 px. Existing real-device acceptance remains PENDING.
 
