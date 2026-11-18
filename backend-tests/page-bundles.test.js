@@ -20,3 +20,10 @@ test('authenticated cache status exposes a revision without data; scoped HTML bo
  response=await fetch(base+'/api/rpc',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({target:'Store',method:'summary',args:[]})});assert.equal(response.headers.get('X-Alishan-Revision'),'0');
  const asset=await fetch(base+'/server-client.js',{headers});assert.match(asset.headers.get('Cache-Control'),/private/);assert.ok(asset.headers.get('ETag'));
 });
+
+test('an unchanged read reply omits the data body when the client supplies its prior digest',async t=>{
+ const {createHash}=require('node:crypto'),{encode}=require('../backend/wire');const repository=new MemoryRepository(),server=createApp({repository,username:'test',password:'test-only-password-123456789'}).listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));t.after(()=>server.close());const url='http://127.0.0.1:'+server.address().port+'/api/batch',headers={Authorization:'Basic '+Buffer.from('test:test-only-password-123456789').toString('base64'),'Content-Type':'application/json'};
+ const call={target:'Store',method:'summary',args:[]};let rows=await fetch(url,{method:'POST',headers,body:JSON.stringify([call])}).then(r=>r.json());const digest=createHash('sha256').update(JSON.stringify(encode(rows[0].result))).digest('hex');
+ rows=await fetch(url,{method:'POST',headers,body:JSON.stringify([{...call,known:digest}])}).then(r=>r.json());assert.deepEqual(rows,[{unchanged:true}]);
+ rows=await fetch(url,{method:'POST',headers,body:JSON.stringify([{...call,known:'0'.repeat(64)}])}).then(r=>r.json());assert.equal(rows[0].result.totalItems,0);
+});

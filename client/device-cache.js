@@ -35,18 +35,18 @@
    const data=new TextEncoder().encode(text);const hash=await root.crypto.subtle.digest('SHA-256',data);
    return 'sha256:'+Array.from(new Uint8Array(hash),n=>n.toString(16).padStart(2,'0')).join('');
   }
-  function put(key,result){
+  function put(key,result,etag=null){
    if(!key||disabled)return;
    const encoded=wire.encode(result),size=JSON.stringify(encoded).length*2+key.length*2;
    if(size>2*1024*1024||result?.ok===false)return;
    const old=ram.get(key);if(old)bytes-=old.bytes;
-   ram.delete(key);ram.set(key,{value:encoded,at:now(),bytes:size});bytes+=size;trim();saveSoon();
+   ram.delete(key);ram.set(key,{value:encoded,at:now(),bytes:size,etag});bytes+=size;trim();saveSoon();
   }
   async function seed(primes,generation=epoch){
    if(!enabled||!Array.isArray(primes))return;
-   const rows=await Promise.all(primes.map(async p=>({p,key:await keyFor(p.target,p.method,p.args)})));
+   const rows=await Promise.all(primes.map(async p=>({p,key:await keyFor(p.target,p.method,p.args),etag:await digest(p.result)})));
    if(generation!==epoch)return;
-   for(const {p,key} of rows)if(isReader(p.target,p.method)&&p.target!=='Groups'){put(key,p.result);if(p.target==='Views'&&['inventoryPage','homeLatest'].includes(p.method))await seed(p.result?.primes,generation);}
+   for(const {p,key,etag} of rows)if(isReader(p.target,p.method)&&p.target!=='Groups'){put(key,p.result,etag);if(p.target==='Views'&&['inventoryPage','homeLatest'].includes(p.method))await seed(p.result?.primes,generation);}
   }
   function invalidate(announce=false){
    epoch++;ram.clear();bytes=0;flights.clear();revision=null;persist();
@@ -70,13 +70,17 @@
    }catch(e){if(e.status===401){invalidate();disabled=true;status('signin');}else status('offline');}
    finally{checking=null;}})();return checking;
   }
+  async function digest(value){if(!root.crypto?.subtle)return null;const buffer=await root.crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(wire.encode(value))));return Array.from(new Uint8Array(buffer),n=>n.toString(16).padStart(2,'0')).join('');}
   async function load(target,method,args,key,background=false){
    const existing=key&&flights.get(key);if(existing)return existing;
    const generation=epoch;
    const task=(async()=>{
-    const result=await network(target,method,args);
+    const previous=key&&ram.get(key),conditional=previous?.etag?{etag:previous.etag,value:clone(previous.value),unchanged:false}:null;
+    const result=await network(target,method,args,conditional);
+    if(conditional?.unchanged){if(generation===epoch&&ram.get(key)===previous){previous.at=now();saveSoon();}return result;}
+    const etag=await digest(result);
     if(generation===epoch){if(target==='Views'&&['inventoryPage','homeLatest','pageBundle'].includes(method))await seed(result?.primes,generation);
-      if(generation===epoch)put(key,target==='Views'&&method==='pageBundle'?{primes:[],ready:true}:result);}
+      if(generation===epoch)put(key,target==='Views'&&method==='pageBundle'?{primes:[],ready:true}:result,etag);}
     return result;
    })();
    if(key)flights.set(key,task);
@@ -92,7 +96,7 @@
     try{return await network(target,method,args);}finally{invalidate(true);onChange();check(true);}
    }
    // Backups, exports and validation previews must read fresh server state.
-   const freshOnly=target==='DB'&&!['init','getTheme'].includes(method)||/backup|export|inspect|^build|^validate|^merge|^purge|^leftover|checkImportDraft|parseBulk|batchDuplicateIds/i.test(method);
+   const freshOnly=target==='DB'&&!['init','getTheme'].includes(method)||/backup|export|inspect|^new|^build|^validate|^merge|^purge|^leftover|checkImportDraft|parseBulk|batchDuplicateIds/i.test(method);
    if(target==='Groups'||disabled||freshOnly)return network(target,method,args);
    const key=await keyFor(target,method,args),entry=key&&ram.get(key);
    if(entry&&now()-entry.at<MAX_AGE){

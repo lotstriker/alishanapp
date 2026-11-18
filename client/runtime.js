@@ -14,7 +14,7 @@
  // once per HTTP batch; the server expands it before executing the original rules.
  function pack(batch){
   const shared=[],seen=new Map();
-  const calls=batch.map(x=>({target:x.target,method:x.method,args:x.args.map(arg=>{
+  const calls=batch.map(x=>({target:x.target,method:x.method,known:x.conditional?.etag,args:x.args.map(arg=>{
     const encoded=encode(arg);if(!encoded||typeof encoded!=='object')return encoded;
     const key=JSON.stringify(encoded);if(key.length<1024)return encoded;
     let index=seen.get(key);if(index===undefined){index=shared.length;seen.set(key,index);shared.push(encoded);}
@@ -34,7 +34,7 @@
    if(!response.ok)throw new Error(response.status===401?'Please sign in again.':'Server connection failed. Please try again.');
    device?.acceptRevision(response.headers?.get?.('X-Alishan-Revision'));
    const output=decode(await response.json());if(!Array.isArray(output)||output.length!==batch.length)throw new Error('Invalid server response. Please retry.');
-   output.forEach((r,i)=>{if(r.error)batch[i].reject(new Error(r.error));else{
+   output.forEach((r,i)=>{if(r.unchanged&&batch[i].conditional){batch[i].conditional.unchanged=true;batch[i].resolve(batch[i].conditional.value);return;}if(r.error)batch[i].reject(new Error(r.error));else{
      if(batch[i].target==='Groups')batch[i].args.forEach((arg,n)=>{if(arg&&typeof arg==='object'&&!Array.isArray(arg)&&r.args[n]){for(const k of Object.keys(arg))delete arg[k];Object.assign(arg,r.args[n]);}});
      batch[i].resolve(r.result);
    }});
@@ -42,11 +42,11 @@
  }
  const mutations=new Set(['addItem','updateItem','deleteItem','toggleStock','setCompletionDate','addPayment','deletePayment','importEntries','undoImport','importBackup','restoreComplete','restoreBackup','restore','deleteForever','cleanLeftovers','saveInventory','replaceInventoryAndPayments']);
  const referenceMethods=new Set(['getColorStyle','getColorStyleSafe','colorDisplayName','getPrice','getProductTypes','getColors','getQualityData']);
- function networkCall(target,method,args){
+ function networkCall(target,method,args,conditional){
   const pure=!device?.enabled&&(target==='Calc'||target==='Reports'||target==='Store'&&referenceMethods.has(method));
   const key=pure?JSON.stringify([target,method,Math.floor(Date.now()/60000),encode(args)]):null;
   if(key&&cache.has(key))return cache.get(key);
-  const promise=new Promise((resolve,reject)=>{pending.push({target,method,args,resolve,reject});if(!scheduled){scheduled=true;setTimeout(flush,0);}}).then(r=>{
+  const promise=new Promise((resolve,reject)=>{pending.push({target,method,args,conditional,resolve,reject});if(!scheduled){scheduled=true;setTimeout(flush,0);}}).then(r=>{
    if(!device?.enabled&&mutations.has(method)&&r?.ok!==false){changed();if(channel)channel.postMessage('changed');}
    return r;
   });

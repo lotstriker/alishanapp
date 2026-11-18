@@ -31,7 +31,8 @@ function createApp({repository,username,password}){
      const pure=calls.every(c=>['Calc','Groups'].includes(c.target));
      const d=pure?await (pureDomain ||= domain(blank(),{readOnly:true})):await domain(state,{readOnly});const results=[];
      for(const c of calls){const args=decode(c.args);const result=await invoke(d,c.target,c.method,args);
-       results.push({result,...(c.target==='Groups'?{args}:{})});
+       const unchanged=readOnly&&c.target!=='Groups'&&typeof c.known==='string'&&/^[a-f0-9]{64}$/.test(c.known)&&hash(JSON.stringify(encode(result))).toString('hex')===c.known;
+       results.push(unchanged?{unchanged:true}:{result,...(c.target==='Groups'?{args}:{})});
        if(result?.ok===false){const failed=results.length-1;return {ok:false,results:calls.map((_,i)=>i===failed?results[i]:{error:'Request cancelled because another operation was rejected. Please retry.'})};}
      }
      return {results,revision:readOnly&&revision!==undefined?String(revision):null};

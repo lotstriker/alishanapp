@@ -10,6 +10,7 @@
 
 ## Implementation
 - Added client/device-cache.js: isolated RAM copies and scoped IndexedDB snapshots, bounded eviction, TTL, single-flight reads, background revalidation, revision invalidation, stale-flight fencing, authentication purge and storage-unavailable fallback.
+- Conditional revalidation computes a digest of the server result. When a cached answer is byte-identical, the API returns only an unchanged marker and the device keeps its copy, including across repeated revalidations. Digests never suppress write execution; backups/exports remain fresh-only.
 - Updated client/runtime.js: cache integration, primary page preparation, idle/hover prefetch, visible saved/updating/offline/current status, cross-tab invalidation, 15-second/focus/online checks and a Settings Refresh saved view control.
 - Added backend/page-bundles.js. Initial Home/Inventory/Reports data is bundled from original methods. Inventory filters/advanced sorting/pagination use the existing rule functions server-side and return only the chosen 10/20/50/100 raw records plus original card values. Home latest view returns five records.
 - Added authenticated revision endpoint and revision response headers; scope identity fingerprints origin/credentials/database/release. Static build metadata replaces a blocking metadata API call. Assets are versioned and private/ETag revalidated. Authenticated HTML is not stored as a data cache.
@@ -20,7 +21,7 @@
 
 ## Verification
 - npm run build: passed, 24 UI scripts and 251 async functions.
-- npm test: 96/96 passed (82 existing plus nine cache lifecycle, three page/API and two shell-cache tests).
+- npm test: 98/98 passed (82 existing plus ten cache lifecycle, four page/API and two shell-cache tests).
 - node backend-tests/page-smoke.cjs: nine sample-data JSDOM pages passed, including Add Entry save, Inventory Edit and eight report routes/detail. Charts were mocked.
 - Cache tests: repeated reads/clone isolation, writes never cached/retried, simulated disk navigation retention, scope/release isolation, revision changes, stale-flight invalidation, uncertain payment errors, offline stale views, single-flight deduplication, authentication purge, monotonic revision protection and compact bundle markers.
 - Backups/exports/validation previews and raw DB readers bypass device view caching. An authoritative revision reset invalidates old views.

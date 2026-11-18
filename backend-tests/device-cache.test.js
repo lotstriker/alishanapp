@@ -55,3 +55,10 @@ test('backup/export and raw database reads always reach the server instead of an
 test('an authoritative status check can invalidate a cache after the database revision resets',async()=>{
  const cache=create(opts(async()=>({count:2}),{fetchStatus:async()=>({...session,revision:'0'})}));cache.acceptRevision('20');await cache.call('Store','summary',[]);await cache.check(true);assert.equal(cache.inspect().revision,'0');assert.equal(cache.inspect().entries,0);cache.close();
 });
+
+test('background revalidation preserves cached values and digest when the server reports unchanged',async()=>{
+ let time=100000,revalidations=0;const digests=[];
+ const cache=create(opts(async(t,m,args,conditional)=>{if(conditional){revalidations++;digests.push(conditional.etag);conditional.unchanged=true;return conditional.value;}return {count:5};},{now:()=>time}));
+ await cache.call('Store','summary',[]);for(let n=0;n<2;n++){time+=61000;assert.equal((await cache.call('Store','summary',[])).count,5);await new Promise(r=>setTimeout(r,15));}
+ assert.equal(revalidations,2);assert.equal(digests[0],digests[1]);assert.match(digests[0],/^[a-f0-9]{64}$/);cache.close();
+});
