@@ -21,9 +21,9 @@ module.exports=d=>{
   for(const level of C.AGING_ORDER||[])await add('Calc','agingTitle',[level]);
   if(name==='inventory'){
    const args=[{productType:'all',quality:'all',stock:'all',period:'all',search:''},1,50,advanced,''];
-   const result=inventoryPage(...args);primes.push({target:'Views',method:'inventoryPage',args,result},...result.primes);
+   const result=inventoryPage(...args);primes.push({target:'Views',method:'inventoryPage',args,result});
   }else if(name==='home'){
-   const result=homeLatest('');primes.push({target:'Views',method:'homeLatest',args:[''],result},...result.primes);
+   const result=homeLatest('');primes.push({target:'Views',method:'homeLatest',args:[''],result});
    await add('Store','typeStats');await add('Store','getRecentActivity',[5]);
    const buckets=await add('Views','breakdown',['all']);await add('Views','ranking',['all']);
    for(const b of buckets)await add('Views','percent',[b.dozens,buckets.reduce((sum,x)=>sum+x.dozens,0)]);

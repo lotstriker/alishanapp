@@ -54,9 +54,12 @@
   return promise;
  }
  const isReader=(target,method)=>ALISHAN_META[target]?.[method]?.read??(['Calc','Reports','Views','Search','Groups'].includes(target)||target==='DB'&&['init','get','getAll','getAllFrom','getSetting','getTheme','getSearchAnalytics','getSearchHistory','getInventory','getPayments','getArchive','getQualityHistory','getRecentActivity'].includes(method));
+ function shellMessage(type){navigator.serviceWorker?.controller?.postMessage({type,session:window.ALISHAN_SESSION,scope:window.ALISHAN_SESSION?.scope});}
  function cacheStatus(kind){
+  if(['signin','reload'].includes(kind)&&typeof navigator!=='undefined')shellMessage('CLEAR_VIEW_SESSION');
+  if(kind==='current'&&typeof navigator!=='undefined')shellMessage('BIND_VIEW_SESSION');
   if(typeof document==='undefined')return;
-  const paint=()=>{let el=document.getElementById('deviceCacheStatus');if(!el){el=document.createElement('button');el.id='deviceCacheStatus';el.type='button';el.setAttribute('role','status');el.style.cssText='position:fixed;right:12px;bottom:calc(82px + env(safe-area-inset-bottom));max-width:calc(100vw - 24px);z-index:2200;padding:6px 10px;border:1px solid var(--border-color,#aaa);border-radius:16px;background:var(--bg-secondary,#fff);color:var(--text-primary,#222);font:12px sans-serif;box-shadow:0 2px 8px #0002';el.onclick=()=>{if(el.dataset.state==='reload')location.reload();else{device.invalidate(true);changed();void device.check(true);}};document.body.appendChild(el);}
+  const paint=()=>{let el=document.getElementById('deviceCacheStatus');if(!el){el=document.createElement('button');el.id='deviceCacheStatus';el.type='button';el.setAttribute('role','status');el.style.cssText='position:fixed;right:12px;bottom:calc(82px + env(safe-area-inset-bottom));max-width:calc(100vw - 24px);z-index:2200;padding:6px 10px;border:1px solid var(--border-color,#aaa);border-radius:16px;background:var(--bg-secondary,#fff);color:var(--text-primary,#222);font:12px sans-serif;box-shadow:0 2px 8px #0002';el.onclick=()=>{if(el.dataset.state==='reload'){shellMessage('CLEAR_VIEW_SESSION');location.reload();}else{device.invalidate(true);changed();void device.check(true);}};document.body.appendChild(el);}
    const labels={saved:'Saved view',updating:'Saved view · updating…',loading:'Loading…',current:'Up to date',offline:'Offline · saved view',reload:'App updated · Reload',signin:'Please sign in again'};
    el.dataset.state=kind;el.textContent=labels[kind]||kind;el.title='Tap to refresh the saved view';};
   if(document.body)paint();else document.addEventListener('DOMContentLoaded',paint,{once:true});

@@ -46,10 +46,10 @@
    if(!enabled||!Array.isArray(primes))return;
    const rows=await Promise.all(primes.map(async p=>({p,key:await keyFor(p.target,p.method,p.args)})));
    if(generation!==epoch)return;
-   for(const {p,key} of rows)if(isReader(p.target,p.method)&&p.target!=='Groups')put(key,p.result);
+   for(const {p,key} of rows)if(isReader(p.target,p.method)&&p.target!=='Groups'){put(key,p.result);if(p.target==='Views'&&['inventoryPage','homeLatest'].includes(p.method))await seed(p.result?.primes,generation);}
   }
   function invalidate(announce=false){
-   epoch++;ram.clear();bytes=0;flights.clear();revision=null;saveSoon();
+   epoch++;ram.clear();bytes=0;flights.clear();revision=null;persist();
    if(announce)broadcast();
   }
   function acceptRevision(value,authoritative=false){

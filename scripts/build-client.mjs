@@ -175,8 +175,9 @@ for(const name of fs.readdirSync(out))if(name.endsWith('.html')){const file=path
 const wire=fs.readFileSync(path.join(root,'backend/wire.js'),'utf8').replace("'use strict';",'').replace('module.exports = { encode, decode };','window.ALISHAN_WIRE={encode,decode};');
 fs.writeFileSync(path.join(out,'server-client.js'),wire+'\n'+fs.readFileSync(path.join(root,'client/device-cache.js'),'utf8')+'\n'+fs.readFileSync(path.join(root,'client/runtime.js'),'utf8'));
 for(const name of replaced)fs.writeFileSync(path.join(out,name),'/* This module runs on the server. Client API is installed by server-client.js. */\n');
-// Retire old workers and caches: they must never serve old formulas or cache authenticated inventory.
-fs.writeFileSync(path.join(out,'sw.js'),"self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil((async()=>{for(const k of await caches.keys())if(k.startsWith('alishan-'))await caches.delete(k);await self.registration.unregister();})()));");
-fs.writeFileSync(path.join(out,'pwa.js'),"if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));window.addEventListener('online',()=>location.reload());");
+// Only app files are cached by this worker. API/business writes always use the network.
+fs.writeFileSync(path.join(out,'sw.js'),"self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.registration.unregister()));");
+fs.writeFileSync(path.join(out,'view-shell-worker.js'),fs.readFileSync(path.join(root,'client/view-shell-worker.js'),'utf8').replace('__RELEASE__',release));
+fs.writeFileSync(path.join(out,'pwa.js'),`if('serviceWorker' in navigator){navigator.serviceWorker.register('/view-shell-worker.js?v=${release}',{scope:'/',updateViaCache:'none'}).then(()=>navigator.serviceWorker.ready).then(reg=>{const send=()=>reg.active?.postMessage({type:'BIND_VIEW_SESSION',session:window.ALISHAN_SESSION});send();navigator.serviceWorker.addEventListener('controllerchange',send);}).catch(()=>{});}`);
 fs.writeFileSync(path.join(out,'build-manifest.json'),JSON.stringify({version:Number(release.split('.')[0]),sourceCommit:'29952b341579a62337668937982fa60039ef8cbf',asyncFunctions:[...asyncNames].sort(),units:units.length},null,2));
 console.log(`Built ${units.length} UI scripts; ${asyncNames.size} async functions; formulas remain server-only.`);
