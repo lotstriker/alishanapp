@@ -1,5 +1,5 @@
 /* Cache app files, never API replies, credentials or business calculations. */
-const RELEASE='__RELEASE__',SHELL='alishan-shell-'+RELEASE,BINDINGS='alishan-shell-sessions-'+RELEASE;
+const RELEASE='__RELEASE__',BUILD='__ASSET_TAG__',SHELL='alishan-shell-'+BUILD,BINDINGS='alishan-shell-sessions-'+BUILD;
 const INITIAL_PAGES=['/index.html','/inventory.html','/reports.html','/setting.html'];
 const PAGES=[...INITIAL_PAGES,'/add-entry.html','/pending-amount.html','/missing-lot.html','/missing-completion.html','/quality-history.html'];
 const memory=new Map();
