@@ -7,7 +7,7 @@ this is a inventory app
 
 - **AI_HANDOVER_PROTOCOL.md** — mandatory rules for every AI/developer, including scope control, evidence-based status changes, testing and handover.
 
-- **ZIP version rule:** every update delivers a new ZIP named `AlishanApp-v<NN>-<Short-Description>.zip` (number +1 each time) and adds a line to the Version log in `PROJECT_SOURCE_OF_TRUTH.md`. Current: **v98**.
+- **ZIP version rule:** every update delivers a new ZIP named `AlishanApp-v<NN>-<Short-Description>.zip` (number +1 each time) and adds a line to the Version log in `PROJECT_SOURCE_OF_TRUTH.md`. Current: **v99**.
 
 
 - **Regression tests:** run `node --test tests/*.test.js` from the project root (pagination, responsive layout, User Guide/version synchronization and the compulsory Version log check).
@@ -22,3 +22,5 @@ this is a inventory app
 Render + Supabase setup: [deployment/SETUP.md](deployment/SETUP.md). Run `npm ci`, `npm run build`, and `npm start` with the required private environment variables. The production server serves only generated UI code from `dist/`; business calculations and storage run on the server. Live deployment and real-browser mobile acceptance are pending.
 
 Backend performance changes and verification: [v98 handover](deployment/HANDOVER-v98.md).
+
+Device view caching and page bundles: [v99 handover](deployment/HANDOVER-v99.md).

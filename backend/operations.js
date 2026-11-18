@@ -20,7 +20,7 @@ function selection(calls){
    else{selected.add('settings');settings.add(({getTheme:'selectedTheme',getSearchHistory:'searchHistory',getSearchAnalytics:'searchAnalytics'})[m]||a[0]);}
   }else{
    for(const s of ['inventory','payments','auditLog','settings'])selected.add(s);
-   if(['getRecentActivity'].includes(c.method)||c.target==='Reports')selected.add('editHistory');
+   if(['getRecentActivity','pageBundle'].includes(c.method)||c.target==='Reports')selected.add('editHistory');
    if(c.method==='listBackups')settings.add('autoBackups');
    if(c.method==='getDamagedCount')settings.add('corruptedItemsBackup');
    if(c.target==='Archive')for(const s of ['inventory','archive','auditLog','editHistory','payments'])selected.add(s);

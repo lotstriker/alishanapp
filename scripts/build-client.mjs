@@ -10,6 +10,7 @@ const require=createRequire(import.meta.url);
 const root=path.resolve(import.meta.dirname,'..'),src=path.join(root,'frontend'),out=path.join(root,'dist');
 fs.rmSync(out,{recursive:true,force:true});fs.cpSync(src,out,{recursive:true});
 const remoteNames=new Set(['AlishanCalc','AlishanStore','ReportEngine','AlishanArchive','AlishanDB','AlishanGroupCore']);
+const release=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version;
 const replaced=new Set(['calc.js','store.js','db.js','archive.js','report-engine.js','sw.js','pwa.js']);
 const units=[];
 const dashboard=parse(fs.readFileSync(path.join(src,'dashboard.js'),'utf8'),{sourceType:'script'});
@@ -25,6 +26,13 @@ for(const name of fs.readdirSync(src)){
     code=code.slice(code.indexOf('function buildUI(core)'));
     code=code.replace('makeCore(AlishanCalc.SIZES, AlishanCalc.splitPieces)','AlishanGroupCore');
     code=code.replace(/if \(typeof module[^\n]+/g,'');
+  }
+  if(['inventory.js','dashboard.js'].includes(name))code=code.replace('    ItemModal.inject();', '    refreshUI();\n    ItemModal.inject();');
+  if(name==='item-modal.js')code=code.replace('    function inject() {', '    let injecting=null;\n    async function inject(){if(!injecting)injecting=buildModal();return injecting;}\n    async function buildModal() {');
+  if(name==='inventory.js')code=code.replace('const paged = AlishanStore.paginate(currentList(), currentPage, itemsPerPage);',"const bundle=AlishanRemote.call('Views','inventoryPage',[readFilters(),currentPage,itemsPerPage,typeof AlishanAdvancedSearch!=='undefined'?AlishanAdvancedSearch.getOptions():null,currentSearch()]);const paged=bundle.paged;if(typeof AlishanAdvancedSearch!=='undefined')AlishanAdvancedSearch.setCount(paged.total);");
+  if(name==='dashboard.js'){
+   code=code.replace("let items = AlishanStore.query({ search: term });\n    items = items.slice().sort((a, b) => new Date(b.dateTime || b.createdAt || 0) - new Date(a.dateTime || a.createdAt || 0)).slice(0, 5);","const bundle=AlishanRemote.call('Views','homeLatest',[term]);let items=bundle.items;");
+   code=code.replace("    displayPaginatedItems();\n    updateStats();","    if(document.getElementById('inventoryCards'))displayPaginatedItems();\n    updateStats();");
   }
   if(name==='advanced-search.js'){
     const start=code.indexOf('  function matches('),end=code.indexOf('  function setCount(',start);
@@ -70,7 +78,7 @@ for(const name of fs.readdirSync(src)){
    if(/\bsrc\s*=/.test(attrs)||/type=["']application\//.test(attrs)||!code.trim())return match;
    const marker=`__INLINE_${name}_${n++}__`;units.push({...unit(code,marker),html:name});return `<script${attrs}>${marker}</script>`;
   });
-  fs.writeFileSync(path.join(out,name),html.replace(/<head>/i,'<head><script src="/api/bootstrap.js"></script><script src="/server-client.js"></script>'));
+  fs.writeFileSync(path.join(out,name),html.replace(/<head>/i,`<head><script>/*ALISHAN_SESSION*/</script><script src="/bootstrap.js?v=${release}"></script><script src="/server-client.js?v=${release}"></script>`));
  }
 }
 function functionName(p){
@@ -158,11 +166,17 @@ for(const u of units){
  if(u.html){const dest=path.join(out,u.html);fs.writeFileSync(dest,fs.readFileSync(dest,'utf8').replace(u.file,code));}else fs.writeFileSync(path.join(out,u.file),code);
 }
 if(topFailures.length)throw new Error('Manual async integration required:\n'+[...new Set(topFailures)].join('\n'));
+const d=await require('../backend/domain').domain(require('../backend/database').blank(),{readOnly:true});
+const meta=Object.fromEntries(['Calc','Store','Reports','Archive','Groups','DB'].map(target=>[target,Object.fromEntries(Object.entries(d[target]).map(([key,v])=>[key,typeof v==='function'?{fn:true,read:require('../backend/operations').isReader({target,method:key})}:require('../backend/wire').encode(v)]))]));
+meta.Reports.freshFilters={value:require('../backend/wire').encode(d.Reports.freshFilters())};
+for(const key of ['getColors','getQualityData','getProductTypes'])meta.Store[key]={value:require('../backend/wire').encode(d.Store[key]())};
+fs.writeFileSync(path.join(out,'bootstrap.js'),`window.ALISHAN_META=${JSON.stringify(meta).replace(/</g,'\\u003c')};`);
+for(const name of fs.readdirSync(out))if(name.endsWith('.html')){const file=path.join(out,name);fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace(/((?:src|href)=")(\/?[a-zA-Z0-9_./-]+\.(?:js|css))(")/g,`$1$2?v=${release}$3`));}
 const wire=fs.readFileSync(path.join(root,'backend/wire.js'),'utf8').replace("'use strict';",'').replace('module.exports = { encode, decode };','window.ALISHAN_WIRE={encode,decode};');
-fs.writeFileSync(path.join(out,'server-client.js'),wire+'\n'+fs.readFileSync(path.join(root,'client/runtime.js'),'utf8'));
+fs.writeFileSync(path.join(out,'server-client.js'),wire+'\n'+fs.readFileSync(path.join(root,'client/device-cache.js'),'utf8')+'\n'+fs.readFileSync(path.join(root,'client/runtime.js'),'utf8'));
 for(const name of replaced)fs.writeFileSync(path.join(out,name),'/* This module runs on the server. Client API is installed by server-client.js. */\n');
 // Retire old workers and caches: they must never serve old formulas or cache authenticated inventory.
 fs.writeFileSync(path.join(out,'sw.js'),"self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil((async()=>{for(const k of await caches.keys())if(k.startsWith('alishan-'))await caches.delete(k);await self.registration.unregister();})()));");
 fs.writeFileSync(path.join(out,'pwa.js'),"if('serviceWorker' in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));window.addEventListener('online',()=>location.reload());");
-fs.writeFileSync(path.join(out,'build-manifest.json'),JSON.stringify({version:97,sourceCommit:'29952b341579a62337668937982fa60039ef8cbf',asyncFunctions:[...asyncNames].sort(),units:units.length},null,2));
+fs.writeFileSync(path.join(out,'build-manifest.json'),JSON.stringify({version:Number(release.split('.')[0]),sourceCommit:'29952b341579a62337668937982fa60039ef8cbf',asyncFunctions:[...asyncNames].sort(),units:units.length},null,2));
 console.log(`Built ${units.length} UI scripts; ${asyncNames.size} async functions; formulas remain server-only.`);

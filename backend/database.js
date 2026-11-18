@@ -52,6 +52,7 @@ function createDatabase(state) {
 }
 class PostgresRepository {
   constructor(pool,workspace='alishan'){this.pool=pool;this.workspace=workspace;this.readCache=new Map();}
+  async revision(){const r=await this.pool.query('SELECT revision FROM alishan_private.workspaces WHERE id=$1',[this.workspace]);return String(r.rows[0]?.revision||0);}
   async ready(){await this.pool.query('SELECT 1 FROM alishan_private.workspaces LIMIT 1');}
   // One MVCC statement: readers never take the workspace write lock. Revision and
   // projected records come from the same committed snapshot, even during a restore.

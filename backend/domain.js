@@ -32,7 +32,8 @@ async function domain(state,{readOnly=false}={}){
    await db.setSetting('fullRestoreSafetyBackups',[...safety,record].slice(-3));return result;
  };
  const search={apply(items,options,term){context.localStorage={getItem:()=>JSON.stringify(options)};context.window.AlishanSearch={getTerm:()=>term};scripts['advanced-search.js'].runInContext(context,{timeout:2000});return context.window.AlishanAdvancedSearch.apply(items);}};
- return {Views:{...require('./views')(context.window.AlishanCalc,context.window.AlishanStore),...require('./dashboard-rules')(context.window.AlishanCalc,context.window.AlishanStore)},Search:search,Calc:context.window.AlishanCalc,Store:context.window.AlishanStore,Reports:context.window.ReportEngine,Archive:context.window.AlishanArchive,Groups:vm.runInContext('makeCore(AlishanCalc.SIZES, AlishanCalc.splitPieces)',context),DB:db};
+ const d={Views:{...require('./views')(context.window.AlishanCalc,context.window.AlishanStore),...require('./dashboard-rules')(context.window.AlishanCalc,context.window.AlishanStore)},Search:search,Calc:context.window.AlishanCalc,Store:context.window.AlishanStore,Reports:context.window.ReportEngine,Archive:context.window.AlishanArchive,Groups:vm.runInContext('makeCore(AlishanCalc.SIZES, AlishanCalc.splitPieces)',context),DB:db};
+ Object.assign(d.Views,require('./page-bundles')(d));return d;
 }
 const blocked=new Set(['constructor','__proto__','prototype','subscribe','onChange']);
 async function invoke(d,target,method,args){
