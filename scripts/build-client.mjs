@@ -49,6 +49,18 @@ for(const name of fs.readdirSync(src)){
      if(p.node.id.name==='totalDozens'&&p.getFunctionParent()?.node.id?.name==='showAllProductTypes')p.node.init=rpc('Views','totalDozens',[t.identifier('data')]);}
    });code=generate(ast,{retainLines:true}).code;
   }
+  if(['inventory.js','dashboard.js'].includes(name)){
+   // Calculate independent card models together, then append in original order.
+   // Only this exact read-only card loop is parallelized; business actions remain sequential.
+   const ast=parse(code,{sourceType:'script'});
+   traverse(ast,{CallExpression(p){const n=p.node,b=n.arguments[0]?.body;
+    if(!t.isMemberExpression(n.callee)||n.callee.property.name!=='forEach'||n.arguments.length!==1||!t.isArrowFunctionExpression(n.arguments[0])||!t.isCallExpression(b)||!t.isMemberExpression(b.callee)||!t.isIdentifier(b.callee.object,{name:'fragment'})||b.callee.property.name!=='appendChild')return;
+    const card=b.arguments[0];if(!t.isCallExpression(card)||!t.isMemberExpression(card.callee)||!t.isIdentifier(card.callee.object,{name:'ItemCard'})||card.callee.property.name!=='create')return;
+    const fn=p.getFunctionParent();if(!fn||!p.parentPath.isExpressionStatement())return;fn.node.async=true;
+    const cards=t.awaitExpression(t.callExpression(t.memberExpression(t.identifier('Promise'),t.identifier('all')),[t.callExpression(t.memberExpression(n.callee.object,t.identifier('map')),[t.arrowFunctionExpression(n.arguments[0].params,card)])]));
+    p.parentPath.replaceWith(t.forOfStatement(t.variableDeclaration('const',[t.variableDeclarator(t.identifier('card'))]),cards,t.expressionStatement(t.callExpression(t.memberExpression(t.identifier('fragment'),t.identifier('appendChild')),[t.identifier('card')]))));
+   }});code=generate(ast,{retainLines:true}).code;
+  }
   units.push(unit(code,name));
  }
  if(name.endsWith('.html')){

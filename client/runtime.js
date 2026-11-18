@@ -38,8 +38,9 @@
   }catch(e){batch.forEach(x=>x.reject(e));}
  }
  const mutations=new Set(['addItem','updateItem','deleteItem','toggleStock','setCompletionDate','addPayment','deletePayment','importEntries','undoImport','importBackup','restoreComplete','restoreBackup','restore','deleteForever','cleanLeftovers','saveInventory','replaceInventoryAndPayments']);
+ const referenceMethods=new Set(['getColorStyle','getColorStyleSafe','colorDisplayName','getPrice','getProductTypes','getColors','getQualityData']);
  function call(target,method,args){
-  const pure=target==='Calc'||target==='Reports';
+  const pure=target==='Calc'||target==='Reports'||target==='Store'&&referenceMethods.has(method);
   const key=pure?JSON.stringify([target,method,Math.floor(Date.now()/60000),encode(args)]):null;
   if(key&&cache.has(key))return cache.get(key);
   const promise=new Promise((resolve,reject)=>{pending.push({target,method,args,resolve,reject});if(!scheduled){scheduled=true;setTimeout(flush,0);}}).then(r=>{

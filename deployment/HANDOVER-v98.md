@@ -10,10 +10,11 @@
 - Locked decisions retained: original formulas, price snapshots, record shapes, payment validation, UI/navigation and append-only history.
 
 ## Implementation
-- Changed backend/database.js, backend/domain.js, backend/server.js, client/runtime.js; added backend/operations.js and backend-tests/performance.test.js.
+- Changed backend/database.js, backend/domain.js, backend/server.js, client/runtime.js and scripts/build-client.mjs; added backend/operations.js and backend-tests/performance.test.js.
 - Added single-statement MVCC projected reads with revision-validated, bounded snapshots; no reader write lock. Copies isolate callers. Writes retain workspace lock and original canonical validation.
 - Pure calculation/group/reference operations skip database loading. Reused compiled VM scripts; backup maintenance persists on the background/write path.
 - Changed-row writes use batches of up to 100; deleted keys batch per store. No schema change or new dependency.
+- Independent Home/Inventory card models are requested in parallel, then appended in original order. Only those exact read-only loops change in the server build; sequential write semantics remain. Static reference lookups are cached. Actual-data JSDOM Inventory plus Edit check: 173 requests before this change, 23 afterwards; Home: 28 to 15. These request counts include the test harness and do not establish physical-phone timings.
 - Request-local shared arguments transmit identical large report scopes once per batch, with a 500-call queue bound; the server validates/expands them before executing the same methods. No persistent reference token or automatic write retry is introduced.
 - Ordinary responses omit argument copies. Groups keep argument mutation transport. Complete restore uses a three-minute response window and clears client cache; uncertain writes are not automatically retried.
 - README/package versions, Source of Truth version row/history/tracker and User Guide topic 30/footer updated. No layout/CSS changes, paid upgrade, database replacement or formula changes.
