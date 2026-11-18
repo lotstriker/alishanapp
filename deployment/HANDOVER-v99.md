@@ -29,7 +29,10 @@
 - Shell-worker tests: bound navigation returns a cached sanitized shell with zero network; unbound/new tabs and cleared bindings return to normal authentication; API/write requests are not intercepted; per-session scope is stripped from stored HTML. These are VM protocol tests, not actual browser service-worker lifecycle tests.
 - Syntax checks and git diff --check passed before final packaging.
 - Real browser/mobile: not passed. Local Chromium failed to launch in this runtime; the connected browser extension was unavailable and the cloud browser could not reach the local synthetic preview (ERR_CONNECTION_REFUSED). Actual IndexedDB persistence and 390/360/320px indicator/control/guide rendering remain unverified. Simulated IndexedDB tests must not be presented as actual browser disk tests.
-- Hosted verification: deployment and authenticated live API checks in progress; final results appended below.
+- Hosted verification: final code f8bd10620cd585a3147d73891da0d6c6e0581700 deployed live in Render deploy dep-dbutp756e07s73eli5u0 on 18 Nov 2026. Authenticated release/status, paged reads, initial bundle, scoped HTML, worker source/registration and private asset delivery all returned HTTP 200.
+- Live status response: 78 bytes, release 99.0.0, revision 7. Inventory page 2 returned exactly 20 of 390 records with 80 authoritative card primes and snapshot revision 7 (application duration 917.6 ms in a concurrent test). The initial page bundle returned 50 of 390 records in 582778 bytes (application duration 1816.8 ms). These first/live API timings are not warm-cache page-load timings or a subsecond guarantee.
+- Live database counts remained 390 inventory, 409 payments, 34 quality-history and 106 activity records. This task did not restore/replace live user data. No new runtime application errors appeared in the observed post-deploy logs.
+- Browser worker registration/activation, real browser disk retention and click latency still require an actual device; source delivery and VM tests do not establish these production browser results.
 
 ## Documentation
 - Source of Truth updated: Yes. Pending Tracker updated: Yes. Change history appended: Yes.

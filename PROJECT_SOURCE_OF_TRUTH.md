@@ -1053,3 +1053,7 @@ This section records how the app is really used. Read it before changing anythin
 ### ALISHAN-PEND-2026-11-18-003 — Device cache acceptance
 - **Status:** IMPLEMENTED — NOT VERIFIED.
 - Cache and page-bundle source is implemented. Verify actual IndexedDB retention and eviction, cross-tab/other-device updates, offline warm views, login/identity changes and status/control placement at 390/360/320 px in a functioning browser before marking the full feature Completed. Test live API/version/record invariants and deliver v99 code/ZIP; record executed checks in deployment/HANDOVER-v99.md.
+
+#### v99 delivery verification — ALISHAN-CHG-2026-11-18-003
+- 96 automated tests passed after final code changes; nine sample-data JSDOM pages passed. Final code commit f8bd10620cd585a3147d73891da0d6c6e0581700 is live in Render deploy dep-dbutp756e07s73eli5u0. Cache-status response is 78 bytes; server pagination and page-bundle checks returned 20 / 50 of 390 entries with HTTP 200 and matching revision 7. Live record counts remain 390 inventory / 409 payments / 34 quality-history / 106 activity records.
+- Updated source and AlishanApp-v99-Device-Cache.zip are delivered; real browser/device acceptance remains IMPLEMENTED — NOT VERIFIED, as recorded above. Actual service-worker activation/cache-hit navigation and IndexedDB retention were not verified in a production browser. See deployment/HANDOVER-v99.md for first API timings, simulated warm-view measurements and limits.
