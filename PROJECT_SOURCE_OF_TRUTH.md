@@ -1063,3 +1063,5 @@ This section records how the app is really used. Read it before changing anythin
 - Two added regression checks cover unchanged response-body omission and preservation of the cached value/digest across repeated revalidation; total automated checks: 98. The earlier f8bd106 code marker above is an interim deployment; the final conditional-read deployment is recorded in deployment/HANDOVER-v99.md.
 
 - Final cache-worker compatibility/fallback checks bring the automated count to 100: storage/quota failures retain network fallback, and navigation resolves the prior window via replacesClientId or an exact same-origin initiating referrer. Browser/device acceptance remains pending.
+
+- Final v99 live code is 0e166d34db7c6d61aa7a80c8e55b873d12e3a8c7, Render deploy dep-dbuu2agn74is739e71u0 (live). The unchanged summary result is 20 bytes versus its 9671-byte full reply. Final HTTP delivery includes the browser navigation/cache-failure guards. All 100 automated checks pass; actual browser/device acceptance remains pending. Earlier v99 deployment markers above remain as interim history.
