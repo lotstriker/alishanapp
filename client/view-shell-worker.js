@@ -13,14 +13,14 @@ async function storePage(path){
  await Promise.allSettled(files.filter(url=>url.origin===self.location.origin&&!url.pathname.startsWith('/api/')).map(async url=>{const key=new Request(url,{credentials:'same-origin'});if(await cache.match(key))return;const asset=await fetch(key);if(asset.ok)await cache.put(new Request(url),asset);}));
 }
 self.addEventListener('install',event=>{event.waitUntil((async()=>{await Promise.allSettled(INITIAL_PAGES.map(storePage));await self.skipWaiting();})());});
-self.addEventListener('activate',event=>{event.waitUntil((async()=>{for(const name of await caches.keys())if(name.startsWith('alishan-')&&name!==SHELL&&name!==BINDINGS)await caches.delete(name);await self.clients.claim();})());});
+self.addEventListener('activate',event=>{event.waitUntil((async()=>{try{for(const name of await caches.keys())if(name.startsWith('alishan-')&&name!==SHELL&&name!==BINDINGS)await caches.delete(name);}catch{}await self.clients.claim();})());});
 async function bind(id,session){
  if(!id||!session||session.release!==RELEASE||!/^[a-f0-9]{32}$/.test(session.scope))return;
- const value={session,at:Date.now()};memory.set(id,value);const cache=await caches.open(BINDINGS);await cache.put(sessionKey(id),new Response(JSON.stringify(value),{headers:{'Content-Type':'application/json'}}));
+ const value={session,at:Date.now()};memory.set(id,value);try{const cache=await caches.open(BINDINGS);await cache.put(sessionKey(id),new Response(JSON.stringify(value),{headers:{'Content-Type':'application/json'}}));}catch{}
 }
 async function binding(id){
  if(!id)return null;let value=memory.get(id);
- if(!value){const response=await(await caches.open(BINDINGS)).match(sessionKey(id));if(response)value=await response.json();}
+ if(!value){try{const response=await(await caches.open(BINDINGS)).match(sessionKey(id));if(response)value=await response.json();}catch{return null;}}
  if(!value||Date.now()-value.at>24*3600000)return null;
  // Only an existing same-origin page can carry its authenticated shell scope forward.
  const client=await self.clients.get(id);if(!client||new URL(client.url).origin!==self.location.origin)return null;
@@ -42,15 +42,15 @@ self.addEventListener('fetch',event=>{
    const path=url.pathname==='/'?'/index.html':url.pathname;
    if(PAGES.includes(path)){
     const session=await binding(event.clientId);
-    if(session){const response=await(await caches.open(SHELL)).match(new Request(new URL(path,self.location.origin)));if(response){const text=await response.text();if(event.resultingClientId)await bind(event.resultingClientId,session);return new Response(text.replace('/*ALISHAN_SESSION*/',`window.ALISHAN_SESSION=${JSON.stringify(session)};`),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Frame-Options':'DENY','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin'}});}}
+    if(session){try{const response=await(await caches.open(SHELL)).match(new Request(new URL(path,self.location.origin)));if(response){const text=await response.text();if(event.resultingClientId)await bind(event.resultingClientId,session);return new Response(text.replace('/*ALISHAN_SESSION*/',`window.ALISHAN_SESSION=${JSON.stringify(session)};`),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Frame-Options':'DENY','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin'}});}}catch{}}
    }
    // New/unbound tabs always pass through normal server authentication.
    const response=await fetch(request);
-   if(response.ok&&PAGES.includes(path)){const html=cleanHTML(await response.clone().text());if(html.includes('/*ALISHAN_SESSION*/'))await(await caches.open(SHELL)).put(new Request(new URL(path,self.location.origin)),new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8'}}));}
+   if(response.ok&&PAGES.includes(path)){try{const html=cleanHTML(await response.clone().text());if(html.includes('/*ALISHAN_SESSION*/'))await(await caches.open(SHELL)).put(new Request(new URL(path,self.location.origin)),new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8'}}));}catch{}}
    return response;
   })());return;
  }
  if(/\.(?:js|css|woff2?|png|svg|ico)$/.test(url.pathname)&&!url.pathname.endsWith('/view-shell-worker.js')){
-  event.respondWith((async()=>{const cache=await caches.open(SHELL),hit=await cache.match(new Request(request.url));if(hit)return hit;const response=await fetch(request);if(response.ok)await cache.put(new Request(request.url),response.clone());return response;})());
+  event.respondWith((async()=>{let cache;try{cache=await caches.open(SHELL);const hit=await cache.match(new Request(request.url));if(hit)return hit;}catch{}const response=await fetch(request);if(response.ok&&cache)try{await cache.put(new Request(request.url),response.clone());}catch{}return response;})());
  }
 });

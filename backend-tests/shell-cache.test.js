@@ -19,3 +19,10 @@ test('shell cache excludes API and write requests and strips the per-session sco
  const html='<script>window.ALISHAN_SESSION={"scope":"private-fingerprint","release":"99.0.0"};</script>';
  const cleaned=env.context.cleanHTML(html);assert.match(cleaned,/ALISHAN_SESSION/);assert.ok(!cleaned.includes('private-fingerprint'));
 });
+
+test('cache storage/quota failures fall back to the successful network response instead of breaking the page',async()=>{
+ const env=setup();env.storage.open=async()=>{throw new Error('storage blocked');};env.context.fetch=async()=>new Response('network page',{status:200});
+ await env.message({type:'BIND_VIEW_SESSION',session:{scope:'a'.repeat(32),release:'99.0.0'}});const page=await env.navigate('first');assert.equal(page.status,200);assert.equal(await page.text(),'network page');
+ env.storage.open=async()=>({match:async()=>null,put:async()=>{throw new Error('quota exceeded');}});
+ let result;env.handlers.fetch({request:{url:'https://app.test/server-client.js?v=test',method:'GET',mode:'cors'},respondWith:p=>result=p});const asset=await result;assert.equal(asset.status,200);assert.equal(await asset.text(),'network page');
+});
