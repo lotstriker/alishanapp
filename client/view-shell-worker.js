@@ -34,6 +34,20 @@ self.addEventListener('message',event=>{
  if(event.data?.type==='BIND_VIEW_SESSION')event.waitUntil(bind(event.source?.id,event.data.session));
  if(event.data?.type==='CLEAR_VIEW_SESSION')event.waitUntil(clear(event.data.scope));
 });
+async function navigationSession(event){
+ const direct=await binding(event.replacesClientId||event.clientId);if(direct)return direct;
+ // Some engines omit the prior client ID for a navigation. An exact same-origin
+ // initiating referrer can identify an already-bound app window without a new login.
+ const referrer=event.request.referrer;if(!referrer)return null;
+ let source;try{source=new URL(referrer);if(source.origin!==self.location.origin)return null;source.hash='';}catch{return null;}
+ if(!self.clients.matchAll)return null;
+ const sessions=[];for(const client of await self.clients.matchAll({type:'window'})){
+  const url=new URL(client.url);url.hash='';if(url.href!==source.href)continue;
+  const session=await binding(client.id);if(session)sessions.push(session);
+ }
+ if(!sessions.length||sessions.some(s=>s.scope!==sessions[0].scope||s.release!==RELEASE))return null;
+ return sessions[0];
+}
 self.addEventListener('fetch',event=>{
  const request=event.request,url=new URL(request.url);
  if(request.method!=='GET'||url.origin!==self.location.origin||url.pathname.startsWith('/api/'))return;
@@ -41,10 +55,10 @@ self.addEventListener('fetch',event=>{
   event.respondWith((async()=>{
    const path=url.pathname==='/'?'/index.html':url.pathname;
    if(PAGES.includes(path)){
-    const session=await binding(event.clientId);
+    const session=await navigationSession(event);
     if(session){try{const response=await(await caches.open(SHELL)).match(new Request(new URL(path,self.location.origin)));if(response){const text=await response.text();if(event.resultingClientId)await bind(event.resultingClientId,session);return new Response(text.replace('/*ALISHAN_SESSION*/',`window.ALISHAN_SESSION=${JSON.stringify(session)};`),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Frame-Options':'DENY','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin'}});}}catch{}}
    }
-   // New/unbound tabs always pass through normal server authentication.
+   // Without a bound initiating app window, use normal server authentication.
    const response=await fetch(request);
    if(response.ok&&PAGES.includes(path)){try{const html=cleanHTML(await response.clone().text());if(html.includes('/*ALISHAN_SESSION*/'))await(await caches.open(SHELL)).put(new Request(new URL(path,self.location.origin)),new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8'}}));}catch{}}
    return response;

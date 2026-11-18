@@ -1,9 +1,9 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
-function setup(){const handlers={},stores=new Map(),clients=new Map([['first',{url:'https://app.test/index.html'}]]);let network=0;const storage={async open(name){if(!stores.has(name))stores.set(name,new Map());const data=stores.get(name),key=r=>typeof r==='string'?r:r.url;return {async put(r,v){data.set(key(r),v.clone());},async match(r){return data.get(key(r))?.clone();},async keys(){return [...data.keys()].map(u=>new Request(u));},async delete(r){return data.delete(key(r));}};},async keys(){return [...stores.keys()];},async delete(name){return stores.delete(name);}};
- const context={self:{location:{origin:'https://app.test'},clients:{get:async id=>clients.get(id),claim:async()=>{}},addEventListener:(name,fn)=>handlers[name]=fn,skipWaiting:async()=>{}},caches:storage,Request,Response,URL,Map,Date,JSON,Promise,encodeURIComponent,fetch:async()=>{network++;return new Response('authenticate',{status:401});}};
+function setup(){const handlers={},stores=new Map(),clients=new Map([['first',{id:'first',url:'https://app.test/index.html'}]]);let network=0;const storage={async open(name){if(!stores.has(name))stores.set(name,new Map());const data=stores.get(name),key=r=>typeof r==='string'?r:r.url;return {async put(r,v){data.set(key(r),v.clone());},async match(r){return data.get(key(r))?.clone();},async keys(){return [...data.keys()].map(u=>new Request(u));},async delete(r){return data.delete(key(r));}};},async keys(){return [...stores.keys()];},async delete(name){return stores.delete(name);}};
+ const context={self:{location:{origin:'https://app.test'},clients:{get:async id=>clients.get(id),matchAll:async()=>[...clients.values()],claim:async()=>{}},addEventListener:(name,fn)=>handlers[name]=fn,skipWaiting:async()=>{}},caches:storage,Request,Response,URL,Map,Date,JSON,Promise,encodeURIComponent,fetch:async()=>{network++;return new Response('authenticate',{status:401});}};
  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../client/view-shell-worker.js'),'utf8').replace('__RELEASE__','99.0.0').replace('__ASSET_TAG__','99.0.0'),context);
- return {handlers,storage,context,network:()=>network,async message(data){let pending;handlers.message({data,source:{id:'first'},waitUntil:p=>pending=p});await pending;},async navigate(clientId){let result;handlers.fetch({request:{url:'https://app.test/inventory.html',method:'GET',mode:'navigate'},clientId,resultingClientId:'second',respondWith:p=>result=p});return result;}};
+ return {handlers,storage,context,network:()=>network,async message(data){let pending;handlers.message({data,source:{id:'first'},waitUntil:p=>pending=p});await pending;},async navigate(clientId){let result;handlers.fetch({request:{url:'https://app.test/inventory.html',method:'GET',mode:'navigate'},clientId:'',replacesClientId:clientId,resultingClientId:'second',respondWith:p=>result=p});return result;}};
 }
 test('a bound existing tab can navigate to a sanitized cached shell without network; new tabs still authenticate',async()=>{
  const env=setup(),cache=await env.storage.open('alishan-shell-99.0.0');const html='<script>/*ALISHAN_SESSION*/</script><p>saved shell</p>';await cache.put(new Request('https://app.test/inventory.html'),new Response(html));
@@ -25,4 +25,12 @@ test('cache storage/quota failures fall back to the successful network response 
  await env.message({type:'BIND_VIEW_SESSION',session:{scope:'a'.repeat(32),release:'99.0.0'}});const page=await env.navigate('first');assert.equal(page.status,200);assert.equal(await page.text(),'network page');
  env.storage.open=async()=>({match:async()=>null,put:async()=>{throw new Error('quota exceeded');}});
  let result;env.handlers.fetch({request:{url:'https://app.test/server-client.js?v=test',method:'GET',mode:'cors'},respondWith:p=>result=p});const asset=await result;assert.equal(asset.status,200);assert.equal(await asset.text(),'network page');
+});
+
+test('same-origin initiated navigation can reuse a matching bound window when the browser omits prior IDs',async()=>{
+ const env=setup(),cache=await env.storage.open('alishan-shell-99.0.0');await cache.put(new Request('https://app.test/inventory.html'),new Response('<script>/*ALISHAN_SESSION*/</script>'));
+ await env.message({type:'BIND_VIEW_SESSION',session:{scope:'a'.repeat(32),release:'99.0.0'}});
+ async function navigate(referrer){let result;env.handlers.fetch({request:{url:'https://app.test/inventory.html',method:'GET',mode:'navigate',referrer},clientId:'',replacesClientId:'',resultingClientId:'second',respondWith:p=>result=p});return result;}
+ assert.equal((await navigate('https://app.test/index.html')).status,200);assert.equal(env.network(),0);
+ assert.equal((await navigate('https://other.test/index.html')).status,401);
 });
