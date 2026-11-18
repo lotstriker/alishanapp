@@ -42,7 +42,7 @@ self.addEventListener('fetch',event=>{
    const path=url.pathname==='/'?'/index.html':url.pathname;
    if(PAGES.includes(path)){
     const session=await binding(event.clientId);
-    if(session){const response=await(await caches.open(SHELL)).match(new Request(new URL(path,self.location.origin)));if(response){const text=await response.text();if(event.resultingClientId)await bind(event.resultingClientId,session);return new Response(text.replace('/*ALISHAN_SESSION*/',`window.ALISHAN_SESSION=${JSON.stringify(session)};`),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}});}}
+    if(session){const response=await(await caches.open(SHELL)).match(new Request(new URL(path,self.location.origin)));if(response){const text=await response.text();if(event.resultingClientId)await bind(event.resultingClientId,session);return new Response(text.replace('/*ALISHAN_SESSION*/',`window.ALISHAN_SESSION=${JSON.stringify(session)};`),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Frame-Options':'DENY','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin'}});}}
    }
    // New/unbound tabs always pass through normal server authentication.
    const response=await fetch(request);

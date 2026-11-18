@@ -8,7 +8,7 @@ function setup(){const handlers={},stores=new Map(),clients=new Map([['first',{u
 test('a bound existing tab can navigate to a sanitized cached shell without network; new tabs still authenticate',async()=>{
  const env=setup(),cache=await env.storage.open('alishan-shell-99.0.0');const html='<script>/*ALISHAN_SESSION*/</script><p>saved shell</p>';await cache.put(new Request('https://app.test/inventory.html'),new Response(html));
  await env.message({type:'BIND_VIEW_SESSION',session:{scope:'a'.repeat(32),release:'99.0.0'}});
- let response=await env.navigate('first');assert.equal(response.status,200);assert.match(await response.text(),/window.ALISHAN_SESSION=/);assert.equal(env.network(),0);
+ let response=await env.navigate('first');assert.equal(response.status,200);assert.equal(response.headers.get('X-Frame-Options'),'DENY');assert.match(await response.text(),/window.ALISHAN_SESSION=/);assert.equal(env.network(),0);
  response=await env.navigate('');assert.equal(response.status,401);assert.equal(env.network(),1);
  await env.message({type:'CLEAR_VIEW_SESSION',scope:'a'.repeat(32)});response=await env.navigate('first');assert.equal(response.status,401);
 });
