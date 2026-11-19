@@ -21,7 +21,7 @@ function selection(calls){
   }else{
    for(const s of ['inventory','payments','auditLog','settings'])selected.add(s);
    if(['getRecentActivity','pageBundle'].includes(c.method)||c.target==='Reports')selected.add('editHistory');
-   if(c.method==='listBackups')settings.add('autoBackups');
+   if(['listBackups','backupOverview'].includes(c.method))settings.add('autoBackups');
    if(c.method==='getDamagedCount')settings.add('corruptedItemsBackup');
    if(c.target==='Archive')for(const s of ['inventory','archive','auditLog','editHistory','payments'])selected.add(s);
   }

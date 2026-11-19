@@ -1,0 +1,20 @@
+'use strict';
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const {PGlite}=require('@electric-sql/pglite');
+const {PostgresRepository}=require('../backend/database');
+test('theme-only saves preserve the data revision and leave backup records intact',async t=>{
+  const pg=new PGlite();
+  t.after(()=>pg.close());
+  await pg.exec('CREATE ROLE anon; CREATE ROLE authenticated;');
+  await pg.exec(fs.readFileSync('deployment/schema.sql','utf8'));
+  const client={query:(q,p)=>pg.query(q,p),release(){}};
+  const repo=new PostgresRepository({...client,connect:async()=>client},'theme-test');
+  await repo.transaction(state=>{state.settings.push({key:'autoBackups',value:[{inventory:[{id:1}]}]});});
+  const revision=await repo.revision();
+  await repo.themePreference('rose-wine');
+  assert.equal(await repo.themePreference(),'rose-wine');
+  assert.equal(await repo.revision(),revision);
+  await repo.read(state=>assert.equal(state.settings.find(row=>row.key==='autoBackups').value[0].inventory[0].id,1));
+});

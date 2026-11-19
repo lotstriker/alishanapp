@@ -25,6 +25,16 @@ function createApp({repository,username,password}){
  });
  app.use('/api',(req,res,next)=>{const origin=req.get('origin');if(req.get('sec-fetch-site')==='cross-site'||(origin&&origin!==`${req.protocol}://${req.get('host')}`&&origin!==`https://${req.get('host')}`))return res.status(403).json({error:'Cross-site request rejected'});next();});
  app.use(express.json({limit:'15mb',strict:true}));
+ const {gzip}=require('node:zlib');
+ function sendReadResponse(req,res,value){
+   const body=JSON.stringify(encode(value));
+   res.vary('Accept-Encoding');
+   if(body.length<4096||req.acceptsEncodings('gzip','identity')!=='gzip')return res.type('json').send(body);
+   gzip(body,{level:3},(error,compressed)=>{
+     if(error)return res.type('json').send(body);
+     res.set('Content-Encoding','gzip').type('json').send(compressed);
+   });
+ }
  async function run(calls){
    const readOnly=calls.every(isReader);
    const execute=async (state,revision)=>{
@@ -45,7 +55,7 @@ function createApp({repository,username,password}){
  const valid=c=>c&&['Calc','Store','Reports','Archive','Groups','DB','Search','Views'].includes(c.target)&&typeof c.method==='string'&&c.method.length<=100&&Array.isArray(c.args)&&c.args.length<=10;
  app.post('/api/rpc',async(req,res,next)=>{try{
    if(!valid(req.body))return res.status(400).json({error:'Invalid operation'});
-   const started=performance.now();const output=await run([req.body]);res.set('Server-Timing',`app;dur=${(performance.now()-started).toFixed(1)}`);if(output.revision!==null&&output.revision!==undefined)res.set('X-Alishan-Revision',output.revision);res.json(encode(output.results[0]));
+   const started=performance.now();const output=await run([req.body]);res.set('Server-Timing',`app;dur=${(performance.now()-started).toFixed(1)}`);if(output.revision!==null&&output.revision!==undefined)res.set('X-Alishan-Revision',output.revision);if(isReader(req.body))sendReadResponse(req,res,output.results[0]);else res.json(encode(output.results[0]));
  }catch(e){next(e);}});
  app.post('/api/batch',async(req,res,next)=>{try{
    // Batch argument references are request-local, bounded by the JSON body limit.
@@ -61,8 +71,19 @@ function createApp({repository,username,password}){
      req.body=calls;
    }
    if(!Array.isArray(req.body)||req.body.length<1||req.body.length>1000||!req.body.every(valid))return res.status(400).json({error:'Invalid batch'});
-   const started=performance.now();const output=await run(req.body);res.set('Server-Timing',`app;dur=${(performance.now()-started).toFixed(1)}`);if(output.revision!==null&&output.revision!==undefined)res.set('X-Alishan-Revision',output.revision);res.json(encode(output.results||[]));
+   const started=performance.now();const output=await run(req.body);res.set('Server-Timing',`app;dur=${(performance.now()-started).toFixed(1)}`);if(output.revision!==null&&output.revision!==undefined)res.set('X-Alishan-Revision',output.revision);if(req.body.every(isReader))sendReadResponse(req,res,output.results||[]);else res.json(encode(output.results||[]));
  }catch(e){next(e);}});
+ app.get('/api/theme',async(req,res,next)=>{try{
+   const theme=repository.themePreference?await repository.themePreference():await repository.transaction(async state=>(await domain(state,{readOnly:true})).DB.getTheme());
+   res.json({theme:theme||'light-default'});
+ }catch(error){next(error);}});
+ app.post('/api/theme',async(req,res,next)=>{try{
+   const theme=req.body?.theme;
+   if(typeof theme!=='string'||!/^[a-z0-9-]{1,40}$/.test(theme))return res.status(400).json({error:'Invalid theme'});
+   if(repository.themePreference)await repository.themePreference(theme);
+   else await repository.transaction(async state=>(await domain(state,{readOnly:true})).DB.setTheme(theme));
+   res.json({ok:true});
+ }catch(error){next(error);}});
  app.get('/api/cache-status',async(req,res,next)=>{try{res.json({...session,revision:repository.revision?await repository.revision():'0'});}catch(e){next(e);}});
  app.get('/api/bootstrap.js',async(req,res,next)=>{try{
    const d=await domain(blank(),{readOnly:true});

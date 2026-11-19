@@ -29,7 +29,8 @@
     document.addEventListener('themeChanged', function (e) { remember(e.detail.theme); apply(e.detail.theme); barColour(); });
     document.addEventListener('DOMContentLoaded', function () {
         barColour();
-        if (!window.AlishanDB || !AlishanDB.getTheme) return;
+        try { if (localStorage.getItem('alishan-theme')) return; } catch (e) {}
+        if (window.globalThemeManager || !window.AlishanDB || !AlishanDB.getTheme) return;
         AlishanDB.init().then(function () { return AlishanDB.getTheme('light-default'); })
             .then(function (name) { remember(name); apply(name); barColour(); })
             .catch(function () { /* keeps the remembered theme */ });

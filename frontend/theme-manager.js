@@ -19,25 +19,27 @@ class GlobalThemeManager {
   }
   
   async init() {
+    let remembered;
+    try { remembered = localStorage.getItem('alishan-theme'); } catch {}
+    if (remembered) {
+      this.applyTheme(remembered, false);
+      return;
+    }
     await AlishanDB.init();
-    this.currentTheme = await this.getSavedTheme();
-
-    // Apply saved theme on page load
-    this.applyTheme(this.currentTheme);
-    
-    // System theme detection
-    await this.detectSystemTheme();
+    const saved = await this.getSavedTheme();
+    if (!this.themeSave) this.applyTheme(saved, false);
   }
   
   getAvailableThemes() {
     return this.availableThemes;
   }
   
-  applyTheme(themeName) {
+  applyTheme(themeName, persist = true) {
     if (!this.availableThemes.includes(themeName)) {
       themeName = 'light-default';
     }
     
+    const changed = this.currentTheme !== themeName;
     // Remove all theme classes
     this.availableThemes.forEach(theme => {
       document.body.classList.remove(`theme-${theme}`);
@@ -49,8 +51,6 @@ class GlobalThemeManager {
     // Update theme toggle icon
     this.updateThemeToggleIcon(themeName);
     
-    // Persist through the single source of truth (AlishanDB)
-    AlishanDB.setTheme(themeName);
     this.currentTheme = themeName;
     
     // Update theme selector if exists
@@ -58,8 +58,15 @@ class GlobalThemeManager {
     
     // Dispatch event for other components
     this.notifyThemeChange(themeName);
+    if (persist && changed) this.queueThemeSave(themeName);
   }
   
+  queueThemeSave(themeName) {
+    this.themeSave = (this.themeSave || Promise.resolve())
+      .then(() => AlishanDB.setTheme(themeName))
+      .catch(() => window.showNotification?.('Theme is applied on this device. Server sync failed.', 'warning'));
+  }
+
   updateThemeToggleIcon(themeName) {
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {

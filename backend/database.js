@@ -78,6 +78,35 @@ class PostgresRepository {
     }
     return fn(structuredClone(state),Number(row?.revision||0));
   }
+  async themePreference(value) {
+    const key = keyText('selectedTheme');
+    if (value === undefined) {
+      const result = await this.pool.query(
+        "SELECT payload->>'value' AS theme FROM alishan_private.records WHERE workspace_id=$1 AND store='settings' AND record_key=$2",
+        [this.workspace, key]
+      );
+      return result.rows[0]?.theme;
+    }
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query("SET LOCAL lock_timeout = '10s'");
+      await client.query('INSERT INTO alishan_private.workspaces(id) VALUES($1) ON CONFLICT DO NOTHING',[this.workspace]);
+      await client.query('SELECT id FROM alishan_private.workspaces WHERE id=$1 FOR UPDATE',[this.workspace]);
+      await client.query(
+        "INSERT INTO alishan_private.records(workspace_id,store,record_key,payload) VALUES($1,'settings',$2,$3::jsonb) ON CONFLICT(workspace_id,store,record_key) DO UPDATE SET payload=EXCLUDED.payload",
+        [this.workspace,key,JSON.stringify({key:'selectedTheme',value})]
+      );
+      await client.query('COMMIT');
+      this.readCache.clear();
+      return true;
+    } catch (error) {
+      await client.query('ROLLBACK').catch(()=>{});
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
   async transaction(fn){
     const client=await this.pool.connect();
     try{

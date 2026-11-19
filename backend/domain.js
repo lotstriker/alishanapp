@@ -33,6 +33,16 @@ async function domain(state,{readOnly=false}={}){
  };
  const search={apply(items,options,term){context.localStorage={getItem:()=>JSON.stringify(options)};context.window.AlishanSearch={getTerm:()=>term};scripts['advanced-search.js'].runInContext(context,{timeout:2000});return context.window.AlishanAdvancedSearch.apply(items);}};
  const d={Views:{...require('./views')(context.window.AlishanCalc,context.window.AlishanStore),...require('./dashboard-rules')(context.window.AlishanCalc,context.window.AlishanStore)},Search:search,Calc:context.window.AlishanCalc,Store:context.window.AlishanStore,Reports:context.window.ReportEngine,Archive:context.window.AlishanArchive,Groups:vm.runInContext('makeCore(AlishanCalc.SIZES, AlishanCalc.splitPieces)',context),DB:db};
+ d.Views.backupOverview=async()=>{
+   const history=await db.getSetting('autoBackups',[]);
+   return {
+     enabled:(await db.getSetting('autoBackupEnabled','true'))!=='false',
+     frequency:parseInt(await db.getSetting('backupFrequency','24'),10)||24,
+     inventoryCount:state.inventory.length,
+     paymentCount:state.payments.length,
+     history:history.map(b=>({metadata:{created:b?.metadata?.created,type:b?.metadata?.type,totalItems:b?.metadata?.totalItems??b?.inventory?.length??0,totalPayments:b?.metadata?.totalPayments??b?.payments?.length??0},restorable:Array.isArray(b?.inventory)&&Array.isArray(b?.payments)}))
+   };
+ };
  Object.assign(d.Views,require('./page-bundles')(d));return d;
 }
 const blocked=new Set(['constructor','__proto__','prototype','subscribe','onChange']);

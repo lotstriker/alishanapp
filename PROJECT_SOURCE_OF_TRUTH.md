@@ -594,6 +594,7 @@ Rule: see section 0, rule 8. Newest at the bottom.
 | v97 | `AlishanApp-v97-Render-Supabase-Backend.zip` | 2026-11-18 | `ALISHAN-CHG-2026-11-18-001` | Server-only business calculations and transactional Supabase persistence on Render; existing UI retained with asynchronous API wiring, private server access and migration instructions. Hosted and real-browser acceptance remain pending. |
 | v98 | `AlishanApp-v98-Backend-Performance.zip` | 2026-11-18 | `ALISHAN-CHG-2026-11-18-002` | Lock-free projected reads, revision-checked snapshots, bulk restore writes and smaller API responses; original UI and calculation rules preserved. |
 | v99 | `AlishanApp-v99-Device-Cache.zip` | 2026-11-18 | `ALISHAN-CHG-2026-11-18-003` | Scoped RAM/device caches of server-computed views, revision checks, background refresh/prefetch, static metadata and server-paged Inventory. |
+| v100 | `AlishanApp-v100-Theme-and-Loading.zip` | 2026-11-18 | `ALISHAN-CHG-2026-11-18-004` | Local-first theme, independent theme persistence, compressed reads and compact backup overview. |
 
 > **Note on two ZIPs named v90 (added 2026-11-11, history kept):** an earlier ZIP, `AlishanApp-v90-Visual-Manual-Workflow-Fixes.zip` (change ID `ALISHAN-CHG-2026-11-09-008`: Expand All / Collapse All fix, Add Entry order Quality Type → Quality → Cup, 32 PDF screenshots), was delivered on a separate branch. Its changes are **not** contained in the v90 row above or in v91. This lineage continues from `AlishanApp-v90-Visual-Screenshot-Tutorials.zip`. Whether to bring those fixes into this lineage is an open owner decision.
 
@@ -1065,3 +1066,7 @@ This section records how the app is really used. Read it before changing anythin
 - Final cache-worker compatibility/fallback checks bring the automated count to 100: storage/quota failures retain network fallback, and navigation resolves the prior window via replacesClientId or an exact same-origin initiating referrer. Browser/device acceptance remains pending.
 
 - Final v99 live code is 0e166d34db7c6d61aa7a80c8e55b873d12e3a8c7, Render deploy dep-dbuu2agn74is739e71u0 (live). The unchanged summary result is 20 bytes versus its 9671-byte full reply. Final HTTP delivery includes the browser navigation/cache-failure guards. All 100 automated checks pass; actual browser/device acceptance remains pending. Earlier v99 deployment markers above remain as interim history.
+
+### ALISHAN-CHG-2026-11-18-004 — Theme and page loading
+- Theme initialization applies the remembered preference without writing it, explicit changes display before background persistence, and the dedicated settings row write does not invalidate inventory revisions. Large read RPC replies negotiate gzip, and Settings fetches backup metadata/counts instead of backup contents when rendering the list.
+- Full report response structure and manual backup/restore APIs remain compatible. Actual phone timing remains pending.

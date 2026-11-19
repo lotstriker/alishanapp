@@ -30,6 +30,15 @@ for(const name of fs.readdirSync(src)){
   }
   if(['inventory.js','dashboard.js'].includes(name))code=code.replace('    ItemModal.inject();', '    refreshUI();\n    ItemModal.inject();');
   if(name==='item-modal.js')code=code.replace('    function inject() {', '    let injecting=null;\n    async function inject(){if(!injecting)injecting=buildModal();return injecting;}\n    async function buildModal() {');
+  if(name==='settings-data-backup.js'){
+   const start=code.indexOf('    await AlishanDB.init();');
+   const end=code.indexOf("    $('alishanAutoBackup').checked",start);
+   if(start<0||end<0)throw new Error('Backup overview integration source changed');
+   code=code.slice(0,start)+"    const {enabled,frequency,history,inventoryCount,paymentCount}=await AlishanRemote.call('Views','backupOverview',[]);\n"+code.slice(end);
+   code=code.replace('${inventory.length} quality records · ${payments.length} payment records currently saved','${inventoryCount} quality records · ${paymentCount} payment records currently saved');
+   code=code.replace('!latest || !Array.isArray(latest.inventory) || !Array.isArray(latest.payments)','!latest?.restorable');
+  }
+  if(name==='script.js')code=code.replace("const backups = await AlishanDB.getSetting('autoBackups', []);","const {history:backups}=await AlishanRemote.call('Views','backupOverview',[]);");
   if(name==='inventory.js')code=code.replace('const paged = AlishanStore.paginate(currentList(), currentPage, itemsPerPage);',"const bundle=AlishanRemote.call('Views','inventoryPage',[readFilters(),currentPage,itemsPerPage,typeof AlishanAdvancedSearch!=='undefined'?AlishanAdvancedSearch.getOptions():null,currentSearch()]);const paged=bundle.paged;if(typeof AlishanAdvancedSearch!=='undefined')AlishanAdvancedSearch.setCount(paged.total);");
   if(name==='dashboard.js'){
    code=code.replace("let items = AlishanStore.query({ search: term });\n    items = items.slice().sort((a, b) => new Date(b.dateTime || b.createdAt || 0) - new Date(a.dateTime || a.createdAt || 0)).slice(0, 5);","const bundle=AlishanRemote.call('Views','homeLatest',[term]);let items=bundle.items;");

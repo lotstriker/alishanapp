@@ -77,7 +77,17 @@
   if(prepared.has(key))return prepared.get(key);
   const promise=device.call('Views','pageBundle',args);prepared.set(key,promise);promise.catch(()=>prepared.delete(key));return promise;
  }
+ async function themePreference(theme){
+  const options={credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000)};
+  if(theme!==undefined)Object.assign(options,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({theme})});
+  const response=await fetch('/api/theme',options);
+  if(!response.ok)throw new Error('Theme sync failed');
+  const result=await response.json();
+  return theme===undefined?result.theme:result.ok;
+ }
  function call(target,method,args){
+  if(device?.enabled&&target==='DB'&&method==='setTheme')return themePreference(args[0]);
+  if(device?.enabled&&target==='DB'&&method==='getTheme')return themePreference();
   if(device?.enabled&&target==='Store'&&method==='init')return preparePage(pageName()).then(()=>device.call(target,method,args));
   return device?device.call(target,method,args):networkCall(target,method,args);
  }
