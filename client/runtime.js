@@ -2,8 +2,9 @@
 (function(){
  'use strict';
  const encode=ALISHAN_WIRE.encode,decode=ALISHAN_WIRE.decode;
+ const scopedHeaders=()=>({'X-Alishan-Scope':window.ALISHAN_SESSION?.scope||''});
  const listeners=new Set(),cache=new Map();
- const channel=typeof BroadcastChannel==='function'?new BroadcastChannel('alishan-server'):null;
+ const channel=typeof BroadcastChannel==='function'?new BroadcastChannel('alishan-server:'+window.ALISHAN_SESSION?.scope):null;
  let pending=[],scheduled=false;
  function changed(){cache.clear();if(typeof prepared!=='undefined')prepared.clear();for(const cb of listeners)Promise.resolve().then(cb).catch(reportError);}
  let device;
@@ -29,13 +30,14 @@
  }
  async function sendBatch(batch){
   try{
-   const response=await fetch('/api/batch',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:pack(batch),signal:AbortSignal.timeout(batch.some(x=>['restoreComplete','importBackup','restoreBackup','importEntries'].includes(x.method))?180000:45000)});
+   const response=await fetch('/api/batch',{method:'POST',headers:{'Content-Type':'application/json',...scopedHeaders()},credentials:'same-origin',body:pack(batch),signal:AbortSignal.timeout(batch.some(x=>['restoreComplete','importBackup','restoreBackup','importEntries'].includes(x.method))?180000:45000)});
    if(response.status===401)device?.revoke?.();
    if(!response.ok)throw new Error(response.status===401?'Please sign in again.':'Server connection failed. Please try again.');
    device?.acceptRevision(response.headers?.get?.('X-Alishan-Revision'));
    const output=decode(await response.json());if(!Array.isArray(output)||output.length!==batch.length)throw new Error('Invalid server response. Please retry.');
    output.forEach((r,i)=>{if(r.unchanged&&batch[i].conditional){batch[i].conditional.unchanged=true;batch[i].resolve(batch[i].conditional.value);return;}if(r.error)batch[i].reject(new Error(r.error));else{
      if(batch[i].target==='Groups')batch[i].args.forEach((arg,n)=>{if(arg&&typeof arg==='object'&&!Array.isArray(arg)&&r.args[n]){for(const k of Object.keys(arg))delete arg[k];Object.assign(arg,r.args[n]);}});
+     if(batch[i].conditional?.write)batch[i].conditional.primes=r.primes;
      batch[i].resolve(r.result);
    }});
   }catch(e){batch.forEach(x=>x.reject(e));}
@@ -65,7 +67,7 @@
   if(document.body)paint();else document.addEventListener('DOMContentLoaded',paint,{once:true});
  }
  device=window.AlishanCreateDeviceCache?.({wire:ALISHAN_WIRE,network:networkCall,session:window.ALISHAN_SESSION,isReader,onChange:changed,onStatus:cacheStatus,broadcast:()=>channel?.postMessage('changed'),fetchStatus:async()=>{
-  const response=await fetch('/api/cache-status',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(10000)});
+  const response=await fetch('/api/cache-status',{headers:scopedHeaders(),credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(10000)});
   if(!response.ok)throw Object.assign(new Error('Status unavailable'),{status:response.status});return response.json();
  }});
  const prepared=new Map();
@@ -78,14 +80,15 @@
   const promise=device.call('Views','pageBundle',args);prepared.set(key,promise);promise.catch(()=>prepared.delete(key));return promise;
  }
  async function themePreference(theme){
-  const options={credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000)};
-  if(theme!==undefined)Object.assign(options,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({theme})});
+  const options={headers:scopedHeaders(),credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000)};
+  if(theme!==undefined)Object.assign(options,{method:'POST',headers:{'Content-Type':'application/json',...scopedHeaders()},body:JSON.stringify({theme})});
   const response=await fetch('/api/theme',options);
   if(!response.ok)throw new Error('Theme sync failed');
   const result=await response.json();
   return theme===undefined?result.theme:result.ok;
  }
  function call(target,method,args){
+  if(target==='Store'&&method==='reviewEntry')return networkCall(target,method,args);
   if(device?.enabled&&target==='DB'&&method==='setTheme')return themePreference(args[0]);
   if(device?.enabled&&target==='DB'&&method==='getTheme')return themePreference();
   if(device?.enabled&&target==='Store'&&method==='init')return preparePage(pageName()).then(()=>device.call(target,method,args));
@@ -182,7 +185,23 @@
   if(document.readyState==='complete')prefetch();else window.addEventListener('load',prefetch,{once:true});
   const addCacheControl=()=>{const host=document.getElementById('backup');if(!host||document.getElementById('refreshDeviceView'))return;const card=document.createElement('div');card.className='card';card.style.marginTop='18px';card.innerHTML='<div class="card-header"><h2 class="card-title">Saved Device View</h2></div><div class="card-body"><p class="settings-help">Loaded views are kept on this device for faster opening. Server records remain the source of truth.</p><button id="refreshDeviceView" type="button" class="btn btn-secondary">Refresh saved view</button></div>';host.appendChild(card);card.querySelector('button').onclick=()=>{AlishanRemote.clearDeviceCache();if(typeof showNotification==='function')showNotification('Refreshing saved view. Server records are unchanged.','success');};};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addCacheControl,{once:true});else addCacheControl();
-  document.addEventListener('pointerover',e=>{const href=e.target.closest?.('a')?.getAttribute('href')||'';if(/inventory\.html|reports\.html/.test(href))void preparePage(href.includes('inventory')?'inventory':'reports').catch(()=>{});},{passive:true});
+  const warmLink=e=>{
+   const link=e.target.closest?.('a');
+   if(!link||link.origin!==location.origin||link.pathname===location.pathname)return;
+   const names={'/':'home','/index.html':'home','/inventory.html':'inventory','/reports.html':'reports'};
+   const name=names[link.pathname];
+   if(name){void preparePage(name).catch(()=>{});navigator.serviceWorker?.controller?.postMessage({type:'WARM_VIEW',path:link.pathname==='/'?'/index.html':link.pathname});}
+  };
+  for(const event of ['pointerover','pointerdown','focusin'])document.addEventListener(event,warmLink,{passive:true});
+  if(window.ALISHAN_SESSION?.google){
+   const addSignOut=()=>{
+    const form=document.createElement('form');form.method='post';form.action='/auth/logout';
+    const button=document.createElement('button');button.type='submit';button.className='btn btn-secondary';button.textContent='Sign out';
+    form.appendChild(button);(document.querySelector('main')||document.body).appendChild(form);
+    form.addEventListener('submit',()=>{device.revoke();shellMessage('CLEAR_VIEW_SESSION');});
+   };
+   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addSignOut,{once:true});else addSignOut();
+  }
   const poll=setInterval(()=>{if(document.visibilityState!=='hidden')void device.check();},15000);poll?.unref?.();
   window.addEventListener('focus',()=>void device.check(true));window.addEventListener('online',()=>void device.check(true));window.addEventListener('offline',()=>cacheStatus('offline'));
   window.addEventListener('pagehide',()=>device.persist());

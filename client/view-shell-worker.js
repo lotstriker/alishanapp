@@ -31,6 +31,10 @@ async function clear(scope){
  for(const request of await cache.keys()){const response=await cache.match(request);let value;try{value=await response.json();}catch{}if(!scope||value?.session?.scope===scope)await cache.delete(request);}
 }
 self.addEventListener('message',event=>{
+ if(event.data?.type==='WARM_VIEW'&&PAGES.includes(event.data.path))event.waitUntil((async()=>{
+  const url=new URL(event.data.path,self.location.origin);
+  if(!await(await caches.open(SHELL)).match(new Request(url)))await storePage(url.pathname);
+ })());
  if(event.data?.type==='BIND_VIEW_SESSION')event.waitUntil(bind(event.source?.id,event.data.session));
  if(event.data?.type==='CLEAR_VIEW_SESSION')event.waitUntil(clear(event.data.scope));
 });
@@ -50,13 +54,13 @@ async function navigationSession(event){
 }
 self.addEventListener('fetch',event=>{
  const request=event.request,url=new URL(request.url);
- if(request.method!=='GET'||url.origin!==self.location.origin||url.pathname.startsWith('/api/'))return;
+ if(request.method!=='GET'||url.origin!==self.location.origin||(url.pathname.startsWith('/api/')||url.pathname.startsWith('/auth/')||url.pathname==='/login'))return;
  if(request.mode==='navigate'){
   event.respondWith((async()=>{
    const path=url.pathname==='/'?'/index.html':url.pathname;
    if(PAGES.includes(path)){
     const session=await navigationSession(event);
-    if(session){try{const response=await(await caches.open(SHELL)).match(new Request(new URL(path,self.location.origin)));if(response){const text=await response.text();if(event.resultingClientId)await bind(event.resultingClientId,session);return new Response(text.replace('/*ALISHAN_SESSION*/',`window.ALISHAN_SESSION=${JSON.stringify(session)};`),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Frame-Options':'DENY','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin'}});}}catch{}}
+    if(session&&!session.google){try{const response=await(await caches.open(SHELL)).match(new Request(new URL(path,self.location.origin)));if(response){const text=await response.text();if(event.resultingClientId)await bind(event.resultingClientId,session);return new Response(text.replace('/*ALISHAN_SESSION*/',`window.ALISHAN_SESSION=${JSON.stringify(session)};`),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Frame-Options':'DENY','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin'}});}}catch{}}
    }
    // Without a bound initiating app window, use normal server authentication.
    const response=await fetch(request);

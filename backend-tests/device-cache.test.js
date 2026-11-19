@@ -62,3 +62,21 @@ test('background revalidation preserves cached values and digest when the server
  await cache.call('Store','summary',[]);for(let n=0;n<2;n++){time+=61000;assert.equal((await cache.call('Store','summary',[])).count,5);await new Promise(r=>setTimeout(r,15));}
  assert.equal(revalidations,2);assert.equal(digests[0],digests[1]);assert.match(digests[0],/^[a-f0-9]{64}$/);cache.close();
 });
+
+test('confirmed save primes the changed record while retaining pure cached results',async()=>{
+ const calls=[];
+ const cache=create(opts(async(target,method,args,delta)=>{
+  calls.push(method);
+  if(method==='updateItem'){
+   delta.primes=[{target:'Store',method:'getItem',args:[1],result:{id:1,notes:'updated'}}];
+   return {ok:true};
+  }
+  return method==='itemTotals'?{amount:100}:null;
+ },{isReader:(target,method)=>reader(target,method)||method==='getItem'}));
+ await cache.call('Calc','itemTotals',[]);
+ await cache.call('Store','updateItem',[1,{}]);
+ assert.equal((await cache.call('Store','getItem',[1])).notes,'updated');
+ assert.equal((await cache.call('Calc','itemTotals',[])).amount,100);
+ assert.deepEqual(calls,['itemTotals','updateItem']);
+ cache.close();
+});

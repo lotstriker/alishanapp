@@ -86,12 +86,30 @@
    if(key)flights.set(key,task);
    try{return await task;}finally{if(key&&flights.get(key)===task)flights.delete(key);}
   }
+  function clearBusiness(announce=false){
+   epoch++;flights.clear();revision=null;
+   for(const [key,entry] of ram){
+    if(key.startsWith('["Calc",'))continue;
+    bytes-=entry.bytes;ram.delete(key);
+   }
+   persist();
+   if(announce)broadcast();
+  }
   async function call(target,method,args){
    if(!enabled)return network(target,method,args);
    await ready;
    const reader=isReader(target,method);
    if(!reader){
     // Even an uncertain write clears old views. Never retry or optimistically acknowledge a write.
+    if(target==='Store'&&['addItem','updateItem','addPayment'].includes(method)){
+     const delta={primes:null,write:true};
+     try{return await network(target,method,args,delta);}
+     finally{
+      clearBusiness(true);
+      if(delta.primes)await seed(delta.primes);
+      onChange();check(true);
+     }
+    }
     invalidate(true);
     try{return await network(target,method,args);}finally{invalidate(true);onChange();check(true);}
    }

@@ -1,0 +1,10 @@
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 20px; background: #faf3f5; color: #351421; font: 16px system-ui, sans-serif; }
+main { width: min(100%, 380px); padding: 38px 28px; text-align: center; border: 1px solid #ead8df; border-radius: 24px; background: #fff; box-shadow: 0 12px 36px #56192e13; }
+img { border-radius: 16px; }
+h1 { margin: 12px 0 6px; font-size: 34px; }
+p { margin: 0 0 24px; color: #6a4d58; }
+.google { min-height: 48px; padding: 10px 15px; display: flex; align-items: center; justify-content: center; gap: 12px; border: 1px solid #c8c3c5; border-radius: 10px; color: #242124; text-decoration: none; font-weight: 600; }
+.google span { color: #185abc; font-size: 21px; }
+.google:focus-visible { outline: 3px solid #8b3152; outline-offset: 3px; }
+.error { display: none; margin: 16px 0 0; color: #9a2048; }

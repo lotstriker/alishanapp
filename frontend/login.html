@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#56192e">
+  <title>Sign in · Alishan</title>
+  <link rel="stylesheet" href="/login.css">
+</head>
+<body>
+  <main>
+    <img src="/icons/icon-192.png" width="64" height="64" alt="">
+    <h1>Alishan</h1>
+    <p>Apne Google account se sign in karein.</p>
+    <a class="google" href="/auth/google"><span aria-hidden="true">G</span> Continue with Google</a>
+    <p class="error" id="login-error">Sign in poora nahi hua. Dobara try karein.</p>
+    <script>if (new URLSearchParams(location.search).get('error')) document.getElementById('login-error').style.display='block';</script>
+  </main>
+</body>
+</html>

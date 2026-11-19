@@ -15,6 +15,12 @@ CREATE TABLE IF NOT EXISTS alishan_private.records (
 );
 CREATE SEQUENCE IF NOT EXISTS alishan_private.quality_codes AS bigint START WITH 1000000 NO CYCLE;
 REVOKE ALL ON SEQUENCE alishan_private.quality_codes FROM PUBLIC, anon, authenticated;
+CREATE TABLE IF NOT EXISTS alishan_private.login_sessions (
+ token_hash text PRIMARY KEY,
+ subject uuid NOT NULL,
+ expires_at timestamptz NOT NULL
+);
+ALTER TABLE alishan_private.login_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE alishan_private.workspaces ENABLE ROW LEVEL SECURITY;
 ALTER TABLE alishan_private.records ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON ALL TABLES IN SCHEMA alishan_private FROM PUBLIC, anon, authenticated;
