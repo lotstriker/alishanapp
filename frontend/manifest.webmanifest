@@ -1,7 +1,7 @@
 {
   "name": "ALISHAN - Inventory Manager",
   "short_name": "ALISHAN",
-  "description": "Garment inventory: entries, payments and reports. Works without internet.",
+  "description": "Garment inventory: entries, payments and reports.",
   "start_url": "index.html",
   "scope": "./",
   "display": "standalone",

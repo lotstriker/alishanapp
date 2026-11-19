@@ -18,6 +18,11 @@ function createApp({repository,username,password}){
  const app=express();app.disable('x-powered-by');
  app.use((req,res,next)=>{res.set({'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY','Cache-Control':'no-store'});next();});
  app.get('/healthz',async(req,res)=>{try{await repository.ready();res.json({status:'ok'});}catch{res.status(503).json({status:'unavailable'});}});
+ // Chrome may fetch installation metadata without the browser tab's credentials.
+ const installAssets=new Set(['/manifest.webmanifest','/icons/icon-192.png','/icons/icon-512.png','/icons/icon-maskable-512.png']);
+ app.get([...installAssets],(req,res,next)=>{
+   res.sendFile(req.path.slice(1),{root:path.resolve(__dirname,'../dist')},error=>{if(error)next(error);});
+ });
  app.use((req,res,next)=>{
    let supplied='';try{if(req.headers.authorization?.startsWith('Basic '))supplied=Buffer.from(req.headers.authorization.slice(6),'base64').toString('utf8');}catch{}
    if(!timingSafeEqual(hash(supplied),hash(`${username}:${password}`))){res.set('WWW-Authenticate','Basic realm="Alishan", charset="UTF-8"');return res.status(401).send('Sign in to Alishan');}
