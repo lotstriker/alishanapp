@@ -14,6 +14,13 @@ const release=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'))
 const assetTag=release+'-'+require('node:crypto').createHash('sha256').update(['client/runtime.js','client/device-cache.js','client/view-shell-worker.js','scripts/build-client.mjs'].map(p=>fs.readFileSync(path.join(root,p),'utf8')).join('\0')).digest('hex').slice(0,12);
 const replaced=new Set(['calc.js','store.js','db.js','archive.js','report-engine.js','sw.js','pwa.js']);
 const units=[];
+const calcSource=fs.readFileSync(path.join(src,'calc.js'),'utf8');
+const calcBody=parse(calcSource,{sourceType:'script'}).program.body.find(node=>t.isVariableDeclaration(node)).declarations[0].init.callee.body.body;
+const previewNames=new Set(['SIZES','ok','fail','round2','splitPieces','sizesPieces','itemPieces','itemPrice','itemAmount','itemTotals','buildQuantity']);
+const previewRules=calcBody.filter(node=>previewNames.has(node.id?.name||node.declarations?.[0]?.id.name)).map(node=>generate(node).code).join('\n');
+const previewModule=`window.AlishanEntryPreview=(()=>{
+${previewRules}
+return {splitPieces,totals(input,price){const qty=buildQuantity(input);return qty.ok?itemTotals({...qty.sizeFields,colors:qty.colors,sizeOption:qty.sizeOption,price}):null;}};})();`;
 const dashboard=parse(fs.readFileSync(path.join(src,'dashboard.js'),'utf8'),{sourceType:'script'});
 const dashboardRules=dashboard.program.body.filter(n=>t.isFunctionDeclaration(n)&&['breakdownPeriodStart','getBreakdownData','getQualityRanking'].includes(n.id.name));
 fs.writeFileSync(path.join(root,'backend/dashboard-rules.js'),`// Extracted unchanged from v96 UI source by the client build. Server only.\nmodule.exports=(AlishanCalc,AlishanStore)=>{let breakdownState={period:'all'};\n${dashboardRules.map(n=>generate(n).code).join('\n')}\nreturn {breakdown(period){breakdownState.period=period;return getBreakdownData();},ranking(period){breakdownState.period=period;return getQualityRanking();}};};\n`);
@@ -24,12 +31,12 @@ for(const name of fs.readdirSync(src)){
  if(name.endsWith('.js')&&!replaced.has(name)){
   let code=fs.readFileSync(path.join(src,name),'utf8');
   if(name==='size-groups.js'){
-    code=code.slice(code.indexOf('function buildUI(core)'));
-    code=code.replace('makeCore(AlishanCalc.SIZES, AlishanCalc.splitPieces)','AlishanGroupCore');
+    code=previewModule+'\n'+code.replace('AlishanCalc.splitPieces','AlishanEntryPreview.splitPieces');
     code=code.replace(/if \(typeof module[^\n]+/g,'');
   }
   if(['inventory.js','dashboard.js'].includes(name))code=code.replace('    ItemModal.inject();', '    refreshUI();\n    ItemModal.inject();');
   if(name==='item-modal.js')code=code.replace('    function inject() {', '    let injecting=null;\n    async function inject(){if(!injecting)injecting=buildModal();return injecting;}\n    async function buildModal() {');
+  if(name==='dashboard.js')code=code.replace('const result = await AlishanStore.addItem(input);',"const result = await AlishanRemote.submitEntry(input);");
   if(name==='settings-data-backup.js'){
    const start=code.indexOf('    await AlishanDB.init();');
    const end=code.indexOf("    $('alishanAutoBackup').checked",start);
@@ -101,7 +108,6 @@ function functionName(p){
 function rootName(p,node=p.node){
  if(t.isIdentifier(node)){
   if(remoteNames.has(node.name))return node.name;
-  if(node.name==='core')return 'AlishanGroupCore';
   const b=p.scope.getBinding(node.name);
   if(b?.path.isVariableDeclarator()&&b.path.node.init&&b.path.node.init!==node){const init=b.path.node.init;if(t.isIdentifier(init)&&init.name!==node.name)return rootName(b.path,init);if(t.isMemberExpression(init))return rootName(b.path,init.object);}
  }
@@ -190,4 +196,4 @@ fs.writeFileSync(path.join(out,'sw.js'),"self.addEventListener('install',()=>sel
 fs.writeFileSync(path.join(out,'view-shell-worker.js'),fs.readFileSync(path.join(root,'client/view-shell-worker.js'),'utf8').replace('__RELEASE__',release).replace('__ASSET_TAG__',assetTag));
 fs.writeFileSync(path.join(out,'pwa.js'),`if('serviceWorker' in navigator){navigator.serviceWorker.register('/view-shell-worker.js?v=${assetTag}',{scope:'/',updateViaCache:'none'}).then(()=>navigator.serviceWorker.ready).then(reg=>{const send=()=>reg.active?.postMessage({type:'BIND_VIEW_SESSION',session:window.ALISHAN_SESSION});send();navigator.serviceWorker.addEventListener('controllerchange',send);}).catch(()=>{});}`);
 fs.writeFileSync(path.join(out,'build-manifest.json'),JSON.stringify({version:Number(release.split('.')[0]),sourceCommit:'29952b341579a62337668937982fa60039ef8cbf',asyncFunctions:[...asyncNames].sort(),units:units.length},null,2));
-console.log(`Built ${units.length} UI scripts; ${asyncNames.size} async functions; formulas remain server-only.`);
+console.log(`Built ${units.length} UI scripts; ${asyncNames.size} async functions; official calculations remain on the server.`);

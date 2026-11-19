@@ -4,7 +4,7 @@ const stores = ['inventory','payments','qualities','colors','settings','searchAn
 const blank = () => Object.fromEntries(stores.map(k => [k, []]));
 const keyOf = (store, row) => store === 'settings' ? row.key : row.id;
 const keyText = key => JSON.stringify(key); // Numeric and string IndexedDB keys remain distinct.
-function createDatabase(state) {
+function createDatabase(state, actor) {
   function list(store) { if (!stores.includes(store)) throw new Error('Unknown store'); return state[store]; }
   function put(store, row) {
     const key = keyOf(store,row);
@@ -42,7 +42,7 @@ function createDatabase(state) {
     },
     async logActivity(type,text){put('editHistory',{id:Date.now()*1000+Math.floor(Math.random()*1000),type,text,at:new Date().toISOString()});state.editHistory.sort((a,b)=>a.id-b.id);state.editHistory=state.editHistory.slice(-1000);},
     async getRecentActivity(limit=5){return (await this.getAll('editHistory')).sort((a,b)=>b.id-a.id).slice(0,limit);},
-    async logQualityHistory(e){const r={...e,id:`qh-${randomUUID()}`,at:new Date().toISOString()};put('auditLog',r);return r;},
+    async logQualityHistory(e){const r={...e,...(actor?{actor}:{}),id:`qh-${randomUUID()}`,at:new Date().toISOString()};put('auditLog',r);return r;},
     async getQualityHistory(){return (await this.getAll('auditLog')).sort((a,b)=>new Date(b.at)-new Date(a.at));}
   };
   for(const [getName,saveName,key,fallback] of [['getSearchAnalytics','saveSearchAnalytics','searchAnalytics',{}],['getSearchHistory','saveSearchHistory','searchHistory',[]],['getTheme','setTheme','selectedTheme','light-default']]){
@@ -117,7 +117,12 @@ class PostgresRepository {
       const locked=await client.query('SELECT revision FROM alishan_private.workspaces WHERE id=$1 FOR UPDATE',[this.workspace]);
       const rows=await client.query('SELECT store,payload FROM alishan_private.records WHERE workspace_id=$1',[this.workspace]);
       const state=blank();for(const r of rows.rows)state[r.store].push(r.payload);
-      const before=structuredClone(state); const result=await fn(state,Number(locked.rows[0].revision));
+      const before=structuredClone(state);
+      const issueQualityCode=async()=>{
+        const {rows}=await client.query("SELECT nextval('alishan_private.quality_codes')::text AS code");
+        return rows[0].code;
+      };
+      const result=await fn(state,Number(locked.rows[0].revision),issueQualityCode);
       if(result?.ok===false){await client.query('ROLLBACK');return result;}
       let changed=false;
       for(const s of stores){

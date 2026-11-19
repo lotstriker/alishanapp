@@ -15,6 +15,8 @@ function createApp({repository,username,password}){
  let pureDomain;
  const scope=hash(JSON.stringify([repository.workspace||'alishan',username,password,process.env.DATABASE_URL||'local'])).toString('hex').slice(0,32);
  const session={scope,release};
+ const {entryReview}=require('./entry-review');
+ const submit=entryReview(password);
  const app=express();app.disable('x-powered-by');
  app.use((req,res,next)=>{res.set({'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY','Cache-Control':'no-store'});next();});
  app.get('/healthz',async(req,res)=>{try{await repository.ready();res.json({status:'ok'});}catch{res.status(503).json({status:'unavailable'});}});
@@ -42,10 +44,13 @@ function createApp({repository,username,password}){
  }
  async function run(calls){
    const readOnly=calls.every(isReader);
-   const execute=async (state,revision)=>{
+   const execute=async (state,revision,issueQualityCode)=>{
      const pure=calls.every(c=>['Calc','Groups'].includes(c.target));
-     const d=pure?await (pureDomain ||= domain(blank(),{readOnly:true})):await domain(state,{readOnly});const results=[];
-     for(const c of calls){const args=decode(c.args);const result=await invoke(d,c.target,c.method,args);
+     const d=pure?await (pureDomain ||= domain(blank(),{readOnly:true})):await domain(state,{readOnly,actor:username});const results=[];
+     for(const c of calls){const args=decode(c.args);const guarded=c.target==='Store'&&['reviewEntry','submissionStatus','addItem','addPayment'].includes(c.method);
+       const requiresManager=(c.target==='Store'&&c.method==='deleteItem')
+         ||(c.target==='Archive'&&['restore','deleteForever'].includes(c.method));
+       const result=requiresManager?{ok:false,error:'This action requires Manager approval.'}:guarded?await submit(d,c.method,args,issueQualityCode):await invoke(d,c.target,c.method,args);
        const unchanged=readOnly&&c.target!=='Groups'&&typeof c.known==='string'&&/^[a-f0-9]{64}$/.test(c.known)&&hash(JSON.stringify(encode(result))).toString('hex')===c.known;
        results.push(unchanged?{unchanged:true}:{result,...(c.target==='Groups'?{args}:{})});
        if(result?.ok===false){const failed=results.length-1;return {ok:false,results:calls.map((_,i)=>i===failed?results[i]:{error:'Request cancelled because another operation was rejected. Please retry.'})};}

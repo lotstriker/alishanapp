@@ -50,5 +50,78 @@ test('authenticated API rejects unauthenticated and cross-site requests; formula
 test('PostgreSQL schema and repository round-trip records and rollback using the real PGlite engine',async()=>{
  const {PGlite}=require('@electric-sql/pglite');const pg=new PGlite();await pg.exec('CREATE ROLE anon; CREATE ROLE authenticated;');await pg.exec(fs.readFileSync(path.join(__dirname,'../deployment/schema.sql'),'utf8'));
  const client={query:(q,params)=>pg.query(q,params),release(){}};const repo=new PostgresRepository({connect:async()=>client,query:client.query},'test');await repo.ready();await repo.transaction(async state=>{await seed(state);});await repo.transaction(async state=>{assert.equal(state.inventory.length,1);state.inventory=[];return {ok:false};});await repo.transaction(async state=>assert.equal(state.inventory.length,1));
+ const submit=require('../backend/entry-review').entryReview('fixture-only');
+ const form=input(), requestId=require('node:crypto').randomUUID();
+ const review=await repo.read(async state=>submit(await domain(state,{readOnly:true}),'reviewEntry',[form]));
+ const committed=await repo.transaction(async(state,revision,issueQualityCode)=>submit(await domain(state),'addItem',[form,requestId,review.token],issueQualityCode));
+ assert.equal(committed.item.code,'1000000');
+ const status=await repo.read(async state=>submit(await domain(state,{readOnly:true}),'submissionStatus',[requestId]));
+ assert.equal(status.result.item.code,'1000000');
  const settings=await pg.query("SELECT relrowsecurity FROM pg_class WHERE oid='alishan_private.records'::regclass");assert.equal(settings.rows[0].relrowsecurity,true);await pg.close();
+});
+
+test('review holds the entry until submission and concurrent retries create one record',async()=>{
+ const {randomUUID}=require('node:crypto');
+ const {entryReview}=require('../backend/entry-review');
+ const repo=new MemoryRepository(), submit=entryReview('test-secret'),form=input(),requestId=randomUUID();
+ const review=await submit(await domain(repo.state),'reviewEntry',[form]);
+ assert.equal(review.ok,true,review.error);
+ assert.equal(repo.state.inventory.length,0);
+ assert.equal(review.preview.pieces,60);
+ const denied=await repo.transaction(async state=>submit(await domain(state),'addItem',[{...form,notes:'changed'},requestId,review.token]));
+ assert.equal(denied.ok,false);
+ assert.equal(repo.state.inventory.length,0);
+ const save=()=>repo.transaction(async state=>submit(await domain(state),'addItem',[form,requestId,review.token]));
+ const [first,retry]=await Promise.all([save(),save()]);
+ assert.equal(first.ok,true,first.error);
+ assert.equal(retry.item.id,first.item.id);
+ assert.equal(first.item.code,'1000000');
+ assert.equal((await submit(await domain(repo.state),'submissionStatus',[requestId])).result.item.id,first.item.id);
+ assert.equal(repo.state.inventory.length,1);
+ const payment={inventoryId:first.item.id,amount:1,date:Calc.localDate(new Date())};
+ const key=randomUUID();
+ const pay=()=>repo.transaction(async state=>submit(await domain(state),'addPayment',[payment,key]));
+ assert.equal((await pay()).ok,true);
+ assert.equal((await pay()).ok,true);
+ assert.equal(repo.state.payments.length,1);
+});
+
+
+test('reducing completed quantity retains the receipt and audits the extra received balance',async()=>{
+ const state=blank(), actor='fixture-owner';
+ const d=await domain(state,{actor});
+ const entry=await d.Store.addItem(input({price:1000,inStock:false}));
+ assert.equal(entry.item.totalAmount,5000);
+ const {id}=entry.item;
+ const receipt=await d.Store.addPayment({inventoryId:id,amount:5000,date:Calc.localDate(new Date())});
+ assert.equal(receipt.ok,true,receipt.error);
+ const edited=await d.Store.updateItem(id,input({sizes:{32:{dozens:2}},lotNumber:'2-1',notes:'Count corrected'}));
+ assert.equal(edited.ok,true,edited.error);
+ const status=d.Store.itemPayment(edited.item);
+ assert.equal(status.expected,4000);
+ assert.equal(status.received,5000);
+ assert.equal(status.pending,0);
+ assert.equal(status.extraReceived,1000);
+ assert.equal(state.payments[0].amount,5000);
+ assert.ok(state.auditLog.some(record=>record.actor===actor&&record.changes.some(change=>change.field.startsWith('Size Quantities'))));
+});
+
+test('Friday completion and Sunday/Monday receipts use their own dates',async()=>{
+ const state=blank(), d=await domain(state);
+ const created=await d.Store.addItem(input({price:1000}));
+ const item=created.item;
+ state.inventory[0].inStock=false;
+ state.inventory[0].completedAt='2026-11-13T10:00:00+05:30';
+ const next=await domain(state);
+ for(const date of ['2026-11-15','2026-11-16']){
+   const payment=await next.Store.addPayment({inventoryId:item.id,amount:100,date});
+   assert.equal(payment.ok,true,payment.error);
+ }
+ const early=Calc.weekInfo('2026-11-15').key, late=Calc.weekInfo('2026-11-16').key;
+ assert.notEqual(early,late);
+ assert.equal(next.Store.weeklyReport([item],early).days[0].date,'2026-11-15');
+ assert.equal(next.Store.weeklyReport([item],late).days[0].date,'2026-11-16');
+ const filters=next.Reports.freshFilters();
+ assert.equal(next.Reports.weekly(filters,next.Reports.weekRange(new Date('2026-11-13T12:00:00+05:30'))).count,1);
+ assert.equal(next.Reports.weekly(filters,next.Reports.weekRange(new Date('2026-11-16T12:00:00+05:30'))).count,0);
 });

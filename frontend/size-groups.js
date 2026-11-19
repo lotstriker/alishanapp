@@ -205,6 +205,32 @@ function buildUI(core) {
         </section>`;
     }
 
+    function refreshPreview(prefix) {
+        if (typeof AlishanEntryPreview === 'undefined') return;
+        const box = boxOf(prefix);
+        if (!box) return;
+        const field = document.getElementById(prefix ? 'editQuality' : 'quality');
+        const typed = prefix ? document.getElementById('editPrice')?.value : '';
+        const quality = field?.value.trim().toUpperCase();
+        let defaultPrice = 0;
+        for (const categories of Object.values(AlishanStore.getQualityData() || {})) {
+            for (const list of Object.values(categories)) {
+                const match = list.find(entry => entry?.name === quality);
+                if (match) defaultPrice = Number(match.price) || 0;
+            }
+        }
+        const price = typed ? Math.round(Number(typed) * 100) / 100 : defaultPrice;
+        const totals = AlishanEntryPreview.totals(read(prefix), price);
+        let output = box.querySelector('.sg-preview');
+        if (!output) {
+            output = document.createElement('p');
+            output.className = 'sg-preview sg-note';
+            box.appendChild(output);
+        }
+        output.hidden = !totals;
+        output.textContent = totals ? `Preview · ${totals.pieces} pcs · ${Number(totals.dozens.toFixed(2))} dozen · ₹${totals.amount.toFixed(2)}` : '';
+    }
+
     function render(prefix) {
         const box = boxOf(prefix);
         if (!box) return;
@@ -214,6 +240,7 @@ function buildUI(core) {
         box.innerHTML = `<div class="sg-wrap">${st.groups.map((g, i) => groupHTML(prefix, st, g, i)).join('')}
             <p class="sg-note" hidden></p>${hint}</div>`;
         refreshNote(prefix);
+        refreshPreview(prefix);
     }
 
     function refreshNote(prefix) {
@@ -236,6 +263,9 @@ function buildUI(core) {
         const box = boxOf(prefix);
         if (!box || wired[prefix]) return;
         wired[prefix] = true;
+        const form = box.closest('form');
+        form?.addEventListener('input', () => refreshPreview(prefix));
+        form?.addEventListener('change', () => refreshPreview(prefix));
         box.addEventListener('change', (e) => {
             const sel = e.target.closest && e.target.closest('.sg-move');
             if (sel) {

@@ -616,8 +616,15 @@
       } else {
         if (!state.datasets.size) throw new Error('Select at least one data set.');
         const { sheets } = computeSheets();
+        const failed = sheets.find(sheet => sheet.error);
+        if (failed) throw new Error(`${failed.title}: ${failed.error}`);
         const usable = sheets.filter((s) => s.rows.length);
         if (!usable.length) throw new Error('No rows match the selected data and filters. Change the filters and try again.');
+        const totalRows = usable.reduce((sum, sheet) => sum + sheet.rows.length, 0);
+        if (!confirm(`Export ${totalRows} rows?\n${usable.map(sheet => `${sheet.title}: ${sheet.rows.length}`).join('\n')}`)) {
+          status.textContent = 'Export cancelled.';
+          return;
+        }
         const base = baseFileName();
         const file = state.format === 'excel' ? await downloadExcel(usable, base) : state.format === 'csv' ? downloadCsv(usable, base) : state.format === 'json' ? downloadJson(usable, base) : printReport(usable, base);
         await rememberExport(file, usable);

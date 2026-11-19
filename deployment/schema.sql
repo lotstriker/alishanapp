@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS alishan_private.records (
  payload jsonb NOT NULL CHECK(jsonb_typeof(payload)='object'),
  PRIMARY KEY(workspace_id,store,record_key)
 );
+CREATE SEQUENCE IF NOT EXISTS alishan_private.quality_codes AS bigint START WITH 1000000 NO CYCLE;
+REVOKE ALL ON SEQUENCE alishan_private.quality_codes FROM PUBLIC, anon, authenticated;
 ALTER TABLE alishan_private.workspaces ENABLE ROW LEVEL SECURITY;
 ALTER TABLE alishan_private.records ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON ALL TABLES IN SCHEMA alishan_private FROM PUBLIC, anon, authenticated;

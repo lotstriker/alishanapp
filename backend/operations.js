@@ -2,7 +2,7 @@
 const {stores}=require('./database');
 // Only named, audited readers bypass the write transaction. New/unknown actions
 // default to the locked write path, including settings, backups and searches.
-const readers=new Set(`init getDamagedCount getReferenceError getQualityData getColors getColorStyle getColorStyleSafe colorDisplayName getPrice getItems getItem hasItems itemCount getPayments query summary paginate typeStats qualityOptions lowStockItems itemPayment getRecentActivity getQualityHistory missingLotItems pendingList paymentCards advancedPaymentSearch weekOptions weeklyReport paymentHistory valuationTrend qualitySummary agingReport exportRows exportFilterItems exportSizeRows exportTotals exportInRange exportParseDate normalizeQualityHistory completionInfo missingCompletionItems suggest getSearchHistory getSearchAnalytics parseBulk getProductTypes typeOfQuality closeQualities closeColors colorChoices checkImportDraft batchDuplicateIds importTotals aiPrompt listImportBatches backupFile listBackups getBackupSettings inspectBackup`.split(' '));
+const readers=new Set(`init reviewEntry submissionStatus getDamagedCount getReferenceError getQualityData getColors getColorStyle getColorStyleSafe colorDisplayName getPrice getItems getItem hasItems itemCount getPayments query summary paginate typeStats qualityOptions lowStockItems itemPayment getRecentActivity getQualityHistory missingLotItems pendingList paymentCards advancedPaymentSearch weekOptions weeklyReport paymentHistory valuationTrend qualitySummary agingReport exportRows exportFilterItems exportSizeRows exportTotals exportInRange exportParseDate normalizeQualityHistory completionInfo missingCompletionItems suggest getSearchHistory getSearchAnalytics parseBulk getProductTypes typeOfQuality closeQualities closeColors colorChoices checkImportDraft batchDuplicateIds importTotals aiPrompt listImportBatches backupFile listBackups getBackupSettings inspectBackup`.split(' '));
 const referenceReaders=new Set('getQualityData getColors getColorStyle getColorStyleSafe colorDisplayName getPrice getProductTypes getReferenceError exportSizeRows exportTotals exportInRange exportParseDate normalizeQualityHistory completionInfo paginate'.split(' '));
 const dbReaders=new Set('init get getAll getAllFrom getSetting getTheme getSearchAnalytics getSearchHistory getInventory getPayments getArchive getQualityHistory getRecentActivity'.split(' '));
 function isReader(c){return ['Calc','Groups','Search','Views','Reports'].includes(c.target)||c.target==='Store'&&readers.has(c.method)||c.target==='DB'&&dbReaders.has(c.method)||c.target==='Archive'&&['list','summary','scanLeftovers'].includes(c.method);}
@@ -10,6 +10,7 @@ function selection(calls){
  const selected=new Set(),settings=new Set(['importAliases','searchHistory','searchAnalytics','autoBackupEnabled','backupFrequency','lastBackupDate']);let allSettings=false;
  for(const c of calls){
   if(['Calc','Groups','Search'].includes(c.target)||c.target==='Store'&&referenceReaders.has(c.method))continue;
+  if(c.target==='Store'&&c.method==='submissionStatus'){selected.add('settings');settings.add('__submission:'+c.args[0]);continue;}
   if(c.target==='Archive'&&c.method==='list'){selected.add('archive');continue;}
   if(c.target==='DB'){
    const m=c.method,a=c.args||[];

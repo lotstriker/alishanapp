@@ -8,8 +8,9 @@ const source=name=>fs.readFileSync(path.join(root,name),'utf8');
 const sources=Object.fromEntries(['calc.js','store.js','report-engine.js','archive.js','size-groups.js','advanced-search.js'].map(n=>[n,source(n)]));
 const reference=Object.fromEntries(['qualities.json','colors.json'].map(n=>[n,JSON.parse(source(n))]));
 const scripts=Object.fromEntries(Object.entries(sources).map(([n,s])=>[n,new vm.Script(s,{filename:n})]));
-async function domain(state,{readOnly=false}={}){
- const db=createDatabase(state);const idleJobs=[];
+async function domain(state,{readOnly=false,actor}={}){
+ const {prefix}=require('./entry-review');
+ const db=createDatabase(state,actor);const idleJobs=[];
  const context=vm.createContext({console,Date,Map,Set,Math,JSON,Number,String,Boolean,Array,Object,RegExp,Promise,structuredClone,AlishanDB:db,
    window:{requestIdleCallback(fn){idleJobs.push(fn);}}, setTimeout(){return 0;},clearTimeout(){},setInterval(){return 0;},clearInterval(){},
    fetch:async file=>({ok:!!reference[file],json:async()=>structuredClone(reference[file])})});
@@ -23,12 +24,12 @@ async function domain(state,{readOnly=false}={}){
    const extras=payload.extra||{};
    for(const key of ['qualityHistory','activityLog'])if(extras[key]!==undefined&&!Array.isArray(extras[key]))return {ok:false,error:'Invalid backup history'};
    const settings=await db.getAll('settings');
-   const record={createdAt:new Date().toISOString(),backup:S.backupFile('PRE_RESTORE_COMPLETE'),extra:{qualityHistory:await db.getQualityHistory(),activityLog:await db.getRecentActivity(1000),settings:Object.fromEntries(settings.filter(r=>r.key!=='fullRestoreSafetyBackups').map(r=>[r.key,r.value]))}};
+   const record={createdAt:new Date().toISOString(),backup:S.backupFile('PRE_RESTORE_COMPLETE'),extra:{qualityHistory:await db.getQualityHistory(),activityLog:await db.getRecentActivity(1000),settings:Object.fromEntries(settings.filter(r=>r.key!=='fullRestoreSafetyBackups'&&!r.key.startsWith(prefix)).map(r=>[r.key,r.value]))}};
    const safety=await db.getSetting('fullRestoreSafetyBackups',[]);
    const result=await S.importBackup(payload.backup,'replace');if(!result.ok)return result;
    if(extras.qualityHistory)await db.putAll('auditLog',extras.qualityHistory);
    if(extras.activityLog)await db.putAll('editHistory',extras.activityLog);
-   if(extras.settings&&typeof extras.settings==='object'&&!Array.isArray(extras.settings))await db.putAll('settings',Object.entries(extras.settings).filter(([key])=>key!=='fullRestoreSafetyBackups').map(([key,value])=>({key,value})));
+   if(extras.settings&&typeof extras.settings==='object'&&!Array.isArray(extras.settings))await db.putAll('settings',Object.entries(extras.settings).filter(([key])=>key!=='fullRestoreSafetyBackups'&&!key.startsWith(prefix)).concat(settings.filter(row=>row.key.startsWith(prefix)).map(row=>[row.key,row.value])).map(([key,value])=>({key,value})));
    await db.setSetting('fullRestoreSafetyBackups',[...safety,record].slice(-3));return result;
  };
  const search={apply(items,options,term){context.localStorage={getItem:()=>JSON.stringify(options)};context.window.AlishanSearch={getTerm:()=>term};scripts['advanced-search.js'].runInContext(context,{timeout:2000});return context.window.AlishanAdvancedSearch.apply(items);}};
@@ -51,6 +52,8 @@ async function invoke(d,target,method,args){
  if(!obj||blocked.has(method)||!Object.hasOwn(obj,method)||typeof obj[method]!=='function')throw Object.assign(new Error('Unsupported operation'),{status:400});
  // Database writes only occur through the authoritative Store/Archive actions.
  const dbAllowed=new Set(['saveInventory','replaceInventoryAndPayments','init','get','getAll','getAllFrom','getSetting','setSetting','removeSetting','getTheme','setTheme','getSearchAnalytics','saveSearchAnalytics','getSearchHistory','saveSearchHistory','getInventory','getPayments','getArchive','getQualityHistory','getRecentActivity']);
+ if(target==='DB'&&((typeof args[0]==='string'&&args[0].startsWith('__submission:'))||(typeof args[1]==='string'&&args[1].startsWith('__submission:'))))throw Object.assign(new Error('Reserved setting key'),{status:403});
+ if(target==='DB'&&['getAll','getAllFrom'].includes(method)&&args[0]==='settings')return (await obj[method](...args)).filter(row=>!row.key.startsWith('__submission:'));
  if(target==='DB'&&!dbAllowed.has(method))throw Object.assign(new Error('Use an application action to change records'),{status:403});
  if(target==='DB'&&method==='setSetting'&&(typeof args[0]!=='string'||args[0].length>150))throw Object.assign(new Error('Invalid setting key'),{status:400});
  if(target==='DB'&&['saveInventory','replaceInventoryAndPayments'].includes(method)){

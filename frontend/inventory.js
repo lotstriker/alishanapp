@@ -496,6 +496,8 @@ async function executeAdvancedExport() {
         return;
     }
 
+    if (!confirm(`Export all ${data.length} matching entries?`)) return;
+
     const fileName = document.getElementById('exportFileName')?.value?.trim() || exportFileName(exportType, data);
     try {
         if (data.length > 10000) {

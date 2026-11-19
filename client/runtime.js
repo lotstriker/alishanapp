@@ -91,10 +91,74 @@
   if(device?.enabled&&target==='Store'&&method==='init')return preparePage(pageName()).then(()=>device.call(target,method,args));
   return device?device.call(target,method,args):networkCall(target,method,args);
  }
+ const activeSaves=new Map();
+ function saveOnce(method,input,token){
+  const key='alishan:pending:'+window.ALISHAN_SESSION?.scope+':'+method+':'+(input.inventoryId??'entry');
+  const existing=activeSaves.get(key);if(existing)return existing;
+  const task=(async()=>{
+   let pending, recovering;
+   try{
+    pending=JSON.parse(localStorage.getItem(key)||'null');
+    recovering=Boolean(pending);
+
+    if(!pending){pending={id:crypto.randomUUID(),input,token};localStorage.setItem(key,JSON.stringify(pending));}
+   }catch{return {ok:false,error:'Browser storage is unavailable. Allow storage to safely submit.'};}
+   let result;
+   try{
+    const status=recovering?await networkCall('Store','submissionStatus',[pending.id]):{};
+    if(status.confirmed){device?.invalidate();changed();}
+    const same=JSON.stringify(pending.input)===JSON.stringify(input);
+    if(status.confirmed)result=status.result;
+    else if(same||window.confirm('Retry the previous unconfirmed save for this record?'))result=await call('Store',method,[pending.input,pending.id,pending.token]);
+    else return {ok:false,error:'Previous save is still unconfirmed.'};
+    if(!same&&result.ok){
+     localStorage.removeItem(key);
+     return {ok:false,error:'Previous save confirmed. Your new inputs have been kept.'};
+    }
+   }
+   catch{return {ok:false,error:'Save confirm nahi hua. Tap Save again to check the same attempt.'};}
+   try{localStorage.removeItem(key);}catch{}
+   return result;
+  })();
+  activeSaves.set(key,task);
+  task.finally(()=>activeSaves.delete(key));
+  return task;
+ }
+ const draftQuotes=new Map();
+ async function submitEntry(input){
+  const key='alishan:pending:'+window.ALISHAN_SESSION?.scope+':addItem:entry';
+  let pending;
+  try{pending=JSON.parse(localStorage.getItem(key)||'null');}catch{}
+  if(pending){
+   if(!window.confirm('A previous submission is unconfirmed. Check or retry that same entry?'))
+    return {ok:false,error:'Previous submission is still unconfirmed.'};
+   const result=await saveOnce('addItem',pending.input,pending.token);
+   if(result.ok&&JSON.stringify(pending.input)!==JSON.stringify(input))
+    return {ok:false,error:'Previous entry confirmed. Your current form has been kept.'};
+   return result;
+  }
+  const quoteKey=String(input.quality).trim().toUpperCase();
+  let review;
+  try{
+   review=await call('Store','reviewEntry',[input,draftQuotes.get(quoteKey)]);
+   if(!review.ok)return review;
+   draftQuotes.set(quoteKey,review.quote);
+   if(review.preview.price!==review.currentPrice&&window.confirm('The price changed. Use the current master price of ₹'+review.currentPrice+'? Cancel keeps the draft price of ₹'+review.preview.price+'.')){
+    review=await call('Store','reviewEntry',[input]);
+    if(!review.ok)return review;
+   }
+  }catch{return {ok:false,error:'Review could not load. Your entry is still in the form.'};}
+  const p=review.preview;
+  if(!window.confirm('Review and submit this entry?\n'+p.productType+' · '+p.quality+' · '+p.cupSize+'\n'+p.colors.map(c=>c.name||c).join(', ')+'\nPieces: '+p.pieces+' | Dozens: '+p.dozens+'\nPrice: ₹'+p.price+' | Amount: ₹'+p.amount+'\nSizes: '+JSON.stringify(input.sizeOption==='different'?input.colorSizes||input.sizes:input.sizes)+'\nEntry date: '+(input.entry?.mode==='old'?input.entry.date+' '+input.entry.time:'Today')+'\nMaterial: '+(input.material||'—')+' | Weight: '+(input.weight||'—')+'\nNotes: '+(input.notes||'—')))
+   return {ok:false,error:'Entry kept in the form. Nothing was submitted.'};
+  const result=await saveOnce('addItem',input,review.token);
+  if(result.ok)draftQuotes.delete(quoteKey);
+  return result;
+ }
  const make=target=>{
   const out={};
   for(const [name,definition] of Object.entries(ALISHAN_META[target])){
-   out[name]=definition?.fn?(...args)=>call(target,name,args):definition?.value!==undefined?()=>decode(structuredClone(definition.value)):decode(definition);
+   out[name]=definition?.fn?(...args)=>target==='Store'&&name==='addPayment'?saveOnce(name,args[0]):call(target,name,args):definition?.value!==undefined?()=>decode(structuredClone(definition.value)):decode(definition);
   }
   return out;
  };
@@ -111,7 +175,7 @@
  AlishanStore.subscribe=fn=>{listeners.add(fn);return()=>listeners.delete(fn);};AlishanDB.onChange=()=>{};
  window.AlishanHas=needed=>Object.keys(needed).every(k=>window[k]!==undefined);
  window.AlishanRequire=async needed=>AlishanHas(needed);
- window.AlishanRemote={call,preparePage,cacheInfo:()=>device?.inspect(),clearDeviceCache(){device?.invalidate(true);prepared.clear();changed();void device?.check(true);}};
+ window.AlishanRemote={call,submitEntry,preparePage,cacheInfo:()=>device?.inspect(),clearDeviceCache(){device?.invalidate(true);prepared.clear();changed();void device?.check(true);}};
  if(device?.enabled){
   const later=window.requestIdleCallback||((fn)=>setTimeout(fn,1800));
   const prefetch=()=>later(()=>{for(const name of ['inventory','reports'])if(name!==pageName())void preparePage(name).catch(()=>{});});

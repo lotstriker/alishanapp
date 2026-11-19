@@ -377,6 +377,7 @@ const ReportViews = (() => {
       ['Colours', (item.colors || []).map((c) => typeof c === 'string' ? c : C.colorName(c)).filter(Boolean).join(', ')],
       ['Size & Quantity', sizeLines], ['Total Dozen', C.fmtDozens(totals.dozens)], ['Weight', item.weight], ['Meter', item.material],
       ['Price', C.fmtMoney(C.itemPrice(item))], ['Quality Value', C.fmtMoney(totals.amount)], ['Received Amount', C.fmtMoney(pay.received)], ['Pending Amount', C.fmtMoney(pay.pending)],
+      ...(pay.extraReceived > 0 ? [['Extra Received', C.fmtMoney(pay.extraReceived)]] : []),
       ['Entry Date', C.fmtDateLong(item.addedDateTime || item.dateTime)], ['Completion Date', completion.hasDate ? C.fmtDateLong(completion.date) : '—'],
       ['Status', item.inStock === false ? 'Complete' : 'Incomplete'], ['Notes', item.notes], ['Maal Gaya', item.maalGaya || item.maalGayaTo],
       ['Last Modified', item.lastModified ? C.fmtDateTime(item.lastModified) : ''], ['Import Batch', item.importBatch], ['Entry Source', item.source], ['Manual Entry', item.isManualEntry ? 'Yes' : 'No'],

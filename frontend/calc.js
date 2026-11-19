@@ -233,7 +233,8 @@ var AlishanCalc = (() => {
         let status = 'pending';
         if (expected > 0 && pending === 0) status = 'paid';
         else if (received > 0) status = 'partial';
-        return { expected, received, pending, overpaid, status };
+        const extraReceived = Math.max(0, round2(received - expected));
+        return { expected, received, pending, extraReceived, overpaid, status };
     }
 
     // ================= summary of any list of items =================
@@ -492,7 +493,7 @@ var AlishanCalc = (() => {
     // (Settings -> Archives). From there it can be restored, or deleted for good. Deleting for good must leave
     // NO shadow: its payments, its Quality History rows, the Recent Activity lines that name its code and its
     // copy inside the automatic backups all go too. These functions only decide WHAT; db.js / archive.js do it.
-    const CODE_IN_TEXT = /\((\d{6})\)/g;
+    const CODE_IN_TEXT = /\((\d{6,19})\)/g;
 
     function makeArchiveRecord(item, itemPayments, now = new Date()) {
         return {
@@ -650,6 +651,10 @@ var AlishanCalc = (() => {
         return changed;
     }
 
+    function validCode(code) {
+        return typeof code === 'string' && /^\d{6,19}$/.test(code) && BigInt(code) <= 9223372036854775807n;
+    }
+
     function generateCode(taken) {
         let code, tries = 0;
         do {
@@ -670,7 +675,7 @@ var AlishanCalc = (() => {
         const taken = new Set();
         const seen = new Set();
         list.forEach(it => {
-            if (it && typeof it === 'object' && /^\d{6}$/.test(String(it.code || '')) && !seen.has(it.code)) {
+            if (it && typeof it === 'object' && validCode(it.code) && !seen.has(it.code)) {
                 seen.add(it.code);
                 taken.add(it.code);
             }
@@ -722,7 +727,7 @@ var AlishanCalc = (() => {
                     ? it.addedDateTime : new Date().toISOString();
                 changed = true;
             }
-            const codeOk = /^\d{6}$/.test(String(it.code || '')) && !usedNow.has(it.code);
+            const codeOk = validCode(it.code) && !usedNow.has(it.code);
             if (!codeOk) { it.code = generateCode(taken); changed = true; }
             usedNow.add(it.code);
 
@@ -736,7 +741,7 @@ var AlishanCalc = (() => {
         if (!item || typeof item !== 'object') return fail('Invalid item');
         if (typeof item.productType !== 'string' || !item.productType.trim()) return fail('Product type is required');
         if (typeof item.quality !== 'string' || !item.quality.trim()) return fail('Quality is required');
-        if (typeof item.code !== 'string' || !/^\d{6}$/.test(item.code)) return fail('Item code is invalid');
+        if (!validCode(item.code)) return fail('Item code is invalid');
         if (!loose && item.lotNumber && !/^[\d\-]*$/.test(item.lotNumber)) return fail('Lot number can contain only digits and hyphens');
         if (!['same', 'different'].includes(item.sizeOption)) return fail('Size option is invalid');
         if (!Array.isArray(item.colors) || item.colors.length === 0) return fail('At least one color is required');
@@ -841,7 +846,7 @@ var AlishanCalc = (() => {
 
         const item = {
             id: nextId(ctx.items),
-            code: generateCode(new Set(ctx.items.map(i => i.code))),
+            code: ctx.issuedCode || generateCode(new Set(ctx.items.map(i => i.code))),
             dateTime: entry.dateTime,
             addedDateTime: entry.addedDateTime,
             productType,

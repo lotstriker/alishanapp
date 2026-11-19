@@ -326,8 +326,8 @@ var AlishanStore = (() => {
     async function getQualityHistory() { try { return await AlishanDB.getQualityHistory(); } catch (e) { return []; } }
     const missingLotItems = () => items.filter(i => !String(i.lotNumber || '').trim()).sort((a,b)=>new Date(b.dateTime)-new Date(a.dateTime));
 
-    async function addItem(input) {
-        const built = C.buildNewItem(input, ctx());
+    async function addItem(input, issuedCode) {
+        const built = C.buildNewItem(input, { ...ctx(), issuedCode });
         if (!built.ok) return built;
         const item = built.item;
 
