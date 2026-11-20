@@ -1,12 +1,12 @@
 (function () {
  'use strict';
  const routes = new Set(['index','inventory','reports','setting','add-entry','missing-completion','missing-lot','pending-amount','quality-history']);
- const page = location.pathname === '/' ? 'index' : location.pathname.slice(1).replace(/\.html$/, '');
+ let page = location.pathname === '/' ? 'index' : location.pathname.slice(1).replace(/\.html$/, '');
  const scope = window.ALISHAN_SESSION?.scope;
  if (!scope || !routes.has(page) || !crypto.randomUUID) return;
  const deviceKey = 'alishan:performance-device';
  const queueKey = 'alishan:performance-queue:' + scope;
- const visit = crypto.randomUUID();
+ let visit = crypto.randomUUID(), spaStart, deadline;
  let device = crypto.randomUUID(), pendingNavigation;
  try {
   device = localStorage.getItem(deviceKey) || device;
@@ -36,8 +36,9 @@
  }
  function record() {
   if (recorded) return;
-  const nav = performance.getEntriesByType?.('navigation')?.[0];
-  const metrics = {apiCount:count,apiErrors:failures,readyMs:ready};
+  const nav = spaStart===undefined ? performance.getEntriesByType?.('navigation')?.[0] : null;
+  const metrics = {apiCount:count,apiErrors:failures,readyMs:ready===undefined?undefined:ready-(spaStart??0)};
+  if (spaStart!==undefined&&ready!==undefined) metrics.switchMs=ready-spaStart;
   if (nav) {
    if (nav.domContentLoadedEventEnd > 0) metrics.domMs = nav.domContentLoadedEventEnd;
    if (nav.loadEventEnd > 0) metrics.loadMs = nav.loadEventEnd;
@@ -46,7 +47,7 @@
   }
   try {
    const next = JSON.parse(pendingNavigation);
-   if (next?.page === page && ready !== undefined) {
+   if (spaStart===undefined && next?.page === page && ready !== undefined) {
     const ms = performance.timeOrigin + ready - next.at;
     if (ms >= 0 && ms < 600000) metrics.switchMs = ms;
    }
@@ -68,15 +69,28 @@
   if (ready !== undefined && document.readyState === 'complete') setTimeout(record,0);
  }
  window.AlishanPerformance = {
+  navigate(next,started) {
+   if (!routes.has(next)) return;
+   record();
+   clearTimeout(deadline);
+   page=next;visit=crypto.randomUUID();spaStart=started;
+   ready=first=last=longest=pendingNavigation=undefined;
+   count=failures=0;recorded=false;
+   try { sessionStorage.removeItem('alishan:performance-next'); } catch {}
+   deadline=setTimeout(record,15000);
+  },
+  current:()=>visit,
   ready() {
    if (ready !== undefined) return;
+   const key=visit;
    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if (key!==visit) return;
     if (ready === undefined) ready=performance.now();
     whenComplete();
    }));
   },
-  batch(start, headersAt, timing, ok) {
-   if (ready !== undefined || recorded) return;
+  batch(start, headersAt, timing, ok, key) {
+   if ((key && key!==visit) || ready !== undefined || recorded) return;
    const end = performance.now();
    first = Math.min(first??start,start); last=end; count++;
    if (!ok) failures++;
@@ -105,6 +119,6 @@
  window.addEventListener('load',whenComplete,{once:true});
  window.addEventListener('pagehide',record,{once:true});
  window.addEventListener('online',flush);
- setTimeout(record,15000);
+ deadline=setTimeout(record,15000);
  window.addEventListener('load',()=>setTimeout(flush,1500),{once:true});
 })();

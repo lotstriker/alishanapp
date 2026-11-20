@@ -57,6 +57,7 @@
   }, true);
   document.addEventListener('DOMContentLoaded', () => {
     const panel = document.createElement('details');
+    panel.id = 'alishan-timing-panel';
     const label = document.createElement('summary');
     label.textContent = 'Speed timings';
     const output = document.createElement('textarea');

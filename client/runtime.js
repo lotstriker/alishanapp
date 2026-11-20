@@ -30,7 +30,7 @@
  }
  async function sendBatch(batch){
   const clock=window.performance||Date;
-  const start=clock.now();let headersAt,timing;
+  const start=clock.now(),visit=window.AlishanPerformance?.current();let headersAt,timing;
   try{
    const response=await fetch('/api/batch',{method:'POST',headers:{'Content-Type':'application/json',...scopedHeaders()},credentials:'same-origin',body:pack(batch),signal:AbortSignal.timeout(batch.some(x=>['restoreComplete','importBackup','restoreBackup','importEntries'].includes(x.method))?180000:45000)});
    headersAt=clock.now();timing=response.headers?.get?.('Server-Timing');
@@ -38,13 +38,13 @@
    if(!response.ok)throw new Error(response.status===401?'Please sign in again.':'Server connection failed. Please try again.');
    device?.acceptRevision(response.headers?.get?.('X-Alishan-Revision'));
    const output=decode(await response.json());if(!Array.isArray(output)||output.length!==batch.length)throw new Error('Invalid server response. Please retry.');
-   window.AlishanPerformance?.batch(start,headersAt,timing,!output.some(row=>row.error));
+   window.AlishanPerformance?.batch(start,headersAt,timing,!output.some(row=>row.error),visit);
    output.forEach((r,i)=>{if(r.unchanged&&batch[i].conditional){batch[i].conditional.unchanged=true;batch[i].resolve(batch[i].conditional.value);return;}if(r.error)batch[i].reject(new Error(r.error));else{
      if(batch[i].target==='Groups')batch[i].args.forEach((arg,n)=>{if(arg&&typeof arg==='object'&&!Array.isArray(arg)&&r.args[n]){for(const k of Object.keys(arg))delete arg[k];Object.assign(arg,r.args[n]);}});
      if(batch[i].conditional?.write)batch[i].conditional.primes=r.primes;
      batch[i].resolve(r.result);
    }});
-  }catch(e){window.AlishanPerformance?.batch(start,headersAt,timing,false);batch.forEach(x=>x.reject(e));}
+  }catch(e){window.AlishanPerformance?.batch(start,headersAt,timing,false,visit);batch.forEach(x=>x.reject(e));}
  }
  const mutations=new Set(['addItem','updateItem','deleteItem','toggleStock','setCompletionDate','addPayment','deletePayment','importEntries','undoImport','importBackup','restoreComplete','restoreBackup','restore','deleteForever','cleanLeftovers','saveInventory','replaceInventoryAndPayments']);
  const referenceMethods=new Set(['getColorStyle','getColorStyleSafe','colorDisplayName','getPrice','getProductTypes','getColors','getQualityData']);
@@ -62,7 +62,10 @@
  const isReader=(target,method)=>ALISHAN_META[target]?.[method]?.read??(['Calc','Reports','Views','Search','Groups'].includes(target)||target==='DB'&&['init','get','getAll','getAllFrom','getSetting','getTheme','getSearchAnalytics','getSearchHistory','getInventory','getPayments','getArchive','getQualityHistory','getRecentActivity'].includes(method));
  function shellMessage(type){navigator.serviceWorker?.controller?.postMessage({type,session:window.ALISHAN_SESSION,scope:window.ALISHAN_SESSION?.scope});}
  function cacheStatus(kind){
-  if(['signin','reload'].includes(kind)&&typeof navigator!=='undefined')shellMessage('CLEAR_VIEW_SESSION');
+  if(['signin','reload'].includes(kind)){
+   window.AlishanRouter?.block();
+   if(typeof navigator!=='undefined')shellMessage('CLEAR_VIEW_SESSION');
+  }
   if(kind==='current'&&typeof navigator!=='undefined')shellMessage('BIND_VIEW_SESSION');
   if(typeof document==='undefined')return;
   const paint=()=>{let el=document.getElementById('deviceCacheStatus');if(!el){el=document.createElement('button');el.id='deviceCacheStatus';el.type='button';el.setAttribute('role','status');el.style.cssText='position:fixed;right:12px;bottom:calc(82px + env(safe-area-inset-bottom));max-width:calc(100vw - 24px);z-index:2200;padding:6px 10px;border:1px solid var(--border-color,#aaa);border-radius:16px;background:var(--bg-secondary,#fff);color:var(--text-primary,#222);font:12px sans-serif;box-shadow:0 2px 8px #0002';el.onclick=()=>{if(el.dataset.state==='reload'){shellMessage('CLEAR_VIEW_SESSION');location.reload();}else{device.invalidate(true);changed();void device.check(true);}};document.body.appendChild(el);}
@@ -199,7 +202,7 @@
   for(const event of ['pointerover','pointerdown','focusin'])document.addEventListener(event,warmLink,{passive:true});
   if(window.ALISHAN_SESSION?.google){
    const addSignOut=()=>{
-    const form=document.createElement('form');form.method='post';form.action='/auth/logout';
+    const form=document.createElement('form');form.id='alishan-sign-out';form.method='post';form.action='/auth/logout';
     const button=document.createElement('button');button.type='submit';button.className='btn btn-secondary';button.textContent='Sign out';
     form.appendChild(button);(document.querySelector('main')||document.body).appendChild(form);
     form.addEventListener('submit',()=>{device.revoke();shellMessage('CLEAR_VIEW_SESSION');});
