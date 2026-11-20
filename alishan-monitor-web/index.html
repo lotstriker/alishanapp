@@ -92,7 +92,7 @@ section{scroll-margin-top:12px}.chart-row{grid-template-columns:minmax(74px,110p
 <h3>Live release &amp; server start</h3><p id="live-release">Awaiting live release data.</p>
 <h3>Live page timings</h3><p>Seven-day aggregate. Document load, first visit and return visit are reported separately. Paint columns use supported browser observations.</p>
 <div class="table"><table><thead><tr><th>Page</th><th>Release</th><th>Scenario</th><th>Samples</th><th>Ready p50</th><th>Ready p95</th><th>FCP p50</th><th>Observed LCP p50</th></tr></thead><tbody id="live-page-rows"></tbody></table></div>
-<h3>Render deployment history</h3><p id="render-history-source">Waiting for a Render snapshot.</p><div class="table"><table><thead><tr><th>Commit</th><th>Started</th><th>Finished</th><th>Render status</th></tr></thead><tbody id="render-history-rows"></tbody></table></div><h3>Imported release history</h3><div class="table"><table><thead><tr><th>Release</th><th>Commit</th><th>Time</th><th>Outcome</th></tr></thead><tbody id="deploy-rows"></tbody></table></div>
+<h3>Render deployment history</h3><p id="render-history-source">Waiting for a Render snapshot.</p><div class="table"><table><thead><tr><th>Commit</th><th>Started</th><th>Finished</th><th>Render status</th><th>Trigger</th></tr></thead><tbody id="render-history-rows"></tbody></table></div><h3>Imported release history</h3><div class="table"><table><thead><tr><th>Release</th><th>Commit</th><th>Time</th><th>Outcome</th></tr></thead><tbody id="deploy-rows"></tbody></table></div>
 <details><summary>Import operational snapshot</summary><form id="operations-form">
 <p>Use a single reporting interval. Enter route templates and query family names. Leave out customer identifiers, raw SQL and payloads.</p>
 <pre class="example">{"at":"2026-11-20T12:00:00Z","durationMinutes":60,
@@ -360,6 +360,7 @@ async function loadOverview() {
     if (!response.ok) throw Error('Collector unavailable');
     const value = await response.json();
     liveState=value;
+    renderDeploymentHistory(value.deployments, value.deploymentsStatus, value.stale);
     renderRecovery();
     renderOperations();
     badge.textContent = byId('app-state').textContent = labels[value.appState];
@@ -375,6 +376,7 @@ async function loadOverview() {
       value.stale ? 'Monitoring data is stale or pending.' :
       value.events[0]?.state === 'reachable' ? 'Recovery observed · '+localTime(value.events[0].at) : '';
   } catch {
+    renderDeploymentHistory(null,'unavailable',true);
     liveState={stale:true,backup:liveState?.backup,backupError:true,operations:liveState?.operations,operationsError:true};
     renderRecovery();
     renderOperations();
@@ -726,11 +728,26 @@ function renderPublishedEvidence() {
     term.textContent=name;description.textContent=value;details.append(term,description);
   }
   byId('verified-drill').hidden=false;
-  const deployments=publishedEvidence.deployments;
-  byId('render-history-source').textContent='Render provider snapshot · '+localTime(deployments.observedAt);
+  renderDeploymentHistory(null,'waiting');
+}
+let lastRenderHistory;
+function renderDeploymentHistory(recent,status,stale=false) {
+  if(recent)lastRenderHistory=recent;
+  const deployments=lastRenderHistory||publishedEvidence.deployments;
+  const source=lastRenderHistory
+    ? (status==='live'&&!stale?'Live Render history':'Last successful Render history')
+    : 'Render provider snapshot';
+  const descriptions={'not-configured':'Automatic refresh requires Render API access','access-denied':'Render denied access','unavailable':'Automatic refresh unavailable'};
+  byId('render-history-source').textContent=source+' · '+localTime(deployments.observedAt)+
+    (descriptions[status]?' · '+descriptions[status]:'');
   fillRows('render-history-rows',deployments.rows.map(row=>[
-    row.commit?.slice(0,12)||'—',localTime(row.createdAt),row.finishedAt?localTime(row.finishedAt):'—',row.status
+    row.commit?.slice(0,12)||'—',localTime(row.createdAt),row.finishedAt?localTime(row.finishedAt):'—',row.status||'Unknown',row.trigger||'—'
   ]),'No deployment evidence available.');
+  for(const [i,row] of deployments.rows.entries()){
+    const statusCell=byId('render-history-rows').rows[i].cells[3], label=document.createElement('span');
+    const tone=row.status==='live'?'good':/failed|canceled/.test(row.status||'')?'critical':/progress|created/.test(row.status||'')?'warn':'neutral';
+    label.className='status '+tone;label.textContent=statusCell.textContent;statusCell.replaceChildren(label);
+  }
 }
 renderPublishedEvidence();
 renderUsage();renderOperations();renderRecovery();renderFindings();

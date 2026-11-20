@@ -50,6 +50,30 @@ def operations_health():
     return value
 
 
+def render_deployments():
+    token = os.environ.get("RENDER_DEPLOY_HISTORY_KEY")
+    if not token:
+        return None
+    url = "https://api.render.com/v1/services/srv-dbus4ouk1f9s73b6svv0/deploys?limit=20"
+    request = Request(url, headers={"Authorization": "Bearer " + token, "Accept": "application/json"})
+    with urlopen(request, timeout=8) as response:
+        records = json.loads(response.read(131072))
+    if not isinstance(records, list):
+        raise ValueError("Invalid Render deploy history")
+    rows = []
+    for record in records[:20]:
+        deploy = record.get("deploy")
+        if not isinstance(deploy, dict) or not deploy.get("id") or not deploy.get("createdAt"):
+            raise ValueError("Invalid Render deployment")
+        commit = deploy.get("commit") or {}
+        rows.append({
+            "id": deploy["id"], "commit": commit.get("id"), "createdAt": deploy["createdAt"],
+            "finishedAt": deploy.get("finishedAt"), "status": deploy.get("status"),
+            "trigger": deploy.get("trigger"),
+        })
+    return {"observedAt": int(time.time() * 1000), "rows": rows}
+
+
 class Collector:
     def __init__(self, interval=1200):
         self.interval = interval
@@ -62,6 +86,9 @@ class Collector:
         self.backup_error = False
         self.operations = None
         self.operations_error = False
+        self.deployments = None
+        self.deployments_status = "waiting"
+        self.next_render_fetch = float("-inf")
         self.failures = 0
         self.events = []
         self.previous_state = None
@@ -102,7 +129,23 @@ class Collector:
                 operations = operations_health()
             except (OSError, ValueError, AttributeError):
                 operations_error = True
+            deployments = self.deployments
+            deployments_status = self.deployments_status
+            now = time.monotonic()
+            if now >= self.next_render_fetch:
+                try:
+                    observed = render_deployments()
+                    if observed is not None:
+                        deployments = observed
+                    deployments_status = "live" if observed is not None else "not-configured"
+                except HTTPError as error:
+                    deployments_status = "access-denied" if error.code in (401, 403) else "unavailable"
+                except (OSError, ValueError, AttributeError):
+                    deployments_status = "unavailable"
+                self.next_render_fetch = now + self.interval
             with self.lock:
+                self.deployments = deployments
+                self.deployments_status = deployments_status
                 if operations is not None:
                     self.operations = operations
                 self.operations_error = operations_error
@@ -135,7 +178,8 @@ class Collector:
             "unavailable" if self.failures >= 2 and corroborated else "verifying")
         return {"appState": state, "app": self.app, "database": self.database,
                 "stale": stale, "consecutiveFailures": self.failures, "events": self.events,
-                "scheduledCount": len(self.rows), "backup": self.backup, "backupError": self.backup_error, "operations": self.operations, "operationsError": self.operations_error, "egress": {"state": "unavailable"}}
+                "scheduledCount": len(self.rows), "backup": self.backup, "backupError": self.backup_error, "operations": self.operations, "operationsError": self.operations_error,
+                "deployments": self.deployments, "deploymentsStatus": self.deployments_status, "egress": {"state": "unavailable"}}
 
     def loop(self, stop):
         while not stop.is_set():
