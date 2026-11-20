@@ -52,9 +52,13 @@ test('Google PKCE scopes reads, writes, exports and logout to the verified user'
     assert.equal(oauth.searchParams.get('code_challenge_method'),'s256');
     const verifier=cookieFrom(start,'__Host-alishan-pkce');
     const reply=await fetch(base+'/auth/callback?code='+subject,{headers:{Cookie:verifier},redirect:'manual'});
-    assert.equal(reply.headers.get('location'),'/');
+    assert.equal(reply.status,200);
+    assert.equal(reply.headers.get('location'),null);
+    assert.match(await reply.text(),/location\.replace\('\/'\)/);
     const cookie=cookieFrom(reply,'__Host-alishan-session');
-    const html=await fetch(base+'/',{headers:{Cookie:cookie}}).then(r=>r.text());
+    const chained=await fetch(base+'/',{headers:{Cookie:cookie,'Sec-Fetch-Site':'cross-site'},redirect:'manual'});
+    assert.equal(chained.headers.get('location'),'/login');
+    const html=await fetch(base+'/',{headers:{Cookie:cookie,'Sec-Fetch-Site':'same-origin'}}).then(r=>r.text());
     return {cookie,scope:JSON.parse(html.match(/ALISHAN_SESSION=(\{.*?\});/)[1]).scope};
   }
   const seed=await domain(legacy.state);

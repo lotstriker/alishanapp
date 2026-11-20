@@ -67,7 +67,11 @@ function googleLogin({ supabaseUrl, publishableKey, origin, sessions, verifyOnly
         const token = random();
         await sessions.save(token, user.id, new Date(Date.now() + sessionLifetime));
         res.cookie(sessionName, token, { ...cookieOptions, maxAge: sessionLifetime });
-        res.redirect(303, '/');
+        // Make the dashboard navigation originate here, after the cross-site OAuth redirect chain ends.
+        res.type('html').send(`<!doctype html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Opening Alishan</title>
+<p>Sign-in complete. <a href="/">Open Alishan Dashboard</a></p>
+<script>location.replace('/');</script></html>`);
       } catch {
         return fail();
       }
