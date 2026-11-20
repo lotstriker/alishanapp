@@ -79,3 +79,26 @@ test('backup checks skip full reads until due and routine writes preserve stored
  await runScheduledBackup(repo,async()=>{ticks++;});
  assert.equal(ticks,1);
 });
+
+test('backup monitor exposes only schedule metadata behind its dedicated token',async t=>{
+ const {repo}=await setup(t);
+ const now=new Date().toISOString();
+ await repo.transaction(async state=>{
+  state.settings=[{key:'lastBackupDate',value:now},{key:'autoBackups',value:[
+    {metadata:{created:now,type:'AUTO_BACKUP'},inventory:[{id:1,notes:'private'}],payments:[]}
+  ]}];
+ });
+ const previous=process.env.MONITOR_BACKUP_TOKEN;
+ const token=require('node:crypto').randomBytes(32).toString('hex');
+ process.env.MONITOR_BACKUP_TOKEN=token;
+ t.after(()=>{if(previous===undefined)delete process.env.MONITOR_BACKUP_TOKEN;else process.env.MONITOR_BACKUP_TOKEN=previous;});
+ const server=createApp({repository:repo,username:'test',password:'test-only-password-123456789'}).listen(0,'127.0.0.1');
+ await new Promise(resolve=>server.once('listening',resolve));t.after(()=>server.close());
+ const url='http://127.0.0.1:'+server.address().port+'/internal/monitor/backup';
+ assert.equal((await fetch(url)).status,404);
+ const response=await fetch(url,{headers:{Authorization:'Bearer '+token}});
+ assert.equal(response.status,200);
+ const body=await response.json();
+ assert.equal(body.lastBackupAt,now);assert.equal(body.frequencyHours,24);
+ assert.deepEqual(Object.keys(body).sort(),['checkedAt','enabled','frequencyHours','lastBackupAt','nextDueAt']);
+});

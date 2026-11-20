@@ -109,6 +109,27 @@ class PostgresRepository {
       client.release();
     }
   }
+  async backupHealth() {
+    const {rows} = await performanceDb.query(this.pool, `SELECT
+      (SELECT payload->'value' FROM alishan_private.records WHERE workspace_id=$1 AND store='settings' AND record_key=$2) AS enabled,
+      (SELECT payload->>'value' FROM alishan_private.records WHERE workspace_id=$1 AND store='settings' AND record_key=$3) AS frequency,
+      (SELECT payload->>'value' FROM alishan_private.records WHERE workspace_id=$1 AND store='settings' AND record_key=$4) AS last,
+      (SELECT max(entry->'metadata'->>'created') FROM alishan_private.records r
+        CROSS JOIN LATERAL jsonb_array_elements(CASE WHEN jsonb_typeof(r.payload->'value')='array'
+          THEN r.payload->'value' ELSE '[]'::jsonb END) AS h(entry)
+        WHERE r.workspace_id=$1 AND r.store='settings' AND r.record_key=$5
+          AND entry->'metadata'->>'type'='AUTO_BACKUP'
+          AND jsonb_typeof(entry->'inventory')='array' AND jsonb_typeof(entry->'payments')='array') AS latest`,
+      [this.workspace,...scheduleKeys.map(keyText),keyText('autoBackups')]);
+    const row = rows[0];
+    const iso = raw => Number.isFinite(Date.parse(raw)) ? new Date(raw).toISOString() : null;
+    const frequencyHours = parseInt(row.frequency,10) || 24;
+    const enabled = row.enabled !== 'false' && frequencyHours > 0;
+    const lastBackupAt = iso(row.latest);
+    const lastScheduleAt = iso(row.last);
+    const due = enabled && lastScheduleAt ? new Date(Date.parse(lastScheduleAt)+frequencyHours*3600000) : null;
+    return {enabled,frequencyHours,lastBackupAt,nextDueAt:due ? iso(due) : null,checkedAt:new Date().toISOString()};
+  }
   async backupIsDue(client = this.pool) {
     const result = await performanceDb.query(client, `SELECT payload FROM alishan_private.records
       WHERE workspace_id=$1 AND store='settings' AND record_key=ANY($2::text[])`,

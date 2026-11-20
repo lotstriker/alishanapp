@@ -19,6 +19,13 @@ function createApp({repository,username,password,auth,repositoryFor,legacyOwnerI
  const {entryReview}=require('./entry-review');
  const app=express();app.disable('x-powered-by');
  app.use((req,res,next)=>{res.set({'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY','Cache-Control':'no-store'});next();});
+ app.get('/internal/monitor/backup',async(req,res)=>{
+   const token=process.env.MONITOR_BACKUP_TOKEN;
+   const supplied=req.get('authorization')||'';
+   if(!token||token.length<32||!timingSafeEqual(hash(supplied),hash('Bearer '+token)))return res.sendStatus(404);
+   try{res.json(await repository.backupHealth());}
+   catch{res.status(503).json({status:'unavailable'});}
+ });
  app.get('/healthz',async(req,res)=>{try{await repository.ready();res.json({status:'ok'});}catch{res.status(503).json({status:'unavailable'});}});
  // Chrome may fetch installation metadata without the browser tab's credentials.
  const installAssets=new Set(['/manifest.webmanifest','/icons/icon-192.png','/icons/icon-512.png','/icons/icon-maskable-512.png']);
