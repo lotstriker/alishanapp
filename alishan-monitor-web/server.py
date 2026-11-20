@@ -5,10 +5,23 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.error import HTTPError
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 HEALTH = "https://alishanapp-server.onrender.com/healthz"
 PAGE = Path(__file__).with_name("index.html").read_bytes()
+WORDMARK = Path(__file__).with_name("wordmark.png").read_bytes()
+HISTORY = "https://suqkfvfrfqtrviqjjaty.supabase.co/rest/v1/rpc/alishan_monitor_history"
+
+
+def history():
+    key = os.environ.get("SUPABASE_PUBLISHABLE_KEY")
+    if not key:
+        raise RuntimeError("Monitor history configuration is missing.")
+    with urlopen(Request(HISTORY, headers={"apikey": key}), timeout=10) as response:
+        rows = json.loads(response.read(65536))
+        if not isinstance(rows, list):
+            raise ValueError("Invalid monitor history.")
+        return rows
 lock = threading.Lock()
 cached = None
 last_check = float("-inf")
@@ -36,6 +49,14 @@ class Dashboard(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/":
             status, mime, body = 200, "text/html; charset=utf-8", PAGE
+        elif self.path == "/wordmark.png":
+            status, mime, body = 200, "image/png", WORDMARK
+        elif self.path == "/api/history":
+            mime = "application/json"
+            try:
+                status, body = 200, json.dumps(history()).encode()
+            except (OSError, ValueError, RuntimeError):
+                status, body = 503, b'{"error":"Scheduled history is temporarily unavailable."}'
         elif self.path == "/api/health":
             status, mime, body = 200, "application/json", json.dumps(probe()).encode()
         elif self.path == "/healthz":
