@@ -7,7 +7,7 @@
      downloaded and used from then on. Put them in the vendor/ folder to have them from the very first start.
    * Your data (entries, payments, backups) is not touched: it lives in the browser database, not here.
    ============================================================ */
-const VERSION = 'v25';                       // bump when cached app-shell assets change
+const VERSION = 'v26';                       // bump when cached app-shell assets change
 const APP_CACHE = 'alishan-app-' + VERSION;
 const LIB_CACHE = 'alishan-libs-v1';        // the library URLs contain their version, so this never goes stale
 
@@ -80,55 +80,6 @@ const APP_FILES = [
     "fonts/inter-800.woff",
     "icons/icon-512.png",
     "icons/icon-maskable-512.png",
-    "assets/user-guide/screen-01.png",
-    "assets/user-guide/screen-02.png",
-    "assets/user-guide/screen-03.png",
-    "assets/user-guide/screen-04.png",
-    "assets/user-guide/screen-05.png",
-    "assets/user-guide/screen-06.png",
-    "assets/user-guide/screen-07.png",
-    "assets/user-guide/screen-08.png",
-    "assets/user-guide/screen-09.png",
-    "assets/user-guide/screen-10.png",
-    "assets/user-guide/screen-11.png",
-    "assets/user-guide/screen-12.png",
-    "assets/user-guide/screen-13.png",
-    "assets/user-guide/screen-14.png",
-    "assets/user-guide/screen-15.png",
-    "assets/user-guide/screen-16.png",
-    "assets/user-guide/screen-17.png",
-    "assets/user-guide/screen-18.png",
-    "assets/user-guide/screen-19.png",
-    "assets/user-guide/screen-20.png",
-    "assets/user-guide/screen-21.png",
-    "assets/user-guide/screen-22.png",
-    "assets/user-guide/screen-23.png",
-    "assets/user-guide/screen-24.png",
-    "assets/user-guide/screen-25.png",
-    "assets/user-guide/screen-26.png",
-    "assets/user-guide/screen-27.png",
-    "assets/user-guide/screen-28.png",
-    "assets/user-guide/screen-29.png",
-    "assets/user-guide/screen-30.png",
-    "assets/user-guide/screen-31.png",
-    "assets/user-guide/screen-32.png",
-    "assets/user-guide/screen-33.png",
-    "assets/user-guide/screen-34.png",
-    "assets/user-guide/screen-35.png",
-    "assets/user-guide/screen-36.png",
-    "assets/user-guide/screen-37.png",
-    "assets/user-guide/screen-38.png",
-    "assets/user-guide/screen-39.png",
-    "assets/user-guide/screen-40.png",
-    "assets/user-guide/screen-41.png",
-    "assets/user-guide/screen-42.png",
-    "assets/user-guide/screen-43.png",
-    "assets/user-guide/screen-44.png",
-    "assets/user-guide/screen-45.png",
-    "assets/user-guide/screen-46.png",
-    "assets/user-guide/screen-47.png",
-    "assets/user-guide/screen-48.png",
-    "assets/user-guide/screen-49.png"
 ];
 const OPTIONAL_FILES = ["vendor/xlsx.full.min.js", "vendor/chart.umd.js"];   // only used if the files exist
 const LIB_URLS = [

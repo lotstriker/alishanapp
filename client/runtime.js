@@ -83,12 +83,13 @@
  async function preparePage(name){
   if(!device?.enabled||!name)return;
   const args=[name,name==='inventory'?advancedOptions():null],key=JSON.stringify(args);
-  if(prepared.has(key))return prepared.get(key);
-  const measured=name===pageName(), started=performance.now();
-  const visit=measured?window.AlishanPerformance?.current():undefined;
-  const promise=device.call('Views','pageBundle',args).finally(()=>{
-   if(visit)window.AlishanPerformance?.phase('startupRefreshMs',started,visit);
-  });prepared.set(key,promise);promise.catch(()=>prepared.delete(key));return promise;
+  let promise=prepared.get(key);
+  if(!promise){
+   promise=device.call('Views','pageBundle',args);
+   prepared.set(key,promise);
+   promise.catch(()=>{if(prepared.get(key)===promise)prepared.delete(key);});
+  }
+  return promise;
  }
  async function themePreference(theme){
   const options={headers:scopedHeaders(),credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000)};
@@ -102,7 +103,13 @@
   if(target==='Store'&&method==='reviewEntry')return networkCall(target,method,args);
   if(device?.enabled&&target==='DB'&&method==='setTheme')return themePreference(args[0]);
   if(device?.enabled&&target==='DB'&&method==='getTheme')return themePreference();
-  if(device?.enabled&&target==='Store'&&method==='init')return preparePage(pageName()).catch(()=>{}).then(()=>device.call(target,method,args));
+  if(device?.enabled&&target==='Store'&&method==='init'){
+   const page=pageName(), visit=page&&window.AlishanPerformance?.current(), started=performance.now();
+   return preparePage(page).catch(()=>{}).then(()=>{
+    if(visit)window.AlishanPerformance?.phase('startupRefreshMs',started,visit);
+    return device.call(target,method,args);
+   });
+  }
   return device?device.call(target,method,args):networkCall(target,method,args);
  }
  const activeSaves=new Map();

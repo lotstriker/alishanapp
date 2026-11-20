@@ -1667,21 +1667,6 @@ input:checked + .toggle-slider:before {
 @media(min-width:900px){.guide-path-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.guide-report-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 
 
-/* === V90 INDIVIDUAL APP SCREEN REFERENCES === */
-.guide-visual-section{margin:1rem 0 .25rem;padding-top:.8rem;border-top:1px solid var(--border-color)}
-.guide-visual-heading{display:block;margin-bottom:.65rem;color:var(--text-primary);font-size:.84rem}
-.guide-visual-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
-.guide-visual{min-width:0;margin:0;padding:.55rem;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-secondary,var(--bg-body))}
-.guide-visual>a{display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:8px;background:#111827}
-.guide-visual img{display:block;width:100%;height:auto;max-height:520px;object-fit:contain;object-position:top}
-.guide-visual figcaption{display:flex;flex-wrap:wrap;gap:.2rem .35rem;align-items:baseline;margin-top:.45rem;color:var(--text-primary);font-size:.72rem;line-height:1.4}
-.guide-visual figcaption span{width:100%;color:var(--text-secondary);font-size:.66rem}
-@media(max-width:640px){
- .guide-visual-grid{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(78%,1fr);grid-template-columns:none;overflow-x:auto;gap:.65rem;padding:0 0 .45rem;scroll-snap-type:x mandatory;overscroll-behavior-inline:contain}
- .guide-visual{scroll-snap-align:start}
- .guide-visual img{max-height:62vh}
-}
-
 /* ============================================================
    USER GUIDE helpers (v93): Quick Start, tip, sub-headings, question boxes, What's new
    ============================================================ */

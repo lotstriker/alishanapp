@@ -50,7 +50,7 @@ test('Release policy is documented as mandatory and append-only', () => {
   assert.match(doc, /ALISHAN-CHG-2026-11-09-007/);
 });
 
-test('Service worker precaches the guide page and individual screenshots', () => {
+test('Service worker precaches the text guide', () => {
   const sw = read('frontend/sw.js');
   assert.match(sw, /const VERSION = 'v2\d'/);        // the cache version is bumped whenever precached files change
   assert.match(sw, /"setting\.html"/);
@@ -59,19 +59,11 @@ test('Service worker precaches the guide page and individual screenshots', () =>
 });
 
 
-test('Every guide screenshot file is a separate asset, used in the guide and precached', () => {
-  const html = read('frontend/setting.html');
-  const sw = read('frontend/sw.js');
-  const files = fs.readdirSync(path.join(root, 'frontend', 'assets', 'user-guide')).filter((f) => /^screen-\d+\.png$/.test(f)).sort();
-  assert.ok(files.length >= 47, 'the guide has screens 01-47 or more');
-  files.forEach((f, i) => assert.equal(f, `screen-${String(i + 1).padStart(2, '0')}.png`, 'screenshots are numbered without gaps'));
-  for (const f of files) {
-    const file = `assets/user-guide/${f}`;
-    assert.ok(html.includes(file), `not referenced in guide: ${file}`);
-    assert.ok(sw.includes(`"${file}"`), `not precached: ${file}`);
-  }
-  assert.equal((html.match(/class="guide-visual"/g) || []).length, files.length);
-  assert.match(html, /Tap to view full size/);
+test('Guide and service worker are free of guide image references', () => {
+  const guideSection = read('frontend/setting.html').split('id="user-guide"')[1].split('id="general"')[0];
+  assert.doesNotMatch(guideSection, /<img\b|assets\/user-guide/i);
+  assert.doesNotMatch(read('frontend/sw.js'), /assets\/user-guide/);
+  assert.equal(fs.existsSync(path.join(root, 'frontend', 'assets', 'user-guide')), false);
 });
 
 // ---- the guide is for the USER (rule 11 / protocol section 18) ----

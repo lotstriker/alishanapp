@@ -195,10 +195,14 @@
     const next=async(queue)=>{
      if(blocked||document.hidden||navigator.onLine===false||!queue.length)return;
      const target=queue.shift();
-     try { if(active?.route!==target)await loadPage(target); } catch {}
+     if(active?.route!==target){
+      const shell=loadPage(target);
+      if(target==='reports')void window.AlishanRemote?.preparePage('reports').catch(()=>{});
+      try { await shell; } catch {}
+     }
      if(queue.length)idle(()=>void next(queue));
     };
-    idle(()=>void next(['setting','add-entry']));
+    idle(()=>void next(['setting','add-entry','reports']));
    },3000);
    if(document.readyState==='complete')warmShells();
    else window.addEventListener('load',warmShells,{once:true});

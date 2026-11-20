@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function () {
         empty.hidden = visible !== 0;
         status.textContent = query
             ? `${visible} guide topic${visible === 1 ? '' : 's'} found`
-            : `${topics.length} guide topics available — kisi topic ko kholkar steps, examples aur diagrams dekhein.`;
+            : `${topics.length} guide topics available — topic kholkar steps aur examples dekhein.`;
     }
 
     if (expandAll) expandAll.addEventListener('click', function () {
