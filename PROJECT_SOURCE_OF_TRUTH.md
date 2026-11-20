@@ -619,6 +619,8 @@ Rule: see section 0, rule 8. Newest at the bottom.
 | v122 | `AlishanApp-v122-Startup-Diagnostics.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-022` | Measure startup assets, API batches, response sizes, database waits and response processing. |
 | v123 | `AlishanApp-v123-Manual-Sync.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-023` | Add manual revision sync and persist the latest server check. |
 | v124 | `AlishanApp-v124-Reports-Route.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-024` | Reuse sanitized versioned route HTML for signed-in tab navigation and trace route prep. |
+| v125 | `AlishanApp-v125-Account-Login.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-025` | Clarify Google account creation and exit the current view upon account or session changes. |
+| v126 | `AlishanApp-v126-Google-Setup.zip` | 2026-11-21 | `ALISHAN-CHG-2026-11-21-001` | Add an owner verification stage before Google-only activation. |
 
 > **Note on two ZIPs named v90 (added 2026-11-11, history kept):** an earlier ZIP, `AlishanApp-v90-Visual-Manual-Workflow-Fixes.zip` (change ID `ALISHAN-CHG-2026-11-09-008`: Expand All / Collapse All fix, Add Entry order Quality Type → Quality → Cup, 32 PDF screenshots), was delivered on a separate branch. Its changes are **not** contained in the v90 row above or in v91. This lineage continues from `AlishanApp-v90-Visual-Screenshot-Tutorials.zip`. Whether to bring those fixes into this lineage is an open owner decision.
 
@@ -1204,3 +1206,11 @@ Dashboard totals and the Inventory list render ahead of other sections during st
 
 - Warm Reports HTML alongside Inventory. Serve sanitized version-matched shells to already bound tabs, with authenticated network fallback.
 - Record HTML fetch, script factory readiness and HTML parse separately in Page Timing Details.
+
+### ALISHAN-CHG-2026-11-20-025 — Account login
+
+- Explain Google account creation and empty first-use workspaces. On account mismatches and expired sessions, leave the previous signed-in view. Explicit logout still submits its server request.
+
+### ALISHAN-CHG-2026-11-21-001 — Google setup
+
+- Allow Google verification with the existing password gate still in place. Setup callbacks issue no Alishan session. Google-only mode still requires a verified legacy owner.

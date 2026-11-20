@@ -8,3 +8,5 @@ p { margin: 0 0 24px; color: #6a4d58; }
 .google span { color: #185abc; font-size: 21px; }
 .google:focus-visible { outline: 3px solid #8b3152; outline-offset: 3px; }
 .error { display: none; margin: 16px 0 0; color: #9a2048; }
+
+.account-note { margin: 16px 0 0; font-size: .875rem; line-height: 1.5; }

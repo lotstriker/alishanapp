@@ -12,7 +12,7 @@ const {PostgresRepository,blank}=require('./database');
 const {isReader,selection}=require('./operations');
 const metrics=require('./performance');
 const hash=s=>createHash('sha256').update(s).digest();
-function createApp({repository,username,password,auth,repositoryFor,legacyOwnerId,telemetry}){
+function createApp({repository,username,password,auth,googleSetup,repositoryFor,legacyOwnerId,telemetry}){
  if((!auth&&!username)||!password||password.length<20)throw new Error('APP_USERNAME and APP_PASSWORD (20+ characters) are required');
  let pureDomain;
  const bootedAt=new Date().toISOString();
@@ -60,12 +60,13 @@ function createApp({repository,username,password,auth,repositoryFor,legacyOwnerI
  app.get([...installAssets],(req,res,next)=>{
    res.sendFile(req.path.slice(1),{root:path.resolve(__dirname,'../dist')},error=>{if(error)next(error);});
  });
- if(auth){
+ const login=auth||googleSetup;
+ if(login){
    app.get('/login',(req,res)=>res.sendFile(path.resolve(__dirname,'../dist/login.html')));
    app.get('/login.css',(req,res)=>res.sendFile(path.resolve(__dirname,'../dist/login.css')));
-   app.get('/auth/google',auth.start);
-   app.get('/auth/callback',auth.callback);
-   app.post('/auth/logout',auth.logout);
+   app.get('/auth/google',login.start);
+   app.get('/auth/callback',login.callback);
+   if(auth)app.post('/auth/logout',auth.logout);
  }
  app.use(async(req,res,next)=>{
    if(auth){
@@ -235,10 +236,13 @@ async function start(){
  pool.on('error',e=>console.error('Database pool error:',e.code||e.name));
  const repository=new PostgresRepository(pool,process.env.APP_WORKSPACE||'alishan');await repository.ready();
  const {googleLogin,sessionStore}=require('./google-login');
- const auth=process.env.APP_AUTH_MODE==='google'?googleLogin({
+ const authMode=process.env.APP_AUTH_MODE;
+ const login=['google','google-setup'].includes(authMode)?googleLogin({
    supabaseUrl:process.env.SUPABASE_URL,publishableKey:process.env.SUPABASE_PUBLISHABLE_KEY,
-   origin:process.env.APP_ORIGIN,sessions:sessionStore(pool)
+   origin:process.env.APP_ORIGIN,sessions:sessionStore(pool),verifyOnly:authMode==='google-setup'
  }):null;
+ const auth=authMode==='google'?login:null;
+ const googleSetup=authMode==='google-setup'?login:null;
  if(auth){
    await pool.query('SELECT 1 FROM alishan_private.login_sessions LIMIT 1');
    const legacyOwner=process.env.LEGACY_OWNER_USER_ID||null;
@@ -259,7 +263,7 @@ async function start(){
    return userRepositories.get(workspace);
  };
  const app=createApp({repository,username:process.env.APP_USERNAME,password:process.env.APP_PASSWORD,
-   auth,repositoryFor,legacyOwnerId:process.env.LEGACY_OWNER_USER_ID,telemetry:metrics.telemetryStore(pool)});
+   auth,googleSetup,repositoryFor,legacyOwnerId:process.env.LEGACY_OWNER_USER_ID,telemetry:metrics.telemetryStore(pool)});
  const server=app.listen(Number(process.env.PORT)||10000,'0.0.0.0',()=>console.log('Alishan server ready'));
  let backupRunning=false;
  const backupTimer=setInterval(async()=>{

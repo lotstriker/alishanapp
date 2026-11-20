@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="hi-Latn">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,10 +11,16 @@
   <main>
     <img src="/icons/icon-192.png" width="64" height="64" alt="">
     <h1>Alishan</h1>
-    <p>Apne Google account se sign in karein.</p>
+    <p>Naya account banane ya wapas sign in karne ke liye apna Google account chunein.</p>
     <a class="google" href="/auth/google"><span aria-hidden="true">G</span> Continue with Google</a>
-    <p class="error" id="login-error">Sign in poora nahi hua. Dobara try karein.</p>
-    <script>if (new URLSearchParams(location.search).get('error')) document.getElementById('login-error').style.display='block';</script>
+    <p class="account-note">Har Google account ka inventory aur payments alag rehte hain. Naya account khaali workspace se shuru hota hai.</p>
+    <p role="alert" class="error" id="login-error">Sign in poora nahi hua. Dobara try karein.</p>
+    <p role="status" id="login-verified" hidden>Google account verify ho gaya. Alishan ka Google sign-in activate hone ke baad isi account se login karein.</p>
+    <script>
+      const params = new URLSearchParams(location.search);
+      if (params.has('error')) document.getElementById('login-error').style.display='block';
+      if (params.get('verified')==='google') document.getElementById('login-verified').hidden=false;
+    </script>
   </main>
 </body>
 </html>

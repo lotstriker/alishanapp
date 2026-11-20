@@ -7,7 +7,7 @@
  const channel=typeof BroadcastChannel==='function'?new BroadcastChannel('alishan-server:'+window.ALISHAN_SESSION?.scope):null;
  let pending=[],scheduled=false;
  function changed(){cache.clear();for(const cb of listeners)Promise.resolve().then(cb).catch(reportError);}
- let device;
+ let device, signingOut=false;
  if(channel)channel.onmessage=()=>{device?.invalidate();changed();};
  function reportError(e){console.error(e);if(typeof window.showNotification==='function')window.showNotification(e.message||'Server connection failed','error');}
  window.addEventListener('unhandledrejection',e=>{reportError(e.reason);});
@@ -83,6 +83,14 @@
   if(['signin','reload'].includes(kind)){
    window.AlishanRouter?.block();
    if(typeof navigator!=='undefined')shellMessage('CLEAR_VIEW_SESSION');
+   if(kind==='signin'&&window.ALISHAN_SESSION?.google&&!signingOut){
+    location.replace('/login');
+    return;
+   }
+   if(kind==='reload'&&window.ALISHAN_SESSION?.google){
+    location.reload();
+    return;
+   }
   }
   if(kind==='current'&&typeof navigator!=='undefined')shellMessage('BIND_VIEW_SESSION');
   if(typeof document==='undefined')return;
@@ -251,7 +259,7 @@
     const form=document.createElement('form');form.id='alishan-sign-out';form.method='post';form.action='/auth/logout';
     const button=document.createElement('button');button.type='submit';button.className='btn btn-secondary';button.textContent='Sign out';
     form.appendChild(button);(document.querySelector('main')||document.body).appendChild(form);
-    form.addEventListener('submit',()=>{device.revoke();shellMessage('CLEAR_VIEW_SESSION');});
+    form.addEventListener('submit',()=>{signingOut=true;device.revoke();shellMessage('CLEAR_VIEW_SESSION');});
    };
    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addSignOut,{once:true});else addSignOut();
   }

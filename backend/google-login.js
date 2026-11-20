@@ -26,7 +26,7 @@ function sessionStore(pool) {
   };
 }
 
-function googleLogin({ supabaseUrl, publishableKey, origin, sessions, request = fetch }) {
+function googleLogin({ supabaseUrl, publishableKey, origin, sessions, verifyOnly = false, request = fetch }) {
   const base = new URL('/auth/v1/', supabaseUrl);
   if (base.protocol !== 'https:' || new URL(origin).origin !== origin || !origin.startsWith('https:') || !publishableKey)
     throw new Error('Google login requires HTTPS APP_ORIGIN, SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY');
@@ -61,6 +61,7 @@ function googleLogin({ supabaseUrl, publishableKey, origin, sessions, request = 
         if (!reply.ok) return fail();
         const { user } = await reply.json();
         if (!uuid.test(user?.id || '') || !user.app_metadata?.providers?.includes('google')) return fail();
+        if(verifyOnly)return res.redirect(303, '/login?verified=google');
         const previous = cookie(req, sessionName);
         if (validSecret(previous)) await sessions.remove(previous);
         const token = random();

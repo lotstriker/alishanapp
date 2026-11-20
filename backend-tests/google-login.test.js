@@ -92,3 +92,19 @@ test('Google PKCE scopes reads, writes, exports and logout to the verified user'
   assert.equal((await rpc(accountB,'getItems',[])).status,401);
   assert.equal((await rpc(accountA,'getItems',[])).status,200);
 });
+
+test('setup-only Google verification does not grant access or issue an app session',async t=>{
+ const subject='11111111-1111-4111-8111-111111111111';
+ const googleSetup=googleLogin({supabaseUrl:'https://auth.example',publishableKey:'fixture',origin:'https://alishan.example',
+  verifyOnly:true,sessions:{save(){throw Error('Setup must not create a session');}},
+  request:async()=>Response.json({user:{id:subject,app_metadata:{providers:['google']}}})});
+ const server=createApp({repository:new MemoryRepository(),username:'test',password:'fixture-only-long-password',googleSetup}).listen(0,'127.0.0.1');
+ await new Promise(r=>server.once('listening',r));t.after(()=>server.close());
+ const base='http://127.0.0.1:'+server.address().port;
+ const start=await fetch(base+'/auth/google',{redirect:'manual'});
+ const verifier=start.headers.getSetCookie()[0].split(';')[0];
+ const result=await fetch(base+'/auth/callback?code=fixture',{headers:{Cookie:verifier},redirect:'manual'});
+ assert.equal(result.headers.get('location'),'/login?verified=google');
+ assert.ok(result.headers.getSetCookie().every(value=>!value.startsWith('__Host-alishan-session=')));
+ assert.equal((await fetch(base+'/')).status,401);
+});
