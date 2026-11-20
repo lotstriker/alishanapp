@@ -92,7 +92,7 @@ section{scroll-margin-top:12px}.chart-row{grid-template-columns:minmax(74px,110p
 <h3>Live release &amp; server start</h3><p id="live-release">Awaiting live release data.</p>
 <h3>Live page timings</h3><p>Seven-day aggregate. Document load, first visit and return visit are reported separately. Paint columns use supported browser observations.</p>
 <div class="table"><table><thead><tr><th>Page</th><th>Release</th><th>Scenario</th><th>Samples</th><th>Ready p50</th><th>Ready p95</th><th>FCP p50</th><th>Observed LCP p50</th></tr></thead><tbody id="live-page-rows"></tbody></table></div>
-<h3>Release history</h3><div class="table"><table><thead><tr><th>Release</th><th>Commit</th><th>Time</th><th>Outcome</th></tr></thead><tbody id="deploy-rows"></tbody></table></div>
+<h3>Render deployment history</h3><p id="render-history-source">Waiting for a Render snapshot.</p><div class="table"><table><thead><tr><th>Commit</th><th>Started</th><th>Finished</th><th>Render status</th></tr></thead><tbody id="render-history-rows"></tbody></table></div><h3>Imported release history</h3><div class="table"><table><thead><tr><th>Release</th><th>Commit</th><th>Time</th><th>Outcome</th></tr></thead><tbody id="deploy-rows"></tbody></table></div>
 <details><summary>Import operational snapshot</summary><form id="operations-form">
 <p>Use a single reporting interval. Enter route templates and query family names. Leave out customer identifiers, raw SQL and payloads.</p>
 <pre class="example">{"at":"2026-11-20T12:00:00Z","durationMinutes":60,
@@ -139,7 +139,11 @@ section{scroll-margin-top:12px}.chart-row{grid-template-columns:minmax(74px,110p
 <label class="check-label"><input id="restore-checked" type="checkbox"> Isolated restore passed integrity checks</label>
 <button>Save recovery evidence</button><p id="recovery-message" role="status"></p>
 </form></details>
-<p id="backup-source" role="status"></p><h3>Runbooks</h3><p>Health checks are available. Retry and cache invalidation are awaiting approval controls. Destructive actions, deployments and database changes require explicit approval.</p>
+<article class="finding-card" id="verified-drill" hidden>
+<h3>Verified production backup drill</h3><span class="status good">Passed in isolation</span>
+<dl id="drill-details"></dl>
+<p>Elapsed time is for a local database and record verification. Recovery point is the backup age at the simulated incident start. Full hosting recovery was outside this drill.</p>
+</article><p id="backup-source" role="status"></p><h3>Runbooks</h3><p>Health checks are available. Retry and cache invalidation are awaiting approval controls. Destructive actions, deployments and database changes require explicit approval.</p>
 </section>
 <section id="warnings"><h2>Warning history</h2><p class="subtle">Health warning after two failed checks. Speed warning after at least three samples when the median is at least 25% and 50 ms above the baseline.</p><ol id="events" class="events"></ol><p id="empty">No warnings recorded yet.</p></section>
 </main>
@@ -705,6 +709,30 @@ function readJson(id) {
 bindSnapshot('usage',()=>usageSnapshot(readJson('usage-input')),value=>{usage=value;renderUsage();});
 bindSnapshot('operations',()=>operationsSnapshot(readJson('operations-input')),value=>{operations=value;renderOperations();});
 bindSnapshot('recovery',recoverySnapshot,value=>{recovery=value;renderRecovery();});
+const publishedEvidence = {"recovery":{"inventory":390,"payments":409,"unmatchedPayments":21,"backupAt":"2026-11-20T15:55:34.420Z","startedAt":"2026-11-20T16:55:52.915Z","verifiedAt":"2026-11-20T16:55:56.089Z","rtoMs":3175,"rpoMs":3618495,"verified":true},"deployments":{"observedAt":"2026-11-20T16:56:25.352Z","rows":[{"commit":"8ec8a9a01c355cd213b3cdb453974a58758ede80","createdAt":"2026-11-20T16:50:23.686516Z","finishedAt":"2026-11-20T16:51:03.357729Z","status":"live"},{"commit":"18a814c11103f7878270cbe51f976f69904323fe","createdAt":"2026-11-20T16:43:58.995773Z","finishedAt":"2026-11-20T16:45:05.342201Z","status":"deactivated"},{"commit":"18a814c11103f7878270cbe51f976f69904323fe","createdAt":"2026-11-20T16:43:54.495243Z","finishedAt":"2026-11-20T16:44:32.101846Z","status":"deactivated"},{"commit":"dd360ca5d916a5e0a9903d59dad0874a9b4d7373","createdAt":"2026-11-20T16:03:13.068098Z","finishedAt":"2026-11-20T16:03:46.279315Z","status":"deactivated"},{"commit":"2d5e5347bcf9220380dd28faa427dfd47fb89fc3","createdAt":"2026-11-20T15:42:00.30341Z","finishedAt":"2026-11-20T15:42:35.104564Z","status":"deactivated"},{"commit":"72b6704c46aa6e60a63e48adf3e06f6fb058b18d","createdAt":"2026-11-20T15:26:24.031781Z","finishedAt":"2026-11-20T15:26:56.600013Z","status":"deactivated"},{"commit":"947155180de4684322440d968b9438e6e0948945","createdAt":"2026-11-20T12:28:01.42614Z","finishedAt":"2026-11-20T12:28:38.98037Z","status":"deactivated"},{"commit":"e0d87f69ee34e02a2fb5b852749f51125996a923","createdAt":"2026-11-20T12:22:41.371327Z","finishedAt":"2026-11-20T12:23:12.633634Z","status":"deactivated"}]}};
+function renderPublishedEvidence() {
+  const drill=publishedEvidence.recovery;
+  const entries=[
+    ['Backup captured',localTime(drill.backupAt)],
+    ['Restore verified',localTime(drill.verifiedAt)],
+    ['Records checked',drill.inventory+' inventory · '+drill.payments+' payments'],
+    ['Payments without active inventory',drill.unmatchedPayments+' preserved from the backup'],
+    ['Isolated restore and verification', (drill.rtoMs/1000).toFixed(2)+' seconds'],
+    ['Recovery point in this drill',minutes(drill.rpoMs/60000)+' before drill start']
+  ];
+  const details=byId('drill-details');
+  for(const [name,value] of entries){
+    const term=document.createElement('dt'),description=document.createElement('dd');
+    term.textContent=name;description.textContent=value;details.append(term,description);
+  }
+  byId('verified-drill').hidden=false;
+  const deployments=publishedEvidence.deployments;
+  byId('render-history-source').textContent='Render provider snapshot · '+localTime(deployments.observedAt);
+  fillRows('render-history-rows',deployments.rows.map(row=>[
+    row.commit?.slice(0,12)||'—',localTime(row.createdAt),row.finishedAt?localTime(row.finishedAt):'—',row.status
+  ]),'No deployment evidence available.');
+}
+renderPublishedEvidence();
 renderUsage();renderOperations();renderRecovery();renderFindings();
 
 showCohorts();
