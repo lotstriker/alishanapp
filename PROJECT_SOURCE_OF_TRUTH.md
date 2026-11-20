@@ -602,6 +602,7 @@ Rule: see section 0, rule 8. Newest at the bottom.
 | v105 | `AlishanApp-v105-Responsive-Settings.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-005` | Settings navigation binds immediately, with backup and archive requests deferred to the relevant sections. |
 | v106 | `AlishanApp-v106-Faster-Startup.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-006` | Parallel first render, intent-based prefetch, and page-by-release performance comparison. |
 | v107 | `AlishanApp-v107-SPA-Navigation.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-007` | In-app navigation retains visited views and shared transport in a single document. |
+| v108 | `AlishanApp-v108-SPA-Styles.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-008` | Attach route stylesheets to the active document during SPA navigation. |
 
 > **Note on two ZIPs named v90 (added 2026-11-11, history kept):** an earlier ZIP, `AlishanApp-v90-Visual-Manual-Workflow-Fixes.zip` (change ID `ALISHAN-CHG-2026-11-09-008`: Expand All / Collapse All fix, Add Entry order Quality Type → Quality → Cup, 32 PDF screenshots), was delivered on a separate branch. Its changes are **not** contained in the v90 row above or in v91. This lineage continues from `AlishanApp-v90-Visual-Screenshot-Tutorials.zip`. Whether to bring those fixes into this lineage is an open owner decision.
 
@@ -1105,3 +1106,7 @@ Dashboard and Inventory run independent reads together and render once on startu
 ### ALISHAN-CHG-2026-11-20-007 — Single-document navigation
 
 The hosted UI routes reuse the same authenticated transport and retain visited views in the current tab. Back and Forward restore views. Direct and special action URLs continue to work. Performance measures in-app switches separately from document loads.
+
+### ALISHAN-CHG-2026-11-20-008 — SPA stylesheet fix
+
+Stylesheet nodes parsed in a separate document are attached to the live document head. Regression coverage verifies Inventory CSS loads and remains usable on Back navigation.

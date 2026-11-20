@@ -126,7 +126,7 @@
  function setStyles(page,enabled){
   for(const node of page.styles){
    if(!media.has(node))media.set(node,node.getAttribute('media'));
-   if(!node.isConnected)document.head.appendChild(document.adoptNode(node));
+   if(node.parentNode!==document.head)document.head.appendChild(node);
    const original=media.get(node);
    if(!enabled)node.setAttribute('media','not all');
    else if(original===null)node.removeAttribute('media');

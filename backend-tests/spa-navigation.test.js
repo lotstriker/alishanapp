@@ -41,9 +41,16 @@ test('main routes share one document, preserve controls and support browser hist
   const click=path=>document.querySelector('.tabbar a[href="'+path+'.html"]').click();
   await waitFor(()=>w.history.state?.alishanSpa&&document.getElementById('homeTotalItems')?.textContent==='0');
   const sharedTransport=transport(), firstBody=document.body;
+  const stylesheet = name => [...document.head.querySelectorAll('link[rel="stylesheet"]')]
+    .find(link => new URL(link.href).pathname === '/' + name);
+  const homeStyle = [...document.head.querySelectorAll('link[rel="stylesheet"]')][0];
   click('inventory');
   await waitFor(()=>w.location.pathname==='/inventory.html'&&document.querySelector('#inventoryCards .empty-state'));
   const inventoryBody=document.body;
+  const inventoryStyle=stylesheet('inventory.css');
+  assert.ok(inventoryStyle, 'Inventory CSS must be attached to the active document');
+  assert.notEqual(inventoryStyle.media,'not all');
+  await waitFor(()=>inventoryStyle.sheet);
   click('reports');
   await waitFor(()=>w.location.pathname==='/reports.html'&&w.ReportViews);
   click('setting');
@@ -53,10 +60,14 @@ test('main routes share one document, preserve controls and support browser hist
   w.history.back();
   await waitFor(()=>w.location.pathname==='/reports.html'&&w.ReportViews);
   assert.equal(w.settingsManager,undefined);
+  assert.equal(inventoryStyle.media,'not all');
   w.history.back();
   await waitFor(()=>w.location.pathname==='/inventory.html'&&document.body===inventoryBody);
+  assert.equal(stylesheet('inventory.css'),inventoryStyle);
+  assert.notEqual(inventoryStyle.media,'not all');
   click('index');
   await waitFor(()=>w.location.pathname==='/index.html'&&document.body===firstBody);
+  assert.notEqual(homeStyle.media,'not all');
   click('add-entry');
   await waitFor(()=>w.location.pathname==='/add-entry.html'&&document.querySelector('#productForm')&&w.ItemForm);
   const notes=document.getElementById('notes');
