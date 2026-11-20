@@ -202,7 +202,11 @@
      }
      if(queue.length)idle(()=>void next(queue));
     };
-    idle(()=>void next(['setting','add-entry','reports']));
+    idle(()=>{
+     if(blocked||document.hidden||navigator.onLine===false)return;
+     if(active?.route!=='inventory')void loadPage('inventory').catch(()=>{});
+     void next(['setting','add-entry','reports']);
+    });
    },3000);
    if(document.readyState==='complete')warmShells();
    else window.addEventListener('load',warmShells,{once:true});

@@ -597,7 +597,10 @@ function updateStats() {
 }
 
 function updateTotalInventory() {
-    const summary = AlishanStore.summary();
+    renderTotalInventory(AlishanStore.summary());
+}
+
+function renderTotalInventory(summary) {
     const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
     set('totalInventoryItems', summary.totalItems);
     set('homeTotalItems', summary.totalItems);
@@ -790,7 +793,20 @@ async function initApp() {
         AlishanDB: 'db.js', AlishanCalc: 'calc.js', AlishanStore: 'store.js',
         ItemForm: 'item-form.js', SizeGroups: 'size-groups.js', ItemCard: 'item-card.js', ItemModal: 'item-modal.js'
     }, { AlishanSearch: 'search.js', AlishanLoader: 'loader.js' }))) return;
-    const info = await AlishanStore.init();            // loads qualities, colours, inventory, payments
+    let totalsShown = false;
+    if (window.AlishanRemote && document.getElementById('homeTotalItems')) {
+        try {
+            const summary = await AlishanStore.summary();
+            window.AlishanPerformance?.dataReady();
+            renderTotalInventory(summary);
+            totalsShown = true;
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+            window.AlishanPerformance?.criticalPaint();
+        } catch (error) {
+            console.warn('Early totals unavailable', error);
+        }
+    }
+    const info = await AlishanStore.init();
     window.AlishanPerformance?.dataReady();
     if (info.referenceError) showNotification(info.referenceError, 'error');
     if (info.damaged) showNotification(`${info.damaged} damaged item(s) were set aside and backed up.`, 'warning');
@@ -800,7 +816,7 @@ async function initApp() {
     }
     initProductTypeBreakdown();
     AlishanStore.subscribe(refreshUI);
-    await refreshUI(true);
+    await refreshUI(!totalsShown);
 
     ItemModal.inject();                                 // the shared Edit modal
     await ItemForm.loadColors();                        // draws the colour dropdowns

@@ -11,6 +11,7 @@ function selection(calls){
  for(const c of calls){
   if(['Calc','Groups','Search'].includes(c.target)||c.target==='Store'&&referenceReaders.has(c.method))continue;
   if(c.target==='Store'&&c.method==='submissionStatus'){selected.add('settings');settings.add('__submission:'+c.args[0]);continue;}
+  if(c.target==='Store'&&c.method==='summary'){selected.add('inventory');selected.add('payments');continue;}
   if(c.target==='Archive'&&c.method==='list'){selected.add('archive');continue;}
   if(c.target==='DB'){
    const m=c.method,a=c.args||[];
