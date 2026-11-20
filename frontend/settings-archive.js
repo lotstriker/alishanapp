@@ -114,15 +114,16 @@
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('archiveModal').hidden) closeForever(); });
         $('archiveScanBtn').addEventListener('click', scan);
         $('archiveCleanBtn').addEventListener('click', clean);
-        document.querySelectorAll('.nav-link[data-section="archives"]').forEach((a) => a.addEventListener('click', refresh));
+        document.addEventListener('alishan:settings-section', event => {
+            if (event.detail === 'archives') void refresh();
+        });
     }
 
-    document.addEventListener('DOMContentLoaded', async () => {
+    document.addEventListener('DOMContentLoaded', () => {
         if (!$('archives') || typeof AlishanArchive === 'undefined') return;
-        try { await AlishanDB.init(); } catch (e) { /* the page's other scripts report this */ }
         wire();
-        refresh();
-        AlishanDB.onChange && AlishanDB.onChange('archive', refresh);
+        if ($('archives').classList.contains('active')) void refresh();
+        AlishanDB.onChange && AlishanDB.onChange('archive', () => { if ($('archives').classList.contains('active')) void refresh(); });
         if (location.hash === '#archives') { const a = document.querySelector('.nav-link[data-section="archives"]'); if (a) a.click(); }
     });
 })();

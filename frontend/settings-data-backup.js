@@ -107,10 +107,40 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    refresh().then(()=>window.AlishanPerformance?.ready()).catch(e => message(e.message || 'Could not load backup settings.', false));
-    $('saveAlishanBackupSettings')?.addEventListener('click', () => saveSettings());
+    const backupSection = $('backup');
+    if (!backupSection) return;
+    let loaded = false;
+    let loading = false;
+    const save = $('saveAlishanBackupSettings');
+    const restore = $('restoreLatestAlishanBackup');
+    const preferences = [$('alishanAutoBackup'), $('alishanBackupFrequency'), save];
+    const setPreferences = enabled => preferences.forEach(control => { if (control) control.disabled = !enabled; });
+    setPreferences(false);
+    if (restore) restore.disabled = true;
+
+    async function openBackup() {
+      if (loaded || loading) return;
+      loading = true;
+      message('Loading backup settings…');
+      try {
+        await refresh();
+        loaded = true;
+        setPreferences(true);
+        message('');
+        void refreshStorage();
+      } catch (error) {
+        message(error.message || 'Could not load backup settings. Reopen this section to retry.', false);
+      } finally {
+        loading = false;
+      }
+    }
+    document.addEventListener('alishan:settings-section', event => {
+      if (event.detail === 'backup') void openBackup();
+    });
+    if (backupSection.classList.contains('active')) void openBackup();
+    save?.addEventListener('click', () => saveSettings());
     $('createLocalAlishanBackup')?.addEventListener('click', createBackup);
-    $('restoreLatestAlishanBackup')?.addEventListener('click', () => restoreLatest().catch(e => message(e.message || 'Restore failed.', false)));
+    restore?.addEventListener('click', () => restoreLatest().catch(e => message(e.message || 'Restore failed.', false)));
     $('refreshAlishanStorage')?.addEventListener('click', refreshStorage);
   });
 })();

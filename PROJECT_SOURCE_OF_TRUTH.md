@@ -599,6 +599,7 @@ Rule: see section 0, rule 8. Newest at the bottom.
 | v102 | `AlishanApp-v102-Google-Login.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-002` | Google sign-in candidate, private per-user workspaces, navigation prefetch and changed-record cache priming. |
 | v103 | `AlishanApp-v103-Speed-Timings.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-003` | Opt-in device timings for page loads, page switches, theme changes and confirmed saves. |
 | v104 | `AlishanApp-v104-Page-Performance.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-004` | Automatic page visits, API and database timings, and filtered performance history. |
+| v105 | `AlishanApp-v105-Responsive-Settings.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-005` | Settings navigation binds immediately, with backup and archive requests deferred to the relevant sections. |
 
 > **Note on two ZIPs named v90 (added 2026-11-11, history kept):** an earlier ZIP, `AlishanApp-v90-Visual-Manual-Workflow-Fixes.zip` (change ID `ALISHAN-CHG-2026-11-09-008`: Expand All / Collapse All fix, Add Entry order Quality Type → Quality → Cup, 32 PDF screenshots), was delivered on a separate branch. Its changes are **not** contained in the v90 row above or in v91. This lineage continues from `AlishanApp-v90-Visual-Screenshot-Tutorials.zip`. Whether to bring those fixes into this lineage is an open owner decision.
 
@@ -1090,3 +1091,7 @@ Open Dashboard with `?timing=1` to capture navigation and action timings locally
 ### ALISHAN-CHG-2026-11-20-004 — Automatic page performance
 
 Records approved timing fields per authenticated account and random browser-device identifier. Owners can filter across accounts. Shared password mode separates devices only. Measurements exclude business data and are kept for 30 days.
+
+### ALISHAN-CHG-2026-11-20-005 — Responsive Settings
+
+Settings navigation is available before server data arrives. Backup and archive data load only when requested through their sections. The page-performance marker reflects when Settings controls can be used.

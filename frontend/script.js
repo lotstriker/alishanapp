@@ -2,7 +2,6 @@
 class CompleteSettingsManager {
     constructor() {
         this.currentSection = 'dashboard';
-        this.settings = {}; // populated async in init() from AlishanDB
         this.undoStack = [];
         this.redoStack = [];
         this.users = [
@@ -76,16 +75,12 @@ class CompleteSettingsManager {
         this.init();
     }
 
-    async init() {
-        await AlishanDB.init();
-        this.settings = await this.loadSettings();
+    init() {
         this.setupNavigation();
         this.setupSearch();
         this.setupEventListeners();
         this.populateAllSelectors();
-        await this.updateBackupList();
-        await this.calculateStorageUsage();
-        this.showToast('Settings dashboard loaded successfully', 'success');
+        window.AlishanPerformance?.ready();
     }
 
     // ===== NAVIGATION & LAYOUT =====
@@ -166,6 +161,7 @@ class CompleteSettingsManager {
         if (targetSection) {
             targetSection.classList.add('active');
             this.currentSection = sectionId;
+            document.dispatchEvent(new CustomEvent('alishan:settings-section', { detail: sectionId }));
         }
     }
 
