@@ -8,7 +8,7 @@ const source=name=>fs.readFileSync(path.join(root,name),'utf8');
 const sources=Object.fromEntries(['calc.js','store.js','report-engine.js','archive.js','size-groups.js','advanced-search.js'].map(n=>[n,source(n)]));
 const reference=Object.fromEntries(['qualities.json','colors.json'].map(n=>[n,JSON.parse(source(n))]));
 const scripts=Object.fromEntries(Object.entries(sources).map(([n,s])=>[n,new vm.Script(s,{filename:n})]));
-async function domain(state,{readOnly=false,actor}={}){
+async function domain(state,{readOnly=false,actor,runAutoBackup=!readOnly}={}){
  const {prefix}=require('./entry-review');
  const db=createDatabase(state,actor);const idleJobs=[];
  const context=vm.createContext({console,Date,Map,Set,Math,JSON,Number,String,Boolean,Array,Object,RegExp,Promise,structuredClone,AlishanDB:db,
@@ -16,7 +16,7 @@ async function domain(state,{readOnly=false,actor}={}){
    fetch:async file=>({ok:!!reference[file],json:async()=>structuredClone(reference[file])})});
  for(const name of ['calc.js','store.js','report-engine.js','archive.js','size-groups.js'])scripts[name].runInContext(context,{timeout:2000});
  await context.window.AlishanStore.init();
- if(!readOnly)for(const job of idleJobs)await job();
+ if(runAutoBackup)for(const job of idleJobs)await job();
  const S=context.window.AlishanStore;
  S.restoreComplete=async payload=>{
    if(!payload||!payload.backup)return {ok:false,error:'Invalid complete backup'};
@@ -34,6 +34,9 @@ async function domain(state,{readOnly=false,actor}={}){
  };
  const search={apply(items,options,term){context.localStorage={getItem:()=>JSON.stringify(options)};context.window.AlishanSearch={getTerm:()=>term};scripts['advanced-search.js'].runInContext(context,{timeout:2000});return context.window.AlishanAdvancedSearch.apply(items);}};
  const d={Views:{...require('./views')(context.window.AlishanCalc,context.window.AlishanStore),...require('./dashboard-rules')(context.window.AlishanCalc,context.window.AlishanStore)},Search:search,Calc:context.window.AlishanCalc,Store:context.window.AlishanStore,Reports:context.window.ReportEngine,Archive:context.window.AlishanArchive,Groups:vm.runInContext('makeCore(AlishanCalc.SIZES, AlishanCalc.splitPieces)',context),DB:db};
+ d.Views.exportSettings=async()=>(await db.getAll('settings')).filter(row=>
+   !row.key.startsWith('__submission:') &&
+   !['fullRestoreSafetyBackups','businessLogo','autoBackups','backups','corruptedItemsBackup','exportPresets','exportHistory'].includes(row.key));
  d.Views.backupOverview=async()=>{
    const history=await db.getSetting('autoBackups',[]);
    return {

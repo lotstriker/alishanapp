@@ -1,5 +1,6 @@
 'use strict';
 const performanceDb=require('./performance');
+const { scheduleKeys, snapshotKeys, backupDue } = require('./backup-schedule');
 const { randomUUID } = require('node:crypto');
 const stores = ['inventory','payments','qualities','colors','settings','searchAnalytics','users','editHistory','auditLog','archive'];
 const blank = () => Object.fromEntries(stores.map(k => [k, []]));
@@ -108,7 +109,38 @@ class PostgresRepository {
       client.release();
     }
   }
-  async transaction(fn){
+  async backupIsDue(client = this.pool) {
+    const result = await performanceDb.query(client, `SELECT payload FROM alishan_private.records
+      WHERE workspace_id=$1 AND store='settings' AND record_key=ANY($2::text[])`,
+      [this.workspace, scheduleKeys.map(keyText)]);
+    return backupDue(result.rows.map(row => row.payload));
+  }
+  async exportSettings() {
+    const excluded = [...snapshotKeys,'businessLogo','backups','corruptedItemsBackup','exportPresets','exportHistory'].map(keyText);
+    const result = await performanceDb.query(this.pool,`SELECT payload FROM alishan_private.records
+      WHERE workspace_id=$1 AND store='settings' AND NOT (record_key=ANY($2::text[]))
+      AND left(payload->>'key',13)<>'__submission:'`,[this.workspace,excluded]);
+    return result.rows.map(row=>row.payload);
+  }
+  async backupOverview() {
+    const result = await performanceDb.query(this.pool, `SELECT
+      (SELECT count(*)::int FROM alishan_private.records WHERE workspace_id=$1 AND store='inventory') AS "inventoryCount",
+      (SELECT count(*)::int FROM alishan_private.records WHERE workspace_id=$1 AND store='payments') AS "paymentCount",
+      COALESCE((SELECT payload->>'value' FROM alishan_private.records WHERE workspace_id=$1 AND store='settings' AND record_key=$2),'true') <> 'false' AS enabled,
+      (SELECT payload->>'value' FROM alishan_private.records WHERE workspace_id=$1 AND store='settings' AND record_key=$3) AS frequency,
+      COALESCE((SELECT jsonb_agg(jsonb_build_object('metadata',jsonb_build_object(
+        'created', item->'metadata'->'created', 'type', item->'metadata'->'type',
+        'totalItems', COALESCE(NULLIF(item->'metadata'->'totalItems','null'::jsonb), to_jsonb(CASE WHEN jsonb_typeof(item->'inventory')='array' THEN jsonb_array_length(item->'inventory') ELSE 0 END)),
+        'totalPayments', COALESCE(NULLIF(item->'metadata'->'totalPayments','null'::jsonb), to_jsonb(CASE WHEN jsonb_typeof(item->'payments')='array' THEN jsonb_array_length(item->'payments') ELSE 0 END))),
+        'restorable', COALESCE(jsonb_typeof(item->'inventory')='array' AND jsonb_typeof(item->'payments')='array',false)) ORDER BY ordinal)
+        FROM alishan_private.records r CROSS JOIN LATERAL
+        jsonb_array_elements(CASE WHEN jsonb_typeof(r.payload->'value')='array' THEN r.payload->'value' ELSE '[]'::jsonb END) WITH ORDINALITY AS h(item,ordinal)
+        WHERE r.workspace_id=$1 AND r.store='settings' AND r.record_key=$4),'[]'::jsonb) AS history`,
+      [this.workspace, ...['autoBackupEnabled','backupFrequency','autoBackups'].map(keyText)]);
+    const row = result.rows[0];
+    return { ...row, frequency: parseInt(row.frequency, 10) || 24 };
+  }
+  async transaction(fn,{onlyWhenBackupDue=false,omitBackupSnapshots=false}={}){
     const client=await performanceDb.connect(this.pool);
     try{
       await performanceDb.query(client,'BEGIN');
@@ -116,7 +148,14 @@ class PostgresRepository {
       await performanceDb.query(client,"SET LOCAL lock_timeout = '10s'");
       await performanceDb.query(client,'INSERT INTO alishan_private.workspaces(id) VALUES($1) ON CONFLICT DO NOTHING',[this.workspace]);
       const locked=await performanceDb.query(client,'SELECT revision FROM alishan_private.workspaces WHERE id=$1 FOR UPDATE',[this.workspace]);
-      const rows=await performanceDb.query(client,'SELECT store,payload FROM alishan_private.records WHERE workspace_id=$1',[this.workspace]);
+      if(onlyWhenBackupDue && !await this.backupIsDue(client)){
+        await performanceDb.query(client,'COMMIT');
+        return;
+      }
+      const rows=omitBackupSnapshots
+        ? await performanceDb.query(client,`SELECT store,payload FROM alishan_private.records WHERE workspace_id=$1
+          AND NOT (store='settings' AND record_key=ANY($2::text[]))`,[this.workspace,snapshotKeys.map(keyText)])
+        : await performanceDb.query(client,'SELECT store,payload FROM alishan_private.records WHERE workspace_id=$1',[this.workspace]);
       const state=blank();for(const r of rows.rows)state[r.store].push(r.payload);
       const before=structuredClone(state);
       const issueQualityCode=async()=>{

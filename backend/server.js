@@ -1,4 +1,5 @@
 'use strict';
+const { runScheduledBackup } = require('./backup-schedule');
 process.env.TZ=process.env.TZ||'Asia/Kolkata';
 const express=require('express');
 const {timingSafeEqual,createHash}=require('node:crypto');
@@ -84,9 +85,20 @@ function createApp({repository,username,password,auth,repositoryFor,legacyOwnerI
  async function run(calls,{repository,actor,session}){
    const submit=entryReview(createHash('sha256').update(password).update(session.scope).digest());
    const readOnly=calls.every(isReader);
+   const routineWrites=new Set(['addItem','updateItem','addPayment','deletePayment','toggleStock','setCompletionDate','recordSearch','clearSearchHistory']);
+   const omitBackupSnapshots=!readOnly&&calls.every(c=>c.target==='Store'&&routineWrites.has(c.method));
+   const method=calls[0]?.method;
+   if(readOnly && ['backupOverview','exportSettings'].includes(method) &&
+     calls.every(c=>c.target==='Views'&&c.method===method)){
+     const result=repository[method]?await repository[method]():await repository.read(async state=>{
+       const views=(await domain(state,{readOnly:true,actor})).Views;
+       return views[method]();
+     });
+     return {results:calls.map(()=>({result})),revision:null};
+   }
    const execute=async (state,revision,issueQualityCode)=>{
      const pure=calls.every(c=>['Calc','Groups'].includes(c.target));
-     const d=pure?await (pureDomain ||= domain(blank(),{readOnly:true})):await domain(state,{readOnly,actor});const results=[];
+     const d=pure?await (pureDomain ||= domain(blank(),{readOnly:true})):await domain(state,{readOnly,actor,runAutoBackup:!readOnly&&!omitBackupSnapshots});const results=[];
      for(const c of calls){const args=decode(c.args);const guarded=c.target==='Store'&&['reviewEntry','submissionStatus','addItem','addPayment'].includes(c.method);
        const requiresManager=(c.target==='Store'&&c.method==='deleteItem')
          ||(c.target==='Archive'&&['restore','deleteForever'].includes(c.method));
@@ -109,7 +121,7 @@ function createApp({repository,username,password,auth,repositoryFor,legacyOwnerI
    if(readOnly){const projection=selection(calls);if(!projection.stores.length)return execute(blank());
      if(repository.read)return repository.read(execute,projection);
    }
-   return repository.transaction(execute);
+   return repository.transaction(execute,{omitBackupSnapshots});
  }
  const valid=c=>c&&['Calc','Store','Reports','Archive','Groups','DB','Search','Views'].includes(c.target)&&typeof c.method==='string'&&c.method.length<=100&&Array.isArray(c.args)&&c.args.length<=10;
  app.post('/api/rpc',async(req,res,next)=>{try{
@@ -205,7 +217,14 @@ async function start(){
  const app=createApp({repository,username:process.env.APP_USERNAME,password:process.env.APP_PASSWORD,
    auth,repositoryFor,legacyOwnerId:process.env.LEGACY_OWNER_USER_ID,telemetry:metrics.telemetryStore(pool)});
  const server=app.listen(Number(process.env.PORT)||10000,'0.0.0.0',()=>console.log('Alishan server ready'));
- const backupTimer=setInterval(()=>repository.transaction(async state=>{await domain(state);return {ok:true};}).catch(e=>console.error('Automatic backup check failed:',e.code||e.name)),60000);backupTimer.unref();
+ let backupRunning=false;
+ const backupTimer=setInterval(async()=>{
+   if(backupRunning)return;
+   backupRunning=true;
+   try{await runScheduledBackup(repository,async state=>{await domain(state);return {ok:true};});}
+   catch(e){console.error('Automatic backup check failed:',e.code||e.name);}
+   finally{backupRunning=false;}
+ },60000);backupTimer.unref();
  let stopping=false;const stop=()=>{if(stopping)return;stopping=true;clearInterval(backupTimer);server.close(async()=>{await pool.end();process.exit(0);});setTimeout(()=>process.exit(1),25000).unref();};process.on('SIGTERM',stop);process.on('SIGINT',stop);
 }
 if(require.main===module)start().catch(e=>{console.error('Startup failed:',e.code||e.message);process.exit(1);});

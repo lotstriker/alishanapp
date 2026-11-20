@@ -56,6 +56,9 @@ for(const name of fs.readdirSync(src)){
     code=code.slice(0,start)+"  async function apply(items){return AlishanRemote.call('Search','apply',[items,state,window.AlishanSearch?.getTerm?.()||'']);}\n"+code.slice(end);
   }
   if(name==='export-center.js'){
+   code=code.replace("((await AlishanDB.getAll('settings')) || []).filter((r) => !BULKY_SETTINGS.includes(r.key))","await AlishanRemote.call('Views','exportSettings',[])");
+   code=code.replace("(await AlishanStore.listBackups()) || []","(await AlishanRemote.call('Views','backupOverview',[])).history");
+   code=code.replace("(b.inventory || []).length","b.metadata.totalItems").replace("(b.payments || []).length","b.metadata.totalPayments");
     const start=code.indexOf('      const currentSettings=');const stop=code.indexOf('      notify(`Restore complete.',start);
     if(start<0||stop<0)throw new Error('Restore integration source changed');
     code=code.slice(0,start)+"      const result=await AlishanRemote.call('Store','restoreComplete',[payload]);\n      if(!result.ok)throw new Error(result.error||'Restore failed.');\n"+code.slice(stop);

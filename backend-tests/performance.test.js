@@ -56,3 +56,26 @@ test('API expands shared arguments before execution and refuses invalid referenc
  let response=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});assert.equal(response.status,200);assert.equal((await response.json())[0].result.amount,20);
  body.calls[0].args[0].value=3;response=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});assert.equal(response.status,400);
 });
+
+test('backup checks skip full reads until due and routine writes preserve stored backups',async t=>{
+ const {repo,queries}=await setup(t);
+ const {runScheduledBackup}=require('../backend/backup-schedule');
+ const snapshot={metadata:{created:'2026-11-20',type:'AUTO_BACKUP'},inventory:[{id:1,notes:'x'.repeat(100000)}],payments:[]};
+ await repo.transaction(async s=>{s.inventory=[{id:1}];s.settings=[
+  {key:'autoBackups',value:[snapshot]},{key:'lastBackupDate',value:new Date().toISOString()},
+  {key:'fullRestoreSafetyBackups',value:[snapshot]},{key:'__submission:private',value:'private'}
+ ];});
+ let start=queries.length,ticks=0;
+ await runScheduledBackup(repo,async()=>{ticks++;});
+ assert.equal(ticks,0);assert.equal(queries.length-start,1);assert.doesNotMatch(queries.at(-1),/FOR UPDATE|SELECT store,payload/);
+ const overview=await repo.backupOverview();
+ assert.equal(overview.inventoryCount,1);assert.equal(overview.history[0].metadata.totalItems,1);
+ assert.ok(overview.history[0].restorable);assert.ok(JSON.stringify(overview).length<1000);
+ assert.deepEqual((await repo.exportSettings()).map(x=>x.key),['lastBackupDate']);
+ await repo.transaction(async s=>{assert.ok(!s.settings.some(x=>x.key==='autoBackups'));s.inventory[0].notes='updated';},{omitBackupSnapshots:true});
+ assert.deepEqual(await repo.read(s=>s.settings.find(x=>x.key==='autoBackups').value),[snapshot]);
+ await repo.transaction(async s=>{s.settings.find(x=>x.key==='lastBackupDate').value='2020-01-01';});
+ await runScheduledBackup(repo,async s=>{ticks++;s.settings.find(x=>x.key==='lastBackupDate').value=new Date().toISOString();});
+ await runScheduledBackup(repo,async()=>{ticks++;});
+ assert.equal(ticks,1);
+});
