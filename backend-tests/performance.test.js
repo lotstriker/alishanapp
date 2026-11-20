@@ -122,5 +122,5 @@ test('monitor groups anonymous timings and bounds API statistics behind its toke
  const base='http://127.0.0.1:'+server.address().port;
  assert.equal((await fetch(base+'/internal/monitor/operations')).status,404);
  const result=await fetch(base+'/internal/monitor/operations',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json());
- assert.equal(result.pages[0].samples,3);assert.equal(result.release,'120.0.0');
+ assert.equal(result.pages[0].samples,3);assert.equal(result.release,require('../package.json').version);
 });
