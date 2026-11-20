@@ -79,9 +79,26 @@
  }});
  function pageName(){const path=location.pathname;return /inventory\.html$/.test(path)?'inventory':/reports\.html$/.test(path)?'reports':/\/$|index\.html$/.test(path)?'home':null;}
  function advancedOptions(){if(window.AlishanAdvancedSearch?.getOptions)return window.AlishanAdvancedSearch.getOptions();try{return JSON.parse(localStorage.getItem('alishan.advancedSearch.v1')||'null');}catch{return null;}}
+ async function readStartupCache(target,method,args){
+  const visit=window.AlishanPerformance?.current(),started=performance.now();
+  const hit=await device?.lookup(target,method,args);
+  if(visit&&hit?.kind!=='shared'){
+   const phases={hit:'startupCacheHitMs',miss:'startupCacheMissMs'};
+   window.AlishanPerformance?.phase(phases[hit?.kind||'miss'],started,visit);
+  }
+  return hit?.kind==='hit'?hit.value:undefined;
+ }
  async function preparePage(name){
   if(!device?.enabled||!name)return;
-  return device.call('Views','pageBundle',[name,name==='inventory'?advancedOptions():null]);
+  const args=[name,name==='inventory'?advancedOptions():null];
+  const visit=name===pageName()?window.AlishanPerformance?.current():undefined;
+  if(visit){
+   const started=performance.now(),cached=await device.lookup('Views','pageBundle',args);
+   const result=await device.call('Views','pageBundle',args);
+   if(cached.kind==='shared')window.AlishanPerformance?.phase('startupSharedWaitMs',started,visit);
+   return result;
+  }
+  return device.call('Views','pageBundle',args);
  }
  async function themePreference(theme){
   const options={headers:scopedHeaders(),credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000)};
@@ -190,7 +207,7 @@
  AlishanStore.subscribe=fn=>{listeners.add(fn);return()=>listeners.delete(fn);};AlishanDB.onChange=()=>{};
  window.AlishanHas=needed=>Object.keys(needed).every(k=>window[k]!==undefined);
  window.AlishanRequire=async needed=>AlishanHas(needed);
- window.AlishanRemote={call,submitEntry,preparePage,cacheInfo:()=>device?.inspect(),clearDeviceCache(){device?.invalidate(true);changed();void device?.check(true);}};
+ window.AlishanRemote={call,submitEntry,preparePage,readStartupCache,cacheInfo:()=>device?.inspect(),clearDeviceCache(){device?.invalidate(true);changed();void device?.check(true);}};
  if(device?.enabled){
   const addCacheControl=()=>{const host=document.getElementById('backup');if(!host||document.getElementById('refreshDeviceView'))return;const card=document.createElement('div');card.className='card';card.style.marginTop='18px';card.innerHTML='<div class="card-header"><h2 class="card-title">Saved Device View</h2></div><div class="card-body"><p class="settings-help">Loaded views are kept on this device for faster opening. Server records remain the source of truth.</p><button id="refreshDeviceView" type="button" class="btn btn-secondary">Refresh saved view</button></div>';host.appendChild(card);card.querySelector('button').onclick=()=>{AlishanRemote.clearDeviceCache();if(typeof showNotification==='function')showNotification('Refreshing saved view. Server records are unchanged.','success');};};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addCacheControl,{once:true});else addCacheControl();

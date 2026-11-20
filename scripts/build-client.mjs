@@ -46,7 +46,7 @@ for(const name of fs.readdirSync(src)){
    code=code.replace('!latest || !Array.isArray(latest.inventory) || !Array.isArray(latest.payments)','!latest?.restorable');
   }
   if(name==='script.js')code=code.replace("const backups = await AlishanDB.getSetting('autoBackups', []);","const {history:backups}=await AlishanRemote.call('Views','backupOverview',[]);");
-  if(name==='inventory.js')code=code.replace('const paged = AlishanStore.paginate(currentList(), currentPage, itemsPerPage);',"const bundle=AlishanRemote.call('Views','inventoryPage',[readFilters(),currentPage,itemsPerPage,typeof AlishanAdvancedSearch!=='undefined'?AlishanAdvancedSearch.getOptions():null,currentSearch()]);const paged=bundle.paged;if(typeof AlishanAdvancedSearch!=='undefined')AlishanAdvancedSearch.setCount(paged.total);");
+  if(name==='inventory.js')code=code.replace('const paged = savedPage || AlishanStore.paginate(currentList(), currentPage, itemsPerPage);',"const paged=savedPage || await AlishanRemote.call('Views','inventoryPage',[readFilters(),currentPage,itemsPerPage,typeof AlishanAdvancedSearch!=='undefined'?AlishanAdvancedSearch.getOptions():null,currentSearch()]).then(bundle=>bundle.paged);if(typeof AlishanAdvancedSearch!=='undefined')AlishanAdvancedSearch.setCount(paged.total);");
   if(name==='dashboard.js'){
    code=code.replace("let items = AlishanStore.query({ search: term });\n    items = items.slice().sort((a, b) => new Date(b.dateTime || b.createdAt || 0) - new Date(a.dateTime || a.createdAt || 0)).slice(0, 5);","const bundle=AlishanRemote.call('Views','homeLatest',[term]);let items=bundle.items;");
 

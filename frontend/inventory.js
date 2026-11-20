@@ -69,12 +69,12 @@ function populateQualityFilter() {
 }
 
 let inventoryRender = 0;
-function renderInventoryCards() {
+async function renderInventoryCards(savedPage) {
     const inventoryCards = document.getElementById('inventoryCards');
     if (!inventoryCards) return;
 
     const render = ++inventoryRender;
-    const paged = AlishanStore.paginate(currentList(), currentPage, itemsPerPage);
+    const paged = savedPage || AlishanStore.paginate(currentList(), currentPage, itemsPerPage);
     if (render !== inventoryRender) return;
 
     if (paged.total === 0) {
@@ -561,13 +561,24 @@ async function initPage() {
         AlishanDB: 'db.js', AlishanCalc: 'calc.js', AlishanStore: 'store.js', CommonPagination: 'common-pagination.js',
         ItemForm: 'item-form.js', SizeGroups: 'size-groups.js', ItemCard: 'item-card.js', ItemModal: 'item-modal.js'
     }, { AlishanSearch: 'search.js', AlishanLoader: 'loader.js', BulkImport: 'bulk-import.js' }))) return;
-    const info = await AlishanStore.init();            // loads qualities, colours, inventory, payments
+    const saved = await window.AlishanRemote?.readStartupCache('Views', 'inventoryPage', [
+        readFilters(), currentPage, itemsPerPage, window.AlishanAdvancedSearch?.getOptions() ?? null, currentSearch()
+    ]);
+    const startup = Promise.resolve().then(() => AlishanStore.init());
+    startup.catch(() => {});
+    if (saved) {
+        window.AlishanPerformance?.dataReady();
+        await renderInventoryCards(saved.paged);
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        window.AlishanPerformance?.criticalPaint();
+    }
+    const info = await startup;
     window.AlishanPerformance?.dataReady();
     if (info.referenceError) showNotification(info.referenceError, 'error');
     if (info.damaged) showNotification(`${info.damaged} damaged item(s) were set aside and backed up.`, 'warning');
 
     if (typeof AlishanSearch !== 'undefined') await AlishanSearch.init({ onSearch });
-    await refreshUI(true);
+    await refreshUI(!saved);
 
     ItemModal.inject();                                 // the shared Edit modal
     await ItemForm.loadColors();

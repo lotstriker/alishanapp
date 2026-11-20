@@ -794,19 +794,19 @@ async function initApp() {
         ItemForm: 'item-form.js', SizeGroups: 'size-groups.js', ItemCard: 'item-card.js', ItemModal: 'item-modal.js'
     }, { AlishanSearch: 'search.js', AlishanLoader: 'loader.js' }))) return;
     let totalsShown = false;
-    if (window.AlishanRemote && document.getElementById('homeTotalItems')) {
-        try {
-            const summary = await AlishanStore.summary();
-            window.AlishanPerformance?.dataReady();
-            renderTotalInventory(summary);
-            totalsShown = true;
-            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-            window.AlishanPerformance?.criticalPaint();
-        } catch (error) {
-            console.warn('Early totals unavailable', error);
-        }
+    const summary = document.getElementById('homeTotalItems')
+        ? await window.AlishanRemote?.readStartupCache('Store', 'summary', [])
+        : undefined;
+    const startup = Promise.resolve().then(() => AlishanStore.init());
+    startup.catch(() => {});
+    if (summary) {
+        renderTotalInventory(summary);
+        window.AlishanPerformance?.dataReady();
+        totalsShown = true;
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        window.AlishanPerformance?.criticalPaint();
     }
-    const info = await AlishanStore.init();
+    const info = await startup;
     window.AlishanPerformance?.dataReady();
     if (info.referenceError) showNotification(info.referenceError, 'error');
     if (info.damaged) showNotification(`${info.damaged} damaged item(s) were set aside and backed up.`, 'warning');

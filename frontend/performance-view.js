@@ -3,6 +3,7 @@
  const $ = id => document.getElementById(id);
  const names = {'index':'Dashboard','inventory':'Inventory','reports':'Reports','setting':'Settings','add-entry':'Add Entry','pending-amount':'Pending Amount','missing-lot':'Missing Lot','missing-completion':'Missing Completion','quality-history':'Quality History'};
  const startupMeasures = [
+  ['startupCacheHitMs','Startup view cache hit (lookup)'], ['startupCacheMissMs','Startup view cache miss (lookup)'], ['startupSharedWaitMs','Wait for a request already in progress'],
   ['storeWaitMs','Reports shared store wait'], ['reportSetupMs','Reports filters and event setup'], ['reportScopeMs','Reports calculation and scope'],
   ['reportRenderMs','Reports render and setup'], ['deviceCacheReadMs','Wait for device cache'],
   ['startupRefreshMs','Startup bundle (saved or fetched)'], ['startupFetchMs','Startup bundle network request']
@@ -18,7 +19,7 @@
  const metricGroups={
   'Page and rendering':['switchMs','readyMs','startupDataReadyMs','criticalPaintMs','dataToCriticalMs','routePrepareMs','afterApiMs'],
   'Reports':['storeWaitMs','reportSetupMs','reportScopeMs','reportRenderMs'],
-  'Device cache and startup':['deviceCacheReadMs','startupRefreshMs','startupFetchMs'],
+  'Device cache and startup':['deviceCacheReadMs','startupRefreshMs','startupFetchMs','startupCacheHitMs','startupCacheMissMs','startupSharedWaitMs'],
   'Document':['loadMs','domMs','documentWaitMs','documentDownloadMs'],
   'API and database':['dataMs','apiWaitMs','apiServerMs','apiDbMs','apiNetworkMs','apiDecodeMs','apiCount','apiErrors']
  };

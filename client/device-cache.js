@@ -101,6 +101,13 @@
    persist();
    if(announce)broadcast();
   }
+  async function lookup(target,method,args){
+   await ready;
+   if(!enabled||disabled)return {kind:'miss'};
+   const key=await keyFor(target,method,args),entry=key&&ram.get(key);
+   if(entry&&now()-entry.at<MAX_AGE)return {kind:'hit',value:clone(entry.value)};
+   return {kind:key&&flights.has(key)?'shared':'miss'};
+  }
   async function call(target,method,args){
    if(!enabled)return network(target,method,args);
    const cacheStarted=root.performance?.now(), cacheVisit=root.AlishanPerformance?.current();
@@ -140,7 +147,7 @@
   }
   function close(){clearTimeout(timer);persist();closed=true;db?.close();}
   function revoke(){invalidate();disabled=true;status('signin');}
-  return {enabled,ready,call,seed,check,revoke,acceptRevision,invalidate,persist,close,inspect:()=>({entries:ram.size,bytes,revision,epoch,namespace})};
+  return {enabled,ready,call,lookup,seed,check,revoke,acceptRevision,invalidate,persist,close,inspect:()=>({entries:ram.size,bytes,revision,epoch,namespace})};
  }
  root.AlishanCreateDeviceCache=create;
  if(typeof module!=='undefined'&&module.exports)module.exports={create};

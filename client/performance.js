@@ -15,7 +15,7 @@
   sessionStorage.removeItem('alishan:performance-next');
  } catch {}
  let ready, dataReady, criticalPaint, first, last, count = 0, failures = 0, longest, sending = false, recorded = false;
- const phaseNames = new Set(['storeWaitMs','reportScopeMs','reportRenderMs','deviceCacheReadMs','startupRefreshMs','startupFetchMs','reportSetupMs']);
+ const phaseNames = new Set(['startupCacheHitMs','startupCacheMissMs','startupSharedWaitMs','storeWaitMs','reportScopeMs','reportRenderMs','deviceCacheReadMs','startupRefreshMs','startupFetchMs','reportSetupMs']);
  const phases = {};
  const headers = {'Content-Type':'application/json','X-Alishan-Scope':scope};
  const getQueue = () => {

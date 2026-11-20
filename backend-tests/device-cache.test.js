@@ -98,3 +98,21 @@ test('a persisted bundle is reused across reopen until the background revision c
  assert.equal((await cache.call('Store','summary',[])).count,2);
  assert.equal(calls,2);cache.close();
 });
+
+test('startup lookup distinguishes a cache miss, a running read and a saved projection',async()=>{
+ let resolve,calls=0;
+ const cache=create(opts(async()=>{calls++;return new Promise(done=>{resolve=done;});}));
+ assert.deepEqual(await cache.lookup('Store','summary',[]),{kind:'miss'});
+ const read=cache.call('Store','summary',[]);
+ await new Promise(done=>setImmediate(done));
+ assert.deepEqual(await cache.lookup('Store','summary',[]),{kind:'shared'});
+ resolve({count:3});await read;
+ const hit=await cache.lookup('Store','summary',[]);
+ assert.deepEqual(hit,{kind:'hit',value:{count:3}});
+ hit.value.count=4;
+ assert.equal((await cache.lookup('Store','summary',[])).value.count,3);
+ assert.equal(calls,1);
+ cache.revoke();
+ assert.deepEqual(await cache.lookup('Store','summary',[]),{kind:'miss'});
+ cache.close();
+});

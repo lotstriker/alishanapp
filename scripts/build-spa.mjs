@@ -16,6 +16,7 @@ export function buildSpa(out, root, tag) {
   const sources = [], bindings = new Set();
   html = html.replace(scripts,(all, attributes, inline) => {
    const src = /\bsrc=["']([^"']+)["']/.exec(attributes)?.[1];
+   if(src && /^(?:db|store|calc|archive|report-engine)\.js$/.test(assetName(src)))return '';
    if (inline.trim()==='/*ALISHAN_SESSION*/'||(src && shared.has(assetName(src)))) return all;
    const code = src ? fs.readFileSync(path.join(out,assetName(src)),'utf8') : inline;
    if (!code.trim() || attributes.includes('application/')) return all;
