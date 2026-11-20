@@ -607,6 +607,7 @@ Rule: see section 0, rule 8. Newest at the bottom.
 | v110 | `AlishanApp-v110-SPA-Icons.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-010` | Restore navigation icons when the SPA starts on Page Performance. |
 | v111 | `AlishanApp-v111-First-Visit-Performance.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-011` | Prioritize dashboard totals and inventory list, warm Settings, and measure startup phases. |
 | v112 | `AlishanApp-v112-Startup-Timings.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-012` | Measure report startup phases and saved view startup, and warm Add Entry files. |
+| v113 | `AlishanApp-v113-Monitor-Copy.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-013` | Group performance timings and copy visits or selected timings. |
 
 > **Note on two ZIPs named v90 (added 2026-11-11, history kept):** an earlier ZIP, `AlishanApp-v90-Visual-Manual-Workflow-Fixes.zip` (change ID `ALISHAN-CHG-2026-11-09-008`: Expand All / Collapse All fix, Add Entry order Quality Type → Quality → Cup, 32 PDF screenshots), was delivered on a separate branch. Its changes are **not** contained in the v90 row above or in v91. This lineage continues from `AlishanApp-v90-Visual-Screenshot-Tutorials.zip`. Whether to bring those fixes into this lineage is an open owner decision.
 
@@ -1132,3 +1133,8 @@ Dashboard totals and the Inventory list render ahead of other sections during st
 - Record shared store wait, filter setup, scope calculation and initial render setup in Reports.
 - Time device cache initialization and startup bundle preparation. Record the bundle network time when a request occurs during the visit.
 - Warm Add Entry route files after Settings during idle time. Keep the existing account-scoped saved data and background revalidation behavior.
+
+### ALISHAN-CHG-2026-11-20-013 — Performance monitor sharing
+
+- Show timings by group and allow copying a visit, filtered visit selections, a group, or individually selected timings.
+- Include page, time, release and visit type in copied text. Exclude account and device identifiers.

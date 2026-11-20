@@ -14,7 +14,16 @@
   ['apiDbMs','DB round trips'], ['apiNetworkMs','API outside server'], ['apiDecodeMs','API download / decode'],
   ['afterApiMs','Last API to UI'], ['apiCount','API batches'], ['apiErrors','Failed batches']
  ];
- let visits=[];
+ const allMeasures=[...measures,...startupMeasures];
+ const metricGroups={
+  'Page and rendering':['switchMs','readyMs','startupDataReadyMs','criticalPaintMs','dataToCriticalMs','routePrepareMs','afterApiMs'],
+  'Reports':['storeWaitMs','reportSetupMs','reportScopeMs','reportRenderMs'],
+  'Device cache and startup':['deviceCacheReadMs','startupRefreshMs','startupFetchMs'],
+  'Document':['loadMs','domMs','documentWaitMs','documentDownloadMs'],
+  'API and database':['dataMs','apiWaitMs','apiServerMs','apiDbMs','apiNetworkMs','apiDecodeMs','apiCount','apiErrors']
+ };
+ const pickedVisits=new Set();
+ let visits=[], visibleVisits=[];
  const filters=['release','visitType','page','account','device'];
  const types={document:'Document load','first-route':'First visit in tab','return-route':'Return visit',unknown:'Unclassified older visit'};
  const phases=[['documentWaitMs','Document wait'],['routePrepareMs','Route preparation'],['apiNetworkMs','Outside API server'],['apiServerMs','API server'],['afterApiMs','Last API to UI']];
@@ -31,21 +40,72 @@
   }
   container.append(tr);
  }
+ const measured=(visit,entries=allMeasures)=>entries.filter(([key])=>Number.isFinite(visit.metrics[key]));
+ const visitName=visit=>names[visit.page]||visit.page;
+ const visitTime=visit=>new Date(visit.received_at).toLocaleString();
+ function exportVisit(visit,entries) {
+  return [
+   '## '+visitName(visit)+' · '+visitTime(visit),
+   'Release '+visit.release+' · '+types[visit.visitType],
+   ...entries.map(([key,label])=>'- '+label+': '+measure(visit.metrics[key],key))
+  ].join('\n');
+ }
+ async function copy(blocks) {
+  if(!blocks.length)return;
+  const text='Alishan · Page performance\n\n'+blocks.join('\n\n');
+  const fallback=$('copy-fallback');
+  fallback.hidden=true;
+  try {
+   await navigator.clipboard.writeText(text);
+   $('copy-status').textContent='Copied. Paste into your message.';
+  } catch {
+   fallback.hidden=false;
+   const input=$('copy-text');input.value=text;input.focus();input.select();
+   $('copy-status').textContent='Select and copy the text below.';
+  }
+ }
+ function selectionState() {
+  $('copy-visits').disabled=!visibleVisits.some(visit=>pickedVisits.has(visit));
+  $('select-visits').disabled=!visibleVisits.length;
+  $('select-visits').checked=visibleVisits.length>0&&visibleVisits.every(visit=>pickedVisits.has(visit));
+  $('select-visits').indeterminate=!$('select-visits').checked&&!$('copy-visits').disabled;
+ }
  function inspect(visit) {
   const panel=$('visit-detail');
   panel.hidden=false;
-  $('visit-title').textContent=(names[visit.page]||visit.page)+' · '+types[visit.visitType];
-  $('visit-note').textContent=visit.release+' · '+new Date(visit.received_at).toLocaleString()+' · '+measure(visit.metrics.readyMs,'readyMs')+' ready. Measurements may overlap.';
+  $('visit-title').textContent=visitName(visit)+' · '+types[visit.visitType];
+  $('visit-note').textContent=visit.release+' · '+visitTime(visit)+' · '+measure(visit.metrics.readyMs,'readyMs')+' ready. Measurements may overlap.';
   const host=$('visit-bars');host.replaceChildren();
-  const measured=[...measures,...startupMeasures].filter(([key])=>!['apiCount','apiErrors'].includes(key)&&Number.isFinite(visit.metrics[key]));
-  const scale=Math.max(1,...measured.map(([key])=>visit.metrics[key]));
-  for(const [key,label] of measured){
-   const line=document.createElement('div'), track=document.createElement('span'), bar=document.createElement('i'), value=document.createElement('strong');
-   line.className='detail-row';track.className='detail-track';track.setAttribute('aria-hidden','true');
-   bar.style.width=(100*visit.metrics[key]/scale)+'%';track.append(bar);
-   value.textContent=measure(visit.metrics[key],key);line.append(label,track,value);host.append(line);
+  const entries=measured(visit);
+  const checked=new Set();
+  const copyMetrics=$('copy-metrics');
+  copyMetrics.disabled=true;
+  copyMetrics.onclick=()=>copy([exportVisit(visit,entries.filter(([key])=>checked.has(key)))]);
+  $('copy-visit').onclick=()=>copy([exportVisit(visit,entries)]);
+  for(const [group,keys] of Object.entries(metricGroups)){
+   const groupEntries=entries.filter(([key])=>keys.includes(key));
+   if(!groupEntries.length)continue;
+   const section=document.createElement('details'), title=document.createElement('summary');
+   const copyGroup=document.createElement('button');
+   section.open=true;title.textContent=group;
+   copyGroup.type='button';copyGroup.className='inspect';copyGroup.textContent='Copy group';
+   copyGroup.setAttribute('aria-label','Copy '+group);
+   copyGroup.onclick=()=>copy([exportVisit(visit,groupEntries)]);
+   section.append(title,copyGroup);
+   for(const [key,label] of groupEntries){
+    const line=document.createElement('label'), check=document.createElement('input'), value=document.createElement('strong');
+    check.type='checkbox';
+    check.onchange=()=>{
+     if(check.checked)checked.add(key);
+     else checked.delete(key);
+     copyMetrics.disabled=!checked.size;
+    };
+    line.className='detail-row';value.textContent=measure(visit.metrics[key],key);
+    line.append(check,label,value);section.append(line);
+   }
+   host.append(section);
   }
-  if(!measured.length)host.textContent='Timing details were unavailable for this visit.';
+  if(!entries.length)host.textContent='Timing details were unavailable for this visit.';
   panel.scrollIntoView?.({block:'nearest'});
  }
  function details(visit,label) {
@@ -57,6 +117,7 @@
  function render() {
   const minimum=Number($('slow').value);
   const selected=visits.filter(v=>(!minimum||v.metrics.readyMs>=minimum)&&filters.every(key=>!$(key).value||$(key).value===v[key]));
+  visibleVisits=selected;
   $('visit-detail').hidden=true;
   $('status').textContent=selected.length ? selected.length+' recent visits' : 'No visits found for these filters.';
   $('summary').replaceChildren();
@@ -83,14 +144,25 @@
    row($('page-summary'),[names[group[0].page]||group[0].page,group[0].release,types[group[0].visitType],n+' / '+group.length,measure(median,'readyMs'),measure(n?values[Math.ceil(n*.9)-1]:null,'readyMs'),last?details(last,slow):slow]);
   }
   $('rows').replaceChildren();
-  for (const visit of selected) row($('rows'),[new Date(visit.received_at).toLocaleString(),names[visit.page]||visit.page,visit.release,types[visit.visitType],visit.account,visit.device,details(visit,'Details'),...measures.map(([key])=>measure(visit.metrics[key],key))]);
+  for(const visit of selected){
+   const input=document.createElement('input');
+   input.type='checkbox';input.checked=pickedVisits.has(visit);
+   input.setAttribute('aria-label','Select '+visitName(visit)+' visit at '+visitTime(visit));
+   input.onchange=()=>{
+    if(input.checked)pickedVisits.add(visit);
+    else pickedVisits.delete(visit);
+    selectionState();
+   };
+   row($('rows'),[input,visitTime(visit),visitName(visit),measure(visit.metrics.readyMs,'readyMs'),details(visit,'Details'),visit.release,types[visit.visitType],visit.account,visit.device]);
+  }
+  selectionState();
  }
  async function load() {
   $('reload').disabled=true;
   try {
    const response=await fetch('/api/performance?view=all',{headers:{'X-Alishan-Scope':window.ALISHAN_SESSION?.scope||''}});
    if(!response.ok)throw Error('Performance history is unavailable.');
-   const result=await response.json();visits=result.rows.map(visit=>({...visit,visitType:visitType(visit)}));
+   const result=await response.json();pickedVisits.clear();visits=result.rows.map(visit=>({...visit,visitType:visitType(visit)}));
    $('account-status').textContent=result.google ? result.owner?'Owner view · filter visits by account and device.':'Your account’s visits.' : 'Shared password login · visits are separated by browser device.';
    for (const key of filters) {
     const select=$(key),previous=select.value;
@@ -103,7 +175,17 @@
   } catch(error) { $('status').textContent=error.message; }
   finally { $('reload').disabled=false; }
  }
- row($('head'),['Time','Page','Release','Visit type','Account','Device','Inspect',...measures.map(m=>m[1])],'th');
+ $('close-copy').onclick=()=>{$('copy-fallback').hidden=true;};
+ $('select-visits').onchange=()=>{
+  const checked=$('select-visits').checked;
+  for(const visit of visibleVisits){
+   if(checked)pickedVisits.add(visit);
+   else pickedVisits.delete(visit);
+  }
+  for(const input of $('rows').querySelectorAll('input'))input.checked=checked;
+  selectionState();
+ };
+ $('copy-visits').onclick=()=>copy(visibleVisits.filter(visit=>pickedVisits.has(visit)).map(visit=>exportVisit(visit,measured(visit))));
  for(const key of filters)$(key).addEventListener('change',render);
  $('slow').addEventListener('change',render);
  $('reload').addEventListener('click',load);
