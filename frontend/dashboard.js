@@ -678,12 +678,10 @@ function renderHomeLatestQualities() {
 }
 
 // Redraws everything from the store. Runs at start-up and after ANY change.
-function refreshUI() {
-    displayPaginatedItems();
-    updateStats();
-    updateActivityFeed();
-    updateTotalInventory();
-    renderHomeLatestQualities();
+async function refreshUI() {
+    const sections = [updateStats, updateActivityFeed, updateTotalInventory, renderHomeLatestQualities];
+    if (document.getElementById('inventoryCards')) sections.push(displayPaginatedItems);
+    await Promise.all(sections.map(draw => draw()));
     window.AlishanTimings?.pageReady('Dashboard');
     window.AlishanPerformance?.ready();
 }
@@ -791,6 +789,13 @@ async function initApp() {
     if (info.referenceError) showNotification(info.referenceError, 'error');
     if (info.damaged) showNotification(`${info.damaged} damaged item(s) were set aside and backed up.`, 'warning');
 
+    if (typeof AlishanSearch !== 'undefined' && document.getElementById('alishan-search')) {
+        await AlishanSearch.init({ onSearch, enableAdvanced: false });
+    }
+    initProductTypeBreakdown();
+    AlishanStore.subscribe(refreshUI);
+    await refreshUI();
+
     ItemModal.inject();                                 // the shared Edit modal
     await ItemForm.loadColors();                        // draws the colour dropdowns
     ItemForm.initColorSelectors(['', 'edit']);
@@ -811,13 +816,6 @@ async function initApp() {
     SizeGroups.init('');                                // the size groups follow the one colour picker
     if (productForm) productForm.addEventListener('reset', () => setTimeout(() => { ItemForm.resetColorSelector(''); SizeGroups.reset(''); }, 0));
 
-    if (typeof AlishanSearch !== 'undefined' && document.getElementById('alishan-search')) AlishanSearch.init({ onSearch, enableAdvanced: false });   // Home: search bar only; filters/sort stay on Inventory
-
-    // the page redraws itself whenever the store changes (add/edit/delete/stock,
-    // or a change made in another tab)
-    initProductTypeBreakdown();
-    AlishanStore.subscribe(refreshUI);
-    refreshUI();
 }
 
 document.addEventListener('DOMContentLoaded', function () {

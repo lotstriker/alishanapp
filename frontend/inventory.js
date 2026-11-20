@@ -105,10 +105,8 @@ function prevPage() { currentPage = Math.max(1, currentPage - 1); renderInventor
 function changeItemsPerPage(value) { itemsPerPage = parseInt(value, 10) || 50; currentPage = 1; renderInventoryCards(); }
 
 // Redraws everything from the store (keeps the filters and the page you are on)
-function refreshUI() {
-    updateDashboard();
-    populateQualityFilter();
-    renderInventoryCards();
+async function refreshUI() {
+    await Promise.all([updateDashboard, populateQualityFilter, renderInventoryCards].map(draw => draw()));
     window.AlishanTimings?.pageReady('Inventory');
     window.AlishanPerformance?.ready();
 }
@@ -558,6 +556,9 @@ async function initPage() {
     if (info.referenceError) showNotification(info.referenceError, 'error');
     if (info.damaged) showNotification(`${info.damaged} damaged item(s) were set aside and backed up.`, 'warning');
 
+    if (typeof AlishanSearch !== 'undefined') await AlishanSearch.init({ onSearch });
+    await refreshUI();
+
     ItemModal.inject();                                 // the shared Edit modal
     await ItemForm.loadColors();
     ItemForm.initColorSelectors(['edit']);
@@ -569,8 +570,6 @@ async function initPage() {
         });
     }
 
-    if (typeof AlishanSearch !== 'undefined') AlishanSearch.init({ onSearch });   // the shared search box (search.js)
-    refreshUI();
     const hashParams = new URLSearchParams((location.hash || '').replace(/^#/, ''));
     const editQualityId = hashParams.get('edit');
     if (editQualityId) {

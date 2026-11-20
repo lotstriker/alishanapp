@@ -16,6 +16,7 @@
 <h1>Page performance</h1>
 <p id="account-status"></p>
 <div class="controls">
+<label>Release <select id="release"><option value="">All releases</option></select></label>
 <label>Page <select id="page"><option value="">All pages</option></select></label>
 <label>Account <select id="account"><option value="">All listed accounts</option></select></label>
 <label>Device <select id="device"><option value="">All devices</option></select></label>
@@ -23,6 +24,7 @@
 </div>
 <p id="status" role="status">Loading visits…</p>
 <div id="summary" class="cards"></div>
+<div class="history"><table><thead><tr><th>Page</th><th>Release</th><th>Visits</th><th>Median ready</th><th>90th percentile ready</th><th>Slowest visit · largest measured wait</th></tr></thead><tbody id="page-summary"></tbody></table></div>
 <details><summary>How to read the timings</summary><p>Document wait includes the network and the HTML response. API server time covers the processing measured by Alishan. DB round trips include time waiting for and talking to PostgreSQL. API outside server is an estimate that can also include proxies and queuing. Page ready is measured after initial content rendering where available. A dash means the metric was unavailable or did not apply.</p></details>
 <div class="history"><table><thead id="head"></thead><tbody id="rows"></tbody></table></div>
 </main>

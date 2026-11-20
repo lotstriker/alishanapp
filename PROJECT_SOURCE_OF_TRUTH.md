@@ -600,6 +600,7 @@ Rule: see section 0, rule 8. Newest at the bottom.
 | v103 | `AlishanApp-v103-Speed-Timings.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-003` | Opt-in device timings for page loads, page switches, theme changes and confirmed saves. |
 | v104 | `AlishanApp-v104-Page-Performance.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-004` | Automatic page visits, API and database timings, and filtered performance history. |
 | v105 | `AlishanApp-v105-Responsive-Settings.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-005` | Settings navigation binds immediately, with backup and archive requests deferred to the relevant sections. |
+| v106 | `AlishanApp-v106-Faster-Startup.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-006` | Parallel first render, intent-based prefetch, and page-by-release performance comparison. |
 
 > **Note on two ZIPs named v90 (added 2026-11-11, history kept):** an earlier ZIP, `AlishanApp-v90-Visual-Manual-Workflow-Fixes.zip` (change ID `ALISHAN-CHG-2026-11-09-008`: Expand All / Collapse All fix, Add Entry order Quality Type → Quality → Cup, 32 PDF screenshots), was delivered on a separate branch. Its changes are **not** contained in the v90 row above or in v91. This lineage continues from `AlishanApp-v90-Visual-Screenshot-Tutorials.zip`. Whether to bring those fixes into this lineage is an open owner decision.
 
@@ -1095,3 +1096,7 @@ Records approved timing fields per authenticated account and random browser-devi
 ### ALISHAN-CHG-2026-11-20-005 — Responsive Settings
 
 Settings navigation is available before server data arrives. Backup and archive data load only when requested through their sections. The page-performance marker reflects when Settings controls can be used.
+
+### ALISHAN-CHG-2026-11-20-006 — Faster initial rendering
+
+Dashboard and Inventory run independent reads together and render once on startup. Prefetch follows navigation intent. The performance report compares page readiness and the slowest captured visit by release.

@@ -34,7 +34,6 @@ for(const name of fs.readdirSync(src)){
     code=previewModule+'\n'+code.replace('AlishanCalc.splitPieces','AlishanEntryPreview.splitPieces');
     code=code.replace(/if \(typeof module[^\n]+/g,'');
   }
-  if(['inventory.js','dashboard.js'].includes(name))code=code.replace('    ItemModal.inject();', '    refreshUI();\n    ItemModal.inject();');
   if(name==='item-modal.js')code=code.replace('    function inject() {', '    let injecting=null;\n    async function inject(){if(!injecting)injecting=buildModal();return injecting;}\n    async function buildModal() {');
   if(name==='dashboard.js')code=code.replace('const result = await AlishanStore.addItem(input);',"const result = await AlishanRemote.submitEntry(input);");
   if(name==='settings-data-backup.js'){
@@ -49,7 +48,7 @@ for(const name of fs.readdirSync(src)){
   if(name==='inventory.js')code=code.replace('const paged = AlishanStore.paginate(currentList(), currentPage, itemsPerPage);',"const bundle=AlishanRemote.call('Views','inventoryPage',[readFilters(),currentPage,itemsPerPage,typeof AlishanAdvancedSearch!=='undefined'?AlishanAdvancedSearch.getOptions():null,currentSearch()]);const paged=bundle.paged;if(typeof AlishanAdvancedSearch!=='undefined')AlishanAdvancedSearch.setCount(paged.total);");
   if(name==='dashboard.js'){
    code=code.replace("let items = AlishanStore.query({ search: term });\n    items = items.slice().sort((a, b) => new Date(b.dateTime || b.createdAt || 0) - new Date(a.dateTime || a.createdAt || 0)).slice(0, 5);","const bundle=AlishanRemote.call('Views','homeLatest',[term]);let items=bundle.items;");
-   code=code.replace("    displayPaginatedItems();\n    updateStats();","    if(document.getElementById('inventoryCards'))displayPaginatedItems();\n    updateStats();");
+
   }
   if(name==='advanced-search.js'){
     const start=code.indexOf('  function matches('),end=code.indexOf('  function setCount(',start);

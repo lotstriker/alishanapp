@@ -186,9 +186,6 @@
  window.AlishanRequire=async needed=>AlishanHas(needed);
  window.AlishanRemote={call,submitEntry,preparePage,cacheInfo:()=>device?.inspect(),clearDeviceCache(){device?.invalidate(true);prepared.clear();changed();void device?.check(true);}};
  if(device?.enabled){
-  const later=window.requestIdleCallback||((fn)=>setTimeout(fn,1800));
-  const prefetch=()=>later(()=>{for(const name of ['inventory','reports'])if(name!==pageName())void preparePage(name).catch(()=>{});});
-  if(document.readyState==='complete')prefetch();else window.addEventListener('load',prefetch,{once:true});
   const addCacheControl=()=>{const host=document.getElementById('backup');if(!host||document.getElementById('refreshDeviceView'))return;const card=document.createElement('div');card.className='card';card.style.marginTop='18px';card.innerHTML='<div class="card-header"><h2 class="card-title">Saved Device View</h2></div><div class="card-body"><p class="settings-help">Loaded views are kept on this device for faster opening. Server records remain the source of truth.</p><button id="refreshDeviceView" type="button" class="btn btn-secondary">Refresh saved view</button></div>';host.appendChild(card);card.querySelector('button').onclick=()=>{AlishanRemote.clearDeviceCache();if(typeof showNotification==='function')showNotification('Refreshing saved view. Server records are unchanged.','success');};};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addCacheControl,{once:true});else addCacheControl();
   const warmLink=e=>{
@@ -196,7 +193,8 @@
    if(!link||link.origin!==location.origin||link.pathname===location.pathname)return;
    const names={'/':'home','/index.html':'home','/inventory.html':'inventory','/reports.html':'reports'};
    const name=names[link.pathname];
-   if(name){void preparePage(name).catch(()=>{});navigator.serviceWorker?.controller?.postMessage({type:'WARM_VIEW',path:link.pathname==='/'?'/index.html':link.pathname});}
+   if(name)void preparePage(name).catch(()=>{});
+   if(name||link.pathname==='/setting.html')navigator.serviceWorker?.controller?.postMessage({type:'WARM_VIEW',path:link.pathname==='/'?'/index.html':link.pathname});
   };
   for(const event of ['pointerover','pointerdown','focusin'])document.addEventListener(event,warmLink,{passive:true});
   if(window.ALISHAN_SESSION?.google){
