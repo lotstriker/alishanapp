@@ -3,6 +3,7 @@
  'use strict';
  function create(options){
   const {wire,network,session,isReader,onChange=()=>{},onStatus=()=>{},broadcast=()=>{},fetchStatus}=options;
+  const isPageBundle=(target,method)=>target==='Views'&&method==='pageBundle';
   const enabled=!!session?.scope,namespace=enabled?`${session.scope}:${session.release}`:'disabled';
   const ram=new Map(),flights=new Map();const MAX_BYTES=8*1024*1024,MAX_ENTRIES=600,MAX_AGE=24*3600000;
   let epoch=0,revision=null,bytes=0,db=null,timer=null,checking=null,closed=false,disabled=false,lastCheck=0;
@@ -76,7 +77,7 @@
    const generation=epoch;
    const task=(async()=>{
     const previous=key&&ram.get(key),conditional=previous?.etag?{etag:previous.etag,value:clone(previous.value),unchanged:false}:null;
-    const isBundle=target==='Views'&&method==='pageBundle';
+    const isBundle=isPageBundle(target,method);
     const visit=isBundle?root.AlishanPerformance?.current():undefined;
     const started=visit?root.performance.now():undefined;
     let result;
@@ -85,7 +86,7 @@
     if(conditional?.unchanged){if(generation===epoch&&ram.get(key)===previous){previous.at=now();saveSoon();}return result;}
     const etag=await digest(result);
     if(generation===epoch){if(target==='Views'&&['inventoryPage','homeLatest','pageBundle'].includes(method))await seed(result?.primes,generation);
-      if(generation===epoch)put(key,target==='Views'&&method==='pageBundle'?{primes:[],ready:true}:result,etag);}
+      if(generation===epoch)put(key,isBundle?{primes:[],ready:true}:result,etag);}
     return result;
    })();
    if(key)flights.set(key,task);
@@ -126,7 +127,8 @@
    const key=await keyFor(target,method,args),entry=key&&ram.get(key);
    if(entry&&now()-entry.at<MAX_AGE){
     ram.delete(key);ram.set(key,entry);
-    if(now()-entry.at>60000){
+    // The account revision check refreshes prepared bundles as a unit.
+    if(now()-entry.at>60000&&(!fetchStatus||!isPageBundle(target,method))){
      status('updating');const before=JSON.stringify(entry.value);
      load(target,method,args,key,true).then(result=>{if(JSON.stringify(wire.encode(result))!==before)onChange();status('current');}).catch(()=>status('offline'));
     }

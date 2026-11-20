@@ -68,13 +68,14 @@ function populateQualityFilter() {
     if ([...qualityFilter.options].some(o => o.value === keep)) qualityFilter.value = keep;
 }
 
+let inventoryRender = 0;
 function renderInventoryCards() {
     const inventoryCards = document.getElementById('inventoryCards');
     if (!inventoryCards) return;
 
+    const render = ++inventoryRender;
     const paged = AlishanStore.paginate(currentList(), currentPage, itemsPerPage);
-    currentPage = paged.page;
-    inventoryCards.innerHTML = '';
+    if (render !== inventoryRender) return;
 
     if (paged.total === 0) {
         inventoryCards.innerHTML = `
@@ -86,8 +87,10 @@ function renderInventoryCards() {
     } else {
         const fragment = document.createDocumentFragment();
         paged.items.forEach(item => fragment.appendChild(ItemCard.create(item)));
-        inventoryCards.appendChild(fragment);
+        if (render !== inventoryRender) return;
+        inventoryCards.replaceChildren(fragment);
     }
+    currentPage = paged.page;
     updatePaginationControls(paged);
 }
 

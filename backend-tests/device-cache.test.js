@@ -80,3 +80,21 @@ test('confirmed save primes the changed record while retaining pure cached resul
  assert.deepEqual(calls,['itemTotals','updateItem']);
  cache.close();
 });
+
+test('a persisted bundle is reused across reopen until the background revision changes',async()=>{
+ const storage=memoryDisk();let revision='1',calls=0,events=0,time=100000;
+ const open=()=>create(opts(async()=>{
+  calls++;
+  return {primes:[{target:'Store',method:'summary',args:[],result:{count:Number(revision)}}]};
+ },{storage,now:()=>time,fetchStatus:async()=>({...session,revision}),onChange:()=>events++}));
+ let cache=open();await cache.ready;cache.acceptRevision(revision);
+ await cache.call('Views','pageBundle',['home',null]);cache.close();
+ time+=70000;
+ cache=open();await cache.ready;
+ await cache.call('Views','pageBundle',['home',null]);await cache.check(true);
+ assert.equal(calls,1);
+ revision='2';await cache.check(true);assert.equal(events,1);
+ await cache.call('Views','pageBundle',['home',null]);
+ assert.equal((await cache.call('Store','summary',[])).count,2);
+ assert.equal(calls,2);cache.close();
+});

@@ -6,7 +6,7 @@
  const listeners=new Set(),cache=new Map();
  const channel=typeof BroadcastChannel==='function'?new BroadcastChannel('alishan-server:'+window.ALISHAN_SESSION?.scope):null;
  let pending=[],scheduled=false;
- function changed(){cache.clear();if(typeof prepared!=='undefined')prepared.clear();for(const cb of listeners)Promise.resolve().then(cb).catch(reportError);}
+ function changed(){cache.clear();for(const cb of listeners)Promise.resolve().then(cb).catch(reportError);}
  let device;
  if(channel)channel.onmessage=()=>{device?.invalidate();changed();};
  function reportError(e){console.error(e);if(typeof window.showNotification==='function')window.showNotification(e.message||'Server connection failed','error');}
@@ -77,19 +77,11 @@
   const response=await fetch('/api/cache-status',{headers:scopedHeaders(),credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(10000)});
   if(!response.ok)throw Object.assign(new Error('Status unavailable'),{status:response.status});return response.json();
  }});
- const prepared=new Map();
  function pageName(){const path=location.pathname;return /inventory\.html$/.test(path)?'inventory':/reports\.html$/.test(path)?'reports':/\/$|index\.html$/.test(path)?'home':null;}
  function advancedOptions(){if(window.AlishanAdvancedSearch?.getOptions)return window.AlishanAdvancedSearch.getOptions();try{return JSON.parse(localStorage.getItem('alishan.advancedSearch.v1')||'null');}catch{return null;}}
  async function preparePage(name){
   if(!device?.enabled||!name)return;
-  const args=[name,name==='inventory'?advancedOptions():null],key=JSON.stringify(args);
-  let promise=prepared.get(key);
-  if(!promise){
-   promise=device.call('Views','pageBundle',args);
-   prepared.set(key,promise);
-   promise.catch(()=>{if(prepared.get(key)===promise)prepared.delete(key);});
-  }
-  return promise;
+  return device.call('Views','pageBundle',[name,name==='inventory'?advancedOptions():null]);
  }
  async function themePreference(theme){
   const options={headers:scopedHeaders(),credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000)};
@@ -198,7 +190,7 @@
  AlishanStore.subscribe=fn=>{listeners.add(fn);return()=>listeners.delete(fn);};AlishanDB.onChange=()=>{};
  window.AlishanHas=needed=>Object.keys(needed).every(k=>window[k]!==undefined);
  window.AlishanRequire=async needed=>AlishanHas(needed);
- window.AlishanRemote={call,submitEntry,preparePage,cacheInfo:()=>device?.inspect(),clearDeviceCache(){device?.invalidate(true);prepared.clear();changed();void device?.check(true);}};
+ window.AlishanRemote={call,submitEntry,preparePage,cacheInfo:()=>device?.inspect(),clearDeviceCache(){device?.invalidate(true);changed();void device?.check(true);}};
  if(device?.enabled){
   const addCacheControl=()=>{const host=document.getElementById('backup');if(!host||document.getElementById('refreshDeviceView'))return;const card=document.createElement('div');card.className='card';card.style.marginTop='18px';card.innerHTML='<div class="card-header"><h2 class="card-title">Saved Device View</h2></div><div class="card-body"><p class="settings-help">Loaded views are kept on this device for faster opening. Server records remain the source of truth.</p><button id="refreshDeviceView" type="button" class="btn btn-secondary">Refresh saved view</button></div>';host.appendChild(card);card.querySelector('button').onclick=()=>{AlishanRemote.clearDeviceCache();if(typeof showNotification==='function')showNotification('Refreshing saved view. Server records are unchanged.','success');};};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addCacheControl,{once:true});else addCacheControl();
@@ -220,6 +212,7 @@
    };
    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addSignOut,{once:true});else addSignOut();
   }
+  void device.ready.then(()=>device.check(true));
   const poll=setInterval(()=>{if(document.visibilityState!=='hidden')void device.check();},15000);poll?.unref?.();
   window.addEventListener('focus',()=>void device.check(true));window.addEventListener('online',()=>void device.check(true));window.addEventListener('offline',()=>cacheStatus('offline'));
   window.addEventListener('pagehide',()=>device.persist());

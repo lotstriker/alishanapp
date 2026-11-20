@@ -160,7 +160,14 @@ function createApp({repository,username,password,auth,repositoryFor,legacyOwnerI
    try{const html=fs.readFileSync(file,'utf8');res.type('html').send(html.replace('/*ALISHAN_SESSION*/',`window.ALISHAN_SESSION=${JSON.stringify(res.locals.account.session)};`));}catch(e){if(e.code==='ENOENT')return next();next(e);}
  });
  // Only the generated client directory is public. Original formulas and server files never are.
- app.use(express.static(path.resolve(__dirname,'../dist'),{index:'index.html',dotfiles:'deny',etag:true,maxAge:0,setHeaders(res,file){if(!file.endsWith('.html'))res.set('Cache-Control','private, max-age=0, must-revalidate');}}));
+ const clientDir=path.resolve(__dirname,'../dist');
+ const assetTag=fs.readFileSync(path.join(clientDir,'index.html'),'utf8').match(/bootstrap\.js\?v=([^"]+)/)?.[1];
+ app.use(express.static(clientDir,{index:'index.html',dotfiles:'deny',etag:true,maxAge:0,setHeaders(res,file){
+   if(file.endsWith('.html'))return;
+   const versioned=/^(?:bootstrap|server-client|spa|route-[a-z-]+)\.js$/.test(path.basename(file));
+   const immutable=versioned&&assetTag&&res.req.query.v===assetTag;
+   res.set('Cache-Control',immutable?'private, max-age=31536000, immutable':'private, max-age=0, must-revalidate');
+ }}));
  app.use((err,req,res,next)=>{if(res.headersSent)return next(err);const status=err.status||500;if(status>=500)console.error('Request failed:',err.code||err.name);res.status(status).json({error:status<500?err.message:'Server request failed. Please try again.'});});
  return app;
 }
