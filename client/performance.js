@@ -14,7 +14,7 @@
   pendingNavigation = sessionStorage.getItem('alishan:performance-next');
   sessionStorage.removeItem('alishan:performance-next');
  } catch {}
- let ready, first, last, count = 0, failures = 0, longest, sending = false, recorded = false;
+ let ready, dataReady, criticalPaint, first, last, count = 0, failures = 0, longest, sending = false, recorded = false;
  const headers = {'Content-Type':'application/json','X-Alishan-Scope':scope};
  const getQueue = () => {
   try { return JSON.parse(sessionStorage.getItem(queueKey) || '[]'); } catch { return []; }
@@ -39,6 +39,9 @@
   const nav = spaStart===undefined ? performance.getEntriesByType?.('navigation')?.[0] : null;
   const metrics = {visitType,routePrepareMs,apiCount:count,apiErrors:failures,readyMs:ready===undefined?undefined:ready-(spaStart??0)};
   if (spaStart!==undefined&&ready!==undefined) metrics.switchMs=ready-spaStart;
+  if (dataReady!==undefined) metrics.startupDataReadyMs=dataReady-(spaStart??0);
+  if (criticalPaint!==undefined) metrics.criticalPaintMs=criticalPaint-(spaStart??0);
+  if (dataReady!==undefined&&criticalPaint!==undefined) metrics.dataToCriticalMs=Math.max(0,criticalPaint-dataReady);
   if (nav) {
    if (nav.domContentLoadedEventEnd > 0) metrics.domMs = nav.domContentLoadedEventEnd;
    if (nav.loadEventEnd > 0) metrics.loadMs = nav.loadEventEnd;
@@ -74,10 +77,16 @@
    clearTimeout(deadline);
    page=next;visit=crypto.randomUUID();spaStart=started;
    visitType=reused?'return-route':'first-route';routePrepareMs=prepareMs;
-   ready=first=last=longest=pendingNavigation=undefined;
+   ready=dataReady=criticalPaint=first=last=longest=pendingNavigation=undefined;
    count=failures=0;recorded=false;
    try { sessionStorage.removeItem('alishan:performance-next'); } catch {}
    deadline=setTimeout(record,15000);
+  },
+  dataReady() {
+   if (!recorded&&dataReady===undefined) dataReady=performance.now();
+  },
+  criticalPaint() {
+   if (!recorded&&criticalPaint===undefined) criticalPaint=performance.now();
   },
   current:()=>visit,
   ready() {

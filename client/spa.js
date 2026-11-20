@@ -57,7 +57,11 @@
    if(key==='document')return scopedDocument;
    if(key==='addEventListener')return (...args)=>listen(realWindow,...args);
    if(key==='removeEventListener')return (...args)=>unlisten(realWindow,...args);
-   if(key==='AlishanPerformance')return {ready:()=>{if(isActive())realWindow.AlishanPerformance?.ready();}};
+   if(key==='AlishanPerformance')return {
+    ready:()=>{if(isActive())realWindow.AlishanPerformance?.ready();},
+    dataReady:()=>{if(isActive())realWindow.AlishanPerformance?.dataReady();},
+    criticalPaint:()=>{if(isActive())realWindow.AlishanPerformance?.criticalPaint();}
+   };
    if(exported.has(key))return exported.get(key);
    return bind(realWindow,key);
   },set(_,key,value){expose({[key]:value});return true;}});
@@ -180,6 +184,18 @@
   const page={route,body:document.body,styles:routeStyles(document.head),title:document.title,listeners:[]};
   active=page;pages.set(route,page);
   page.scope=scopeFor(page);factories.get(route)(page.scope);page.scope.runReady();
+  // Warm only the Settings shell after the initial document has settled.
+  if(route!=='setting'){
+   const warmSettings=()=>setTimeout(()=>{
+    const connection=navigator.connection;
+    if(blocked||document.hidden||navigator.onLine===false||connection?.saveData||['slow-2g','2g'].includes(connection?.effectiveType))return;
+    const warm=()=>{if(!blocked&&!document.hidden)void loadPage('setting').catch(()=>{});};
+    if(window.requestIdleCallback)window.requestIdleCallback(warm);
+    else warm();
+   },3000);
+   if(document.readyState==='complete')warmSettings();
+   else window.addEventListener('load',warmSettings,{once:true});
+  }
   history.replaceState({alishanSpa:true},'',location.href);
   history.scrollRestoration='manual';
   document.addEventListener('click',event=>{

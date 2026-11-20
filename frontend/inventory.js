@@ -105,8 +105,14 @@ function prevPage() { currentPage = Math.max(1, currentPage - 1); renderInventor
 function changeItemsPerPage(value) { itemsPerPage = parseInt(value, 10) || 50; currentPage = 1; renderInventoryCards(); }
 
 // Redraws everything from the store (keeps the filters and the page you are on)
-async function refreshUI() {
-    await Promise.all([updateDashboard, populateQualityFilter, renderInventoryCards].map(draw => draw()));
+async function refreshUI(prioritize = false) {
+    const sections = [updateDashboard, populateQualityFilter];
+    if (prioritize) {
+        await renderInventoryCards();
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        window.AlishanPerformance?.criticalPaint();
+    } else sections.unshift(renderInventoryCards);
+    await Promise.all(sections.map(draw => draw()));
     window.AlishanTimings?.pageReady('Inventory');
     window.AlishanPerformance?.ready();
 }
@@ -553,11 +559,12 @@ async function initPage() {
         ItemForm: 'item-form.js', SizeGroups: 'size-groups.js', ItemCard: 'item-card.js', ItemModal: 'item-modal.js'
     }, { AlishanSearch: 'search.js', AlishanLoader: 'loader.js', BulkImport: 'bulk-import.js' }))) return;
     const info = await AlishanStore.init();            // loads qualities, colours, inventory, payments
+    window.AlishanPerformance?.dataReady();
     if (info.referenceError) showNotification(info.referenceError, 'error');
     if (info.damaged) showNotification(`${info.damaged} damaged item(s) were set aside and backed up.`, 'warning');
 
     if (typeof AlishanSearch !== 'undefined') await AlishanSearch.init({ onSearch });
-    await refreshUI();
+    await refreshUI(true);
 
     ItemModal.inject();                                 // the shared Edit modal
     await ItemForm.loadColors();

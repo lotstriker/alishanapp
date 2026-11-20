@@ -3,7 +3,7 @@
  const $ = id => document.getElementById(id);
  const names = {'index':'Dashboard','inventory':'Inventory','reports':'Reports','setting':'Settings','add-entry':'Add Entry','pending-amount':'Pending Amount','missing-lot':'Missing Lot','missing-completion':'Missing Completion','quality-history':'Quality History'};
  const measures = [
-  ['switchMs','Tap to content'], ['readyMs','Page ready'], ['routePrepareMs','Route preparation'], ['loadMs','Load event'],
+  ['switchMs','Tap to content'], ['readyMs','Page ready'], ['startupDataReadyMs','Startup data ready'], ['criticalPaintMs','Key content visible'], ['dataToCriticalMs','Data to key content'], ['routePrepareMs','Route preparation'], ['loadMs','Load event'],
   ['domMs','DOM ready'], ['documentWaitMs','Document wait'], ['documentDownloadMs','HTML download'],
   ['dataMs','API window'], ['apiWaitMs','Slowest API wait'], ['apiServerMs','API server'],
   ['apiDbMs','DB round trips'], ['apiNetworkMs','API outside server'], ['apiDecodeMs','API download / decode'],
@@ -55,7 +55,7 @@
   $('visit-detail').hidden=true;
   $('status').textContent=selected.length ? selected.length+' recent visits' : 'No visits found for these filters.';
   $('summary').replaceChildren();
-  for (const [key,label] of measures.slice(0,13)) {
+  for (const [key,label] of measures.filter(([key])=>!['apiCount','apiErrors'].includes(key))) {
    const values=selected.map(v=>v.metrics[key]).filter(Number.isFinite).sort((a,b)=>a-b);
    if (!values.length) continue;
    const median=(values[Math.floor((values.length-1)/2)]+values[Math.floor(values.length/2)])/2;

@@ -678,9 +678,14 @@ function renderHomeLatestQualities() {
 }
 
 // Redraws everything from the store. Runs at start-up and after ANY change.
-async function refreshUI() {
-    const sections = [updateStats, updateActivityFeed, updateTotalInventory, renderHomeLatestQualities];
+async function refreshUI(prioritize = false) {
+    const sections = [updateStats, updateActivityFeed, renderHomeLatestQualities];
     if (document.getElementById('inventoryCards')) sections.push(displayPaginatedItems);
+    if (prioritize && document.getElementById('homeTotalItems')) {
+        await updateTotalInventory();
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        window.AlishanPerformance?.criticalPaint();
+    } else sections.unshift(updateTotalInventory);
     await Promise.all(sections.map(draw => draw()));
     window.AlishanTimings?.pageReady('Dashboard');
     window.AlishanPerformance?.ready();
@@ -786,6 +791,7 @@ async function initApp() {
         ItemForm: 'item-form.js', SizeGroups: 'size-groups.js', ItemCard: 'item-card.js', ItemModal: 'item-modal.js'
     }, { AlishanSearch: 'search.js', AlishanLoader: 'loader.js' }))) return;
     const info = await AlishanStore.init();            // loads qualities, colours, inventory, payments
+    window.AlishanPerformance?.dataReady();
     if (info.referenceError) showNotification(info.referenceError, 'error');
     if (info.damaged) showNotification(`${info.damaged} damaged item(s) were set aside and backed up.`, 'warning');
 
@@ -794,7 +800,7 @@ async function initApp() {
     }
     initProductTypeBreakdown();
     AlishanStore.subscribe(refreshUI);
-    await refreshUI();
+    await refreshUI(true);
 
     ItemModal.inject();                                 // the shared Edit modal
     await ItemForm.loadColors();                        // draws the colour dropdowns
