@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alishan Monitor</title>
+<style>
+:root{color-scheme:light;--ink:#241824;--muted:#695c68;--accent:#863052;--line:#eadfe6;--paper:#fff;--soft:#f8f1f5}
+*{box-sizing:border-box}body{margin:0;background:var(--soft);color:var(--ink);font:16px/1.5 system-ui,sans-serif}main{width:min(1100px,100%);padding:32px 20px 60px;margin:auto}
+h1{margin:0;font-size:clamp(28px,5vw,44px);letter-spacing:-.05em}h2{margin:0 0 14px;font-size:20px}p{color:var(--muted);margin:6px 0 14px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}section{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px}
+.grid{display:grid;gap:16px;grid-template-columns:1.5fr 1fr}.grid section{margin:0}.grid{margin-bottom:16px}.pill{border-radius:100px;background:#f2e6ee;color:#63334e;padding:6px 12px;font-weight:650}.ok{background:#e5f4eb;color:#1b6340}.bad{background:#fce7e7;color:#8f2525}
+button{border:0;border-radius:9px;background:var(--accent);color:white;font:inherit;font-weight:625;padding:9px 15px;cursor:pointer}button:disabled{opacity:.6;cursor:wait}
+select,input,textarea{display:block;width:100%;color:inherit;background:#fff;border:1px solid #cdbec8;border-radius:8px;padding:9px;font:inherit;margin:5px 0 12px}textarea{resize:vertical;font:14px/1.45 ui-monospace,monospace}label{font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:600}.numeric{white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}.table{overflow-x:auto}.events{padding-left:20px}.events li{margin:8px 0}.events time{display:block;color:var(--muted);font-size:13px}#message{min-height:24px;margin:6px 0;color:#77334f}.subtle{font-size:14px;color:var(--muted)}@media(max-width:740px){.grid{grid-template-columns:1fr}section{padding:16px}}
+</style>
+</head>
+<body>
+<main>
+<header><h1>Alishan Monitor</h1><span id="health" class="pill" role="status">Waiting for first check</span></header>
+<section><h2>Live health</h2><p id="last">Checking the Alishan health endpoint…</p><p class="subtle">Checks run while this dashboard is open. Imported timings and warnings stay in this browser.</p><button id="check" type="button">Check now</button><details><summary>Recent checks</summary><div class="table"><table><thead><tr><th>Time</th><th>Result</th><th class="numeric">Round trip</th></tr></thead><tbody id="checks"></tbody></table></div></details></section>
+<div class="grid">
+<section><h2>Speed by release</h2><p>v103 Android baseline se median compare karein. Same phone aur network ke samples use karein.</p><label for="release">Compare release</label><select id="release"></select><div class="table"><table><thead><tr><th>Measurement</th><th class="numeric">v103</th><th id="comparison" class="numeric">Selected</th><th class="numeric">Difference</th></tr></thead><tbody id="speed"></tbody></table></div></section>
+<section><h2>Import Android timings</h2><form id="import"><label for="version">App release</label><input id="version" placeholder="v104" required pattern="v[1-9][0-9]{0,5}"><label for="samples">Speed Timings JSON</label><textarea id="samples" rows="6" required placeholder="Paste the full JSON array"></textarea><button type="submit">Import timings</button><p id="message" role="status"></p></form></section>
+</div>
+<section><h2>Warning history</h2><p class="subtle">Health warning after two failed checks. Speed warning after at least three samples when the median is at least 25% and 50 ms above the baseline.</p><ol id="events" class="events"></ol><p id="empty">No warnings recorded yet.</p></section>
+</main>
+<script>
+const byId = id => document.getElementById(id);
+const fmt = n => n == null ? '—' : n + ' ms';
+const localTime = time => new Date(time).toLocaleString();
+let state;
+function cellRow(target, values) {
+  const tr = target.insertRow();
+  for (const [index, value] of values.entries()) {
+    const td = tr.insertCell();
+    if (index > 0) td.className = 'numeric';
+    td.textContent = value;
+  }
+}
+function showSpeed() {
+  const version = byId('release').value;
+  byId('comparison').textContent = version || 'Selected';
+  const target = byId('speed');
+  target.replaceChildren();
+  const names = [...new Set(state.speed.filter(row => ['v103', version].includes(row.version)).map(row => row.name))];
+  for (const name of names) {
+    const base = state.speed.find(row => row.version === 'v103' && row.name === name);
+    const next = version !== 'v103' && state.speed.find(row => row.version === version && row.name === name);
+    const delta = next && base ? next.ms - base.ms : null;
+    const value = row => row ? fmt(row.ms) + ' (' + row.count + ')' : '—';
+    cellRow(target,[name,value(base),value(next),delta == null ? '—' : (delta > 0 ? '+' : '') + fmt(delta)]);
+  }
+}
+
+const baseline = {"Dashboard \u00b7 tap to content": [154, 159, 162, 172], "Reports \u00b7 tap to content": [181, 182, 183], "Inventory \u00b7 tap to content": [273, 279, 283]};
+const labels = new Set(["Dashboard \u00b7 content ready", "Dashboard \u00b7 server response", "Dashboard \u00b7 tap to content", "Entry save confirmation", "Inventory \u00b7 content ready", "Inventory \u00b7 server response", "Inventory \u00b7 tap to content", "Payment save confirmation", "Reports \u00b7 content ready", "Reports \u00b7 server response", "Reports \u00b7 tap to content", "Theme change"]);
+const storageKey = 'alishan-monitor-web-1';
+let saved;
+try { saved = JSON.parse(localStorage.getItem(storageKey) || 'null'); } catch {}
+const data = saved || {checks:[], events:[], imports:[]};
+const median = values => {
+  const sorted = [...values].sort((a,b)=>a-b), center = Math.floor(sorted.length/2);
+  return sorted.length%2 ? sorted[center] : (sorted[center-1]+sorted[center])/2;
+};
+function save() {
+  try { localStorage.setItem(storageKey,JSON.stringify(data)); }
+  catch { byId('message').textContent = 'Browser storage is unavailable. This session’s history is temporary.'; }
+}
+function warning(kind, message) {
+  data.events.unshift({kind,message,at:new Date().toISOString()});
+  data.events = data.events.slice(0,100);
+}
+function rows() {
+  const groups = new Map();
+  for (const [name,values] of Object.entries(baseline)) groups.set(JSON.stringify(['v103',name]),[...values]);
+  for (const {version,samples} of data.imports) {
+    for (const {name,ms} of samples) {
+      const k = JSON.stringify([version,name]);
+      if (!groups.has(k)) groups.set(k,[]);
+      groups.get(k).push(ms);
+    }
+  }
+  return [...groups].map(([key,values])=>{
+    const [version,name] = JSON.parse(key);
+    return {version,name,ms:median(values),count:values.length};
+  }).sort((a,b)=>Number(a.version.slice(1))-Number(b.version.slice(1))||a.name.localeCompare(b.name));
+}
+function importTiming(version, samples) {
+  if (!/^v[1-9][0-9]{0,5}$/.test(version)) throw Error('Enter a release label such as v104.');
+  if (!Array.isArray(samples)||samples.length<1||samples.length>30) throw Error('Paste 1–30 timing samples.');
+  const clean = samples.map(sample=>{
+    if (!labels.has(sample?.name)||!Number.isFinite(sample?.ms)||sample.ms<0||sample.ms>600000) throw Error('Invalid timing label or duration.');
+    return {name:sample.name,ms:sample.ms};
+  }).sort((a,b)=>a.name.localeCompare(b.name)||a.ms-b.ms);
+  const batch = {version,samples:clean};
+  if (data.imports.some(item=>JSON.stringify(item)===JSON.stringify(batch))) return false;
+  const before = new Map(rows().filter(r=>r.version===version&&r.count>=3).map(r=>[r.name,r.ms]));
+  if (data.imports.length>=250) throw Error('This browser has reached the 250 import limit.');
+  data.imports.push(batch);
+  if (version!=='v103') for (const row of rows()) {
+    if (row.version!==version||row.count<3||!baseline[row.name]) continue;
+    const ref = median(baseline[row.name]), threshold=Math.max(ref*1.25,ref+50);
+    if (row.ms>=threshold&&(before.get(row.name)??0)<threshold) warning('speed',version+' '+row.name+': '+row.ms+' ms median vs '+ref+' ms on v103.');
+  }
+  save();
+  return true;
+}
+async function checkHealth() {
+  const response = await fetch('/api/health',{cache:'no-store'});
+  if (!response.ok) throw Error('Monitor could not complete the health check.');
+  const result = await response.json();
+  const previous = data.checks[0];
+  if (previous?.id===result.id) return;
+  const incident = data.events.find(event=>['health','recovery'].includes(event.kind));
+  if (result.kind==='ok'&&incident?.kind==='health') warning('recovery','Alishan health check recovered.');
+  if (result.kind!=='ok'&&previous&&previous.kind!=='ok'&&incident?.kind!=='health') warning('health','Two consecutive health checks failed. Latest result: '+result.kind+'.');
+  data.checks.unshift({...result,at:new Date(result.id).toISOString()});
+  data.checks=data.checks.slice(0,20);
+  save();
+}
+function displayStatus(data) {
+  state = data;
+  const recent = data.checks[0], health = byId('health');
+  health.textContent = recent ? recent.kind === 'ok' ? 'Reachable' : 'Check failed' : 'Waiting for first check';
+  health.className = 'pill' + (recent ? recent.kind === 'ok' ? ' ok' : ' bad' : '');
+  byId('last').textContent = recent ? localTime(recent.at) + ' · ' + recent.kind + ' · ' + fmt(recent.ms) : 'Checking the Alishan health endpoint…';
+  byId('checks').replaceChildren();
+  data.checks.forEach(row => cellRow(byId('checks'),[localTime(row.at),row.kind,fmt(row.ms)]));
+  const select = byId('release'), current = select.value;
+  const versions = [...new Set(data.speed.map(row => row.version))];
+  select.replaceChildren();
+  versions.forEach(version => select.add(new Option(version,version)));
+  select.value = versions.includes(current) ? current : versions.at(-1);
+  showSpeed();
+  byId('events').replaceChildren(...data.events.map(event => {
+    const li = document.createElement('li'), time = document.createElement('time');
+    time.dateTime = event.at;
+    time.textContent = localTime(event.at);
+    li.append(event.message,time);
+    return li;
+  }));
+  byId('empty').hidden = data.events.length > 0;
+}
+function refresh() { displayStatus({...data,speed:rows()}); }
+byId('release').addEventListener('change',showSpeed);
+byId('check').addEventListener('click',async event => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  button.textContent = 'Checking…';
+  try {
+    await checkHealth();
+    refresh();
+  } catch (error) { byId('last').textContent = error.message; }
+  finally { button.disabled = false; button.textContent = 'Check now'; }
+});
+byId('import').addEventListener('submit',async event => {
+  event.preventDefault();
+  const message = byId('message'), button = event.target.querySelector('button');
+  button.disabled = true;
+  try {
+    const version = byId('version').value;
+    const samples = JSON.parse(byId('samples').value);
+    const added = importTiming(version,samples);
+    refresh();
+    byId('release').value = version;
+    showSpeed();
+    message.textContent = added ? 'Timings saved.' : 'These timings were already imported.';
+  } catch (error) { message.textContent = error.message; }
+  finally { button.disabled = false; }
+});
+async function backgroundRefresh() {
+  if (document.hidden) return;
+  try { await checkHealth(); refresh(); }
+  catch (error) { byId('last').textContent = error.message; }
+}
+refresh();
+backgroundRefresh();
+setInterval(backgroundRefresh,120000);
+</script>
+</body>
+</html>
