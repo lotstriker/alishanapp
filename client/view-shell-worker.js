@@ -55,6 +55,23 @@ async function navigationSession(event){
 self.addEventListener('fetch',event=>{
  const request=event.request,url=new URL(request.url);
  if(request.method!=='GET'||url.origin!==self.location.origin||(url.pathname.startsWith('/api/')||url.pathname.startsWith('/auth/')||url.pathname==='/login'))return;
+ if(request.mode!=='navigate'&&PAGES.includes(url.pathname)&&!url.search&&request.headers?.get('X-Alishan-Route-Shell')===BUILD){
+  event.respondWith((async()=>{
+   try{
+    const session=await binding(event.clientId);
+    if(session?.release===RELEASE){
+     const cached=await(await caches.open(SHELL)).match(new Request(url));
+     if(cached){
+      const html=await cached.text();
+      if(html.includes('/*ALISHAN_SESSION*/')&&html.includes('?v='+BUILD)){
+       return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Alishan-Shell-Cache':'hit','X-Content-Type-Options':'nosniff'}});
+      }
+     }
+    }
+   }catch{}
+   return fetch(request);
+  })());return;
+ }
  if(request.mode==='navigate'){
   event.respondWith((async()=>{
    const path=url.pathname==='/'?'/index.html':url.pathname;

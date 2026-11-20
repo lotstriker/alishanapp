@@ -3,6 +3,8 @@
  const $ = id => document.getElementById(id);
  const names = {'index':'Dashboard','inventory':'Inventory','reports':'Reports','setting':'Settings','add-entry':'Add Entry','pending-amount':'Pending Amount','missing-lot':'Missing Lot','missing-completion':'Missing Completion','quality-history':'Quality History'};
  const assetMeasures=[
+  ['routeHtmlMs','Route HTML fetch (may be preloaded)'],['routeHtmlCached','Route HTML served from shell cache'],
+  ['routeFactoryMs','Route JS factory ready (may be preloaded)'],['routeDomMs','Route HTML parse and adoption'],
   ['routeJsDecodedBytes','Route JS decoded size'], ['routeJsEncodedBytes','Route JS encoded body'],
   ['routeJsTransferBytes','Route JS transfer including headers'], ['routeJsFetchMs','Route JS resource duration'],
   ['routeJsCached','Route JS served locally']
@@ -35,7 +37,7 @@
   'Reports':['storeWaitMs','reportSetupMs','reportScopeMs','reportRenderMs'],
   'Device cache and startup':['deviceCacheReadMs','startupRefreshMs','startupFetchMs','startupCacheHitMs','startupCacheMissMs','startupSharedWaitMs'],
   'Document':['fcpMs','lcpObservedMs','loadMs','domMs','documentWaitMs','documentDownloadMs'],
-  'Route JavaScript':assetMeasures.map(([key])=>key),
+  'Route assets':assetMeasures.map(([key])=>key),
   'API and database':['dataMs','apiWaitMs','apiServerMs','apiDbMs','apiNetworkMs','apiDecodeMs','apiCount','apiErrors']
  };
  const pickedVisits=new Set();
@@ -50,7 +52,7 @@
  }
  const measure = (value,key) => {
   if(!Number.isFinite(value))return '—';
-  if(key==='routeJsCached')return value?'Yes':'No';
+  if(key==='routeJsCached'||key==='routeHtmlCached')return value?'Yes':'No';
   if(key.endsWith('Bytes'))return value+' bytes';
   return value+(key==='apiCount'||key==='apiErrors'?'':' ms');
  };

@@ -618,6 +618,7 @@ Rule: see section 0, rule 8. Newest at the bottom.
 | v121 | `AlishanApp-v121-Monitor-Link.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-021` | Link the newer Alishan Monitor from Settings and detailed timing history. |
 | v122 | `AlishanApp-v122-Startup-Diagnostics.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-022` | Measure startup assets, API batches, response sizes, database waits and response processing. |
 | v123 | `AlishanApp-v123-Manual-Sync.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-023` | Add manual revision sync and persist the latest server check. |
+| v124 | `AlishanApp-v124-Reports-Route.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-024` | Reuse sanitized versioned route HTML for signed-in tab navigation and trace route prep. |
 
 > **Note on two ZIPs named v90 (added 2026-11-11, history kept):** an earlier ZIP, `AlishanApp-v90-Visual-Manual-Workflow-Fixes.zip` (change ID `ALISHAN-CHG-2026-11-09-008`: Expand All / Collapse All fix, Add Entry order Quality Type → Quality → Cup, 32 PDF screenshots), was delivered on a separate branch. Its changes are **not** contained in the v90 row above or in v91. This lineage continues from `AlishanApp-v90-Visual-Screenshot-Tutorials.zip`. Whether to bring those fixes into this lineage is an open owner decision.
 
@@ -1198,3 +1199,8 @@ Dashboard totals and the Inventory list render ahead of other sections during st
 
 - Keep account-scoped saved views when Sync Now finds the same revision. Display the last successful revision check separately from record updates.
 - Reduce periodic revision polling while keeping startup, foreground and reconnect checks.
+
+### ALISHAN-CHG-2026-11-20-024 — Reports route preparation
+
+- Warm Reports HTML alongside Inventory. Serve sanitized version-matched shells to already bound tabs, with authenticated network fallback.
+- Record HTML fetch, script factory readiness and HTML parse separately in Page Timing Details.

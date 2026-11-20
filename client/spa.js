@@ -111,16 +111,23 @@
   if(pages.has(route))return Promise.resolve(pages.get(route));
   if(loads.has(route))return loads.get(route);
   const task=(async()=>{
-   const [response]=await Promise.all([
-    fetch('/'+route+'.html',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(12000)}),
-    loadFactory(route)
-   ]);
-   if(!response.ok||response.redirected)throw Error('Unable to load page');
-   const html=await response.text();
+   const started=performance.now(),timing={};
+   const htmlLoad=fetch('/'+route+'.html',{credentials:'same-origin',cache:'no-store',
+    headers:{'X-Alishan-Route-Shell':tag},signal:AbortSignal.timeout(12000)}).then(async response=>{
+    if(!response.ok||response.redirected)throw Error('Unable to load page');
+    const html=await response.text();
+    timing.routeHtmlMs=performance.now()-started;
+    timing.routeHtmlCached=Number(response.headers.get('X-Alishan-Shell-Cache')==='hit');
+    return html;
+   });
+   const [html]=await Promise.all([htmlLoad,loadFactory(route).then(()=>{timing.routeFactoryMs=performance.now()-started;})]);
    if(!html.includes(assetUrl(route)))throw Error('App version changed');
+   const parseStarted=performance.now();
    const source=new DOMParser().parseFromString(html,'text/html');
    for(const node of source.querySelectorAll('script'))node.remove();
    const page={route,body:document.adoptNode(source.body),styles:routeStyles(source.head),title:source.title,listeners:[]};
+   timing.routeDomMs=performance.now()-parseStarted;
+   page.timing=timing;
    pages.set(route,page);
    return page;
   })();
@@ -155,7 +162,7 @@
   }
   if(mode==='push')history.pushState({alishanSpa:true},'',url.href);
   if(old!==page){
-   window.AlishanPerformance?.navigate(page.route,started,Boolean(page.scope),prepareMs);
+   window.AlishanPerformance?.navigate(page.route,started,Boolean(page.scope),prepareMs,page.scope?undefined:page.timing);
    if(!page.scope){page.scope=scopeFor(page);factories.get(page.route)(page.scope);page.scope.runReady();}
    else {page.scope.enable();window.AlishanPerformance?.ready();}
    document.dispatchEvent(new Event('alishan:route'));
@@ -205,6 +212,7 @@
     idle(()=>{
      if(blocked||document.hidden||navigator.onLine===false)return;
      if(active?.route!=='inventory')void loadPage('inventory').catch(()=>{});
+     if(active?.route!=='reports')void loadPage('reports').catch(()=>{});
      void next(['setting','add-entry','reports']);
     });
    },3000);

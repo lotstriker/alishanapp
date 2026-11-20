@@ -34,3 +34,21 @@ test('same-origin initiated navigation can reuse a matching bound window when th
  assert.equal((await navigate('https://app.test/index.html')).status,200);assert.equal(env.network(),0);
  assert.equal((await navigate('https://other.test/index.html')).status,401);
 });
+
+test('SPA report shells reuse only sanitized current-build HTML in a bound tab',async()=>{
+ const env=setup(),cache=await env.storage.open('alishan-shell-99.0.0');
+ const url='https://app.test/reports.html';
+ const load=async tag=>{
+  let pending;
+  env.handlers.fetch({request:new Request(url,{headers:{'X-Alishan-Route-Shell':tag}}),clientId:'first',respondWith:p=>pending=p});
+  return pending;
+ };
+ await cache.put(new Request(url),new Response('<script>/*ALISHAN_SESSION*/</script><script src="/route-reports.js?v=99.0.0"></script>'));
+ assert.equal((await load('99.0.0')).status,401);
+ await env.message({type:'BIND_VIEW_SESSION',session:{scope:'a'.repeat(32),release:'99.0.0',google:true}});
+ const hit=await load('99.0.0');assert.equal(hit.headers.get('X-Alishan-Shell-Cache'),'hit');
+ assert.doesNotMatch(await hit.text(),/window\.ALISHAN_SESSION=/);
+ assert.equal(await load('old'),undefined);
+ await env.message({type:'CLEAR_VIEW_SESSION',scope:'a'.repeat(32)});
+ assert.equal((await load('99.0.0')).status,401);
+});

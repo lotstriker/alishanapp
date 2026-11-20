@@ -134,3 +134,27 @@ test('manual sync keeps a saved view on unchanged revision and on network failur
  cache.close();
  assert.equal(storage.records.get(cache.inspect().namespace).checkedAt,now);
 });
+
+test('a second device retains its saved view until manual sync sees the first device revision',async()=>{
+ let revision=1,changes=0,reads=0;
+ const network=async(target,method)=>{
+  if(method==='updateItem'){revision++;return {ok:true};}
+  reads++;
+  return {count:revision};
+ };
+ const config={fetchStatus:async()=>({...session,revision:String(revision)})};
+ const first=create(opts(network,config));
+ const second=create(opts(network,{...config,onChange:()=>changes++}));
+ try{
+  await second.check(true);
+  assert.deepEqual(await second.call('Store','summary',[]),{count:1});
+  await first.call('Store','updateItem',[1,{}]);
+  assert.deepEqual(await second.call('Store','summary',[]),{count:1});
+  assert.equal((await second.check(true)).changed,true);
+  assert.deepEqual(await second.call('Store','summary',[]),{count:2});
+  assert.equal(changes,1);
+  assert.equal((await second.check(true)).changed,false);
+  await second.call('Store','summary',[]);
+  assert.equal(reads,2);
+ }finally{first.close();second.close();}
+});

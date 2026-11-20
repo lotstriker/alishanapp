@@ -6,7 +6,7 @@
  if (!scope || !crypto.randomUUID) return;
  const deviceKey = 'alishan:performance-device';
  const queueKey = 'alishan:performance-queue:' + scope;
- let visit = crypto.randomUUID(), spaStart, deadline, visitType='document', routePrepareMs;
+ let visit = crypto.randomUUID(), spaStart, deadline, visitType='document', routePrepareMs, routeTiming;
  let device = crypto.randomUUID(), pendingNavigation;
  try {
   device = localStorage.getItem(deviceKey) || device;
@@ -50,7 +50,7 @@
  function record() {
   if (recorded || !routes.has(page)) return;
   const nav = spaStart===undefined ? performance.getEntriesByType?.('navigation')?.[0] : null;
-  const metrics = {...phases,waterfall:[...waterfall].sort((a,b)=>a.startMs-b.startMs),visitType,routePrepareMs,apiCount:count,apiErrors:failures,readyMs:ready===undefined?undefined:ready-(spaStart??0)};
+  const metrics = {...phases,...routeTiming,waterfall:[...waterfall].sort((a,b)=>a.startMs-b.startMs),visitType,routePrepareMs,apiCount:count,apiErrors:failures,readyMs:ready===undefined?undefined:ready-(spaStart??0)};
   const routeScript=performance.getEntriesByType?.('resource')?.find(entry=>{
    const url=new URL(entry.name,location.href);
    return url.origin===location.origin&&url.pathname==='/route-'+page+'.js';
@@ -101,11 +101,11 @@
   if (ready !== undefined && document.readyState === 'complete') setTimeout(record,0);
  }
  window.AlishanPerformance = {
-  navigate(next,started,reused,prepareMs) {
+  navigate(next,started,reused,prepareMs,preparation) {
    record();
    clearTimeout(deadline);
    page=next;visit=crypto.randomUUID();spaStart=started;
-   visitType=reused?'return-route':'first-route';routePrepareMs=prepareMs;
+   visitType=reused?'return-route':'first-route';routePrepareMs=prepareMs;routeTiming=preparation;
    ready=dataReady=criticalPaint=first=last=longest=pendingNavigation=undefined;
    for (const name of phaseNames) delete phases[name];
    waterfall.length=0;
