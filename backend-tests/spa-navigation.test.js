@@ -16,9 +16,9 @@ test('main routes share one document, preserve controls and support browser hist
   const console=new VirtualConsole();
   console.on('jsdomError',error=>errors.push(error.message));
   console.on('error',error=>errors.push(String(error)));
-  const html=await request('/index.html').then(response=>response.text());
+  const html=await request('/performance.html').then(response=>response.text());
   const dom=new JSDOM(html,{
-    url:base+'/index.html',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:console,
+    url:base+'/performance.html',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:console,
     resources:{interceptors:[requestInterceptor(req=>req.url.startsWith(base)?request(req.url):new Response(''))]},
     beforeParse(w){
       Object.assign(w,{fetch:request,structuredClone,TextEncoder,TextDecoder,AbortSignal,BroadcastChannel:undefined});
@@ -39,7 +39,10 @@ test('main routes share one document, preserve controls and support browser hist
     assert.fail('Route did not become ready. '+w.location.pathname+' '+errors.join('\n'));
   }
   const click=path=>document.querySelector('.tabbar a[href="'+path+'.html"]').click();
-  await waitFor(()=>w.history.state?.alishanSpa&&document.getElementById('homeTotalItems')?.textContent==='0');
+  await waitFor(()=>w.history.state?.alishanSpa&&document.getElementById('reload'));
+  document.querySelector('header a[href="/"]').click();
+  await waitFor(()=>w.location.pathname==='/'&&document.getElementById('homeTotalItems')?.textContent==='0');
+  assert.ok(document.querySelector('.tabbar i svg.ic'), 'Dashboard must show icons after entering through Page Performance');
   const sharedTransport=transport(), firstBody=document.body;
   const stylesheet = name => [...document.head.querySelectorAll('link[rel="stylesheet"]')]
     .find(link => new URL(link.href).pathname === '/' + name);
@@ -47,6 +50,7 @@ test('main routes share one document, preserve controls and support browser hist
   click('inventory');
   await waitFor(()=>w.location.pathname==='/inventory.html'&&document.querySelector('#inventoryCards .empty-state'));
   const inventoryBody=document.body;
+  assert.ok(document.querySelector('.tabbar i svg.ic'), 'Inventory navigation icons render after switching');
   const inventoryStyle=stylesheet('inventory.css');
   assert.ok(inventoryStyle, 'Inventory CSS must be attached to the active document');
   assert.notEqual(inventoryStyle.media,'not all');
@@ -60,6 +64,7 @@ test('main routes share one document, preserve controls and support browser hist
   w.history.back();
   await waitFor(()=>w.location.pathname==='/reports.html'&&w.ReportViews);
   assert.equal(w.settingsManager,undefined);
+  assert.ok(document.querySelector('.tabbar i svg.ic'), 'Icons survive history navigation');
   assert.equal(inventoryStyle.media,'not all');
   w.history.back();
   await waitFor(()=>w.location.pathname==='/inventory.html'&&document.body===inventoryBody);
