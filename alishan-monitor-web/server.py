@@ -22,27 +22,82 @@ def history():
         if not isinstance(rows, list):
             raise ValueError("Invalid monitor history.")
         return rows
-lock = threading.Lock()
-cached = None
-last_check = float("-inf")
 
 
-def probe():
-    global cached, last_check
-    with lock:
-        if time.monotonic() - last_check < 60:
-            return cached
-        start = time.monotonic()
-        try:
-            with urlopen(HEALTH, timeout=20) as response:
-                kind = "ok" if response.status == 200 and json.loads(response.read(4096)).get("status") == "ok" else "unexpected"
-        except HTTPError as error:
-            kind = f"http-{error.code}"
-        except (OSError, ValueError, AttributeError):
-            kind = "unreachable"
-        last_check = time.monotonic()
-        cached = {"id": int(time.time() * 1000), "kind": kind, "ms": round((last_check - start) * 1000)}
-        return cached
+class Collector:
+    def __init__(self, interval=1200):
+        self.interval = interval
+        self.lock = threading.Lock()
+        self.run_lock = threading.Lock()
+        self.app = None
+        self.database = None
+        self.rows = []
+        self.failures = 0
+        self.events = []
+        self.previous_state = None
+        self.last_start = float("-inf")
+
+    def collect(self):
+        with self.run_lock:
+            if time.monotonic() - self.last_start < 60:
+                return
+            self.last_start = time.monotonic()
+            started = time.monotonic()
+            try:
+                with urlopen(HEALTH, timeout=20) as response:
+                    healthy = response.status == 200 and json.loads(response.read(4096)).get("status") == "ok"
+                    kind = "ok" if healthy else "unexpected"
+            except HTTPError as error:
+                kind = f"http-{error.code}"
+            except TimeoutError:
+                kind = "timeout"
+            except (OSError, ValueError, AttributeError):
+                kind = "unreachable"
+            app = {"id": int(time.time() * 1000), "kind": kind, "ms": round((time.monotonic() - started) * 1000)}
+            rows = None
+            try:
+                rows = history()
+                database = {"state": "reachable", "at": int(time.time() * 1000)}
+            except RuntimeError:
+                database = {"state": "unavailable", "at": int(time.time() * 1000)}
+            except (OSError, ValueError):
+                database = {"state": "unknown", "at": int(time.time() * 1000)}
+            with self.lock:
+                self.app, self.database = app, database
+                if rows is not None:
+                    self.rows = rows
+                self.failures = 0 if kind == "ok" else self.failures + 1
+                state = self.overview()["appState"]
+                if state == "unavailable" or (state == "reachable" and self.previous_state in ("verifying", "unavailable")):
+                    if state != self.previous_state:
+                        self.events = [{"at": app["id"], "state": state}] + self.events[:19]
+                self.previous_state = state
+
+    def overview(self, now=None):
+        now = time.time() * 1000 if now is None else now
+        stale = not self.app or now - self.app["id"] > (self.interval + 480) * 1000
+        corroborated = False
+        if self.database and self.database["state"] == "reachable" and self.rows and self.app:
+            from datetime import datetime
+            try:
+                latest = self.rows[0]
+                timestamp = datetime.fromisoformat(latest["at"].replace("Z", "+00:00")).timestamp() * 1000
+                corroborated = latest["kind"] != "ok" and 0 <= now - timestamp <= (self.interval + 480) * 1000
+            except (ValueError, TypeError, KeyError, AttributeError):
+                pass
+        state = "unknown" if stale else "reachable" if not self.failures else (
+            "unavailable" if self.failures >= 2 and corroborated else "verifying")
+        return {"appState": state, "app": self.app, "database": self.database,
+                "stale": stale, "consecutiveFailures": self.failures, "events": self.events,
+                "scheduledCount": len(self.rows), "egress": {"state": "unavailable"}}
+
+    def loop(self, stop):
+        while not stop.is_set():
+            self.collect()
+            stop.wait(self.interval)
+
+
+collector = Collector()
 
 
 class Dashboard(BaseHTTPRequestHandler):
@@ -54,11 +109,18 @@ class Dashboard(BaseHTTPRequestHandler):
         elif self.path == "/api/history":
             mime = "application/json"
             try:
-                status, body = 200, json.dumps(history()).encode()
+                with collector.lock:
+                    if not collector.database or collector.database["state"] != "reachable":
+                        raise RuntimeError("Scheduled history unavailable")
+                    status, body = 200, json.dumps(collector.rows).encode()
             except (OSError, ValueError, RuntimeError):
                 status, body = 503, b'{"error":"Scheduled history is temporarily unavailable."}'
         elif self.path == "/api/health":
-            status, mime, body = 200, "application/json", json.dumps(probe()).encode()
+            collector.collect()
+            status, mime, body = 200, "application/json", json.dumps(collector.app).encode()
+        elif self.path == "/v2/overview":
+            with collector.lock:
+                status, mime, body = 200, "application/json", json.dumps(collector.overview()).encode()
         elif self.path == "/healthz":
             status, mime, body = 200, "application/json", b'{"status":"ok"}'
         else:
@@ -74,4 +136,6 @@ class Dashboard(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
+    stop = threading.Event()
+    threading.Thread(target=collector.loop, args=(stop,), daemon=True).start()
     ThreadingHTTPServer(("0.0.0.0", int(os.environ.get("PORT", "8765"))), Dashboard).serve_forever()

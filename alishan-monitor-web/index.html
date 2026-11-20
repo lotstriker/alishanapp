@@ -14,6 +14,7 @@ section{background:var(--paper);border:1px solid var(--line);border-radius:14px;
 button{border:0;border-radius:9px;background:var(--accent);color:#2a0a14;font:inherit;font-weight:700;padding:9px 15px;min-height:44px;cursor:pointer}button:disabled{opacity:.65;cursor:wait}:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 select,input,textarea{display:block;width:100%;color:inherit;background:#210b14;border:1px solid #9b5d70;border-radius:8px;padding:9px;font:inherit;margin:5px 0 12px}textarea{resize:vertical;font:14px/1.45 ui-monospace,monospace}textarea::placeholder,input::placeholder{color:#c9a39b}label,summary{font-weight:600}summary{cursor:pointer;color:var(--focus)}details{margin-top:12px}
 table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:600}.numeric{white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}.table{overflow-x:auto}.events{padding-left:20px}.events li{margin:8px 0}.events time{display:block;color:var(--muted);font-size:13px}#message{min-height:24px;margin:6px 0;color:var(--focus)}.subtle{font-size:14px;color:#c9a39b}@media(max-width:740px){.grid{grid-template-columns:1fr}section{padding:15px}}
+.health-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}.health-grid article{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}.health-grid strong{display:block;font-size:22px}.health-grid small{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -22,8 +23,15 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 <a href="https://alishanapp-server.onrender.com">Open Alishan app</a>
 </div></div>
 <main>
-<header><h1>Alishan Monitor</h1><span id="health" class="pill" role="status">Waiting for first check</span></header>
-<section><h2>Live health</h2><p id="last">Checking the Alishan health endpoint…</p><p class="subtle">Scheduled checks run every 20 minutes, even when this tab is closed. Imported Android timings stay in this browser.</p><p id="schedule" class="subtle" role="status"></p><button id="check" type="button">Check now</button><details><summary>Recent checks</summary><div class="table"><table><thead><tr><th>Time</th><th>Source</th><th>Result</th><th class="numeric">Round trip</th></tr></thead><tbody id="checks"></tbody></table></div></details></section>
+<header><h1>Alishan Control Center</h1><span id="health" class="pill" role="status">Waiting for first check</span></header>
+<section><h2>System health</h2>
+<div class="health-grid">
+<article>App reachability<strong id="app-state">Unknown</strong><small id="app-age">Waiting for collector</small></article>
+<article>Health round trip<strong id="app-latency">—</strong><small>Includes network and probe processing</small></article>
+<article>Supabase monitor storage<strong id="database-state">Unknown</strong><small id="database-age">Separate history RPC probe</small></article>
+<article>Monthly egress<strong>Unavailable</strong><small>Billing source pending</small></article>
+</div>
+<p id="finding" role="status"></p><h2>Live checks</h2><p id="last">Checking the Alishan health endpoint…</p><p class="subtle">Scheduled checks run every 20 minutes, even when this tab is closed. Imported Android timings stay in this browser.</p><p id="schedule" class="subtle" role="status"></p><button id="check" type="button">Check now</button><details><summary>Recent checks</summary><div class="table"><table><thead><tr><th>Time</th><th>Source</th><th>Result</th><th class="numeric">Round trip</th></tr></thead><tbody id="checks"></tbody></table></div></details></section>
 <div class="grid">
 <section><h2>Speed by release</h2><p><a style="color:var(--focus)" href="https://alishanapp-server.onrender.com/performance.html">Open automatic page performance</a> · Alishan sign-in required</p><p>v103 Android baseline se median compare karein. Same phone aur network ke samples use karein.</p><label for="release">Compare release</label><select id="release"></select><div class="table"><table><thead><tr><th>Measurement</th><th class="numeric">v103</th><th id="comparison" class="numeric">Selected</th><th class="numeric">Difference</th></tr></thead><tbody id="speed"></tbody></table></div></section>
 <section><h2>Import Android timings</h2><form id="import"><label for="version">App release</label><input id="version" placeholder="v104" required pattern="v[1-9][0-9]{0,5}"><label for="samples">Speed Timings JSON</label><textarea id="samples" rows="6" required placeholder="Paste the full JSON array"></textarea><button type="submit">Import timings</button><p id="message" role="status"></p></form></section>
@@ -126,9 +134,8 @@ async function checkHealth() {
 }
 function displayStatus(data) {
   state = data;
-  const recent = data.checks[0], health = byId('health');
-  health.textContent = recent ? recent.kind === 'ok' ? 'Reachable' : 'Check failed' : 'Waiting for first check';
-  health.className = 'pill' + (recent ? recent.kind === 'ok' ? ' ok' : ' bad' : '');
+  const recent = data.checks[0];
+
   byId('last').textContent = recent ? localTime(recent.at) + ' · ' + recent.kind + ' · ' + fmt(recent.ms) : 'Checking the Alishan health endpoint…';
   byId('checks').replaceChildren();
   data.checks.forEach(row => cellRow(byId('checks'),[localTime(row.at),row.source,row.kind,fmt(row.ms)]));
@@ -191,7 +198,7 @@ byId('check').addEventListener('click',async event => {
   button.textContent = 'Checking…';
   try {
     await checkHealth();
-    refresh();
+    await backgroundRefresh();
   } catch (error) { byId('last').textContent = error.message; }
   finally { button.disabled = false; button.textContent = 'Check now'; }
 });
@@ -210,9 +217,34 @@ byId('import').addEventListener('submit',async event => {
   } catch (error) { message.textContent = error.message; }
   finally { button.disabled = false; }
 });
+async function loadOverview() {
+  const labels = {reachable:'Reachable', verifying:'Verifying', unavailable:'Unavailable', unknown:'Unknown'};
+  const badge = byId('health');
+  try {
+    const response = await fetch('/v2/overview',{cache:'no-store'});
+    if (!response.ok) throw Error('Collector unavailable');
+    const value = await response.json();
+    badge.textContent = byId('app-state').textContent = labels[value.appState];
+    badge.className = 'pill' + (value.appState === 'reachable' ? ' ok' : value.appState === 'unavailable' ? ' bad' : '');
+    byId('app-age').textContent = value.app ? (value.stale ? 'Stale · ' : 'Last check · ')+localTime(value.app.id) : 'Waiting for collector';
+    byId('app-latency').textContent = fmt(value.app?.ms);
+    byId('database-state').textContent = (!value.stale && labels[value.database?.state]) || 'Unknown';
+    byId('database-age').textContent = value.database ? 'History RPC · '+localTime(value.database.at) : 'Waiting for history RPC';
+    byId('finding').textContent = value.appState === 'unavailable' ? 'Critical · Direct and scheduled app checks failed. Inspect Render and the app dependency logs.' :
+      value.appState === 'verifying' ? 'Verifying · Recent app probe failed. Waiting for corroboration.' :
+      value.stale ? 'Monitoring data is stale or pending.' :
+      value.events[0]?.state === 'reachable' ? 'Recovery observed · '+localTime(value.events[0].at) : '';
+  } catch {
+    badge.textContent = byId('app-state').textContent = byId('database-state').textContent = 'Unknown';
+    badge.className = 'pill';
+    byId('app-latency').textContent = '—';
+    byId('app-age').textContent = byId('database-age').textContent = 'Collector unavailable';
+    byId('finding').textContent = 'Could not read the monitor collector.';
+  }
+}
 async function backgroundRefresh() {
   if (document.hidden) return;
-  await loadHistory();
+  await Promise.all([loadHistory(),loadOverview()]);
 }
 refresh();
 backgroundRefresh();
