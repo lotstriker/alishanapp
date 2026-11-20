@@ -15,28 +15,35 @@ button{border:0;border-radius:9px;background:var(--accent);color:#2a0a14;font:in
 select,input,textarea{display:block;width:100%;color:inherit;background:#210b14;border:1px solid #9b5d70;border-radius:8px;padding:9px;font:inherit;margin:5px 0 12px}textarea{resize:vertical;font:14px/1.45 ui-monospace,monospace}textarea::placeholder,input::placeholder{color:#c9a39b}label,summary{font-weight:600}summary{cursor:pointer;color:var(--focus)}details{margin-top:12px}
 table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:600}.numeric{white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}.table{overflow-x:auto}.events{padding-left:20px}.events li{margin:8px 0}.events time{display:block;color:var(--muted);font-size:13px}#message{min-height:24px;margin:6px 0;color:var(--focus)}.subtle{font-size:14px;color:#c9a39b}@media(max-width:740px){.grid{grid-template-columns:1fr}section{padding:15px}}
 .health-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}.health-grid article{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}.health-grid strong{display:block;font-size:22px}.health-grid small{color:var(--muted)}
+:root{--soft:#000;--paper:#101010;--ink:#f7f8fb;--muted:#bdc4d0;--line:#313641;--accent:#9fc4ff;--focus:#b9d3ff;--button:#10203b}
+:root[data-theme="light"]{color-scheme:light;--soft:#fff;--paper:#fff;--ink:#141c2b;--muted:#485671;--line:#ccd5e5;--accent:#1854a4;--focus:#184d99;--button:#fff}
+.topbar{background:var(--paper);border-color:var(--line)}:root[data-theme="light"] .top-inner img{background:#17233a;padding:6px;border-radius:6px}.subtle{color:var(--muted)}
+button{color:var(--button)}select,input,textarea{background:var(--soft);border-color:var(--line)}
+textarea::placeholder,input::placeholder{color:var(--muted)}.pill{background:var(--paper);border:1px solid var(--line);color:var(--ink)}.pill.ok{background:#174632;color:#dcffeb}.pill.bad{background:#792a36;color:#fff3f4}
+.top-actions,.section-nav{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.section-nav{margin-bottom:18px}.section-nav a{color:var(--focus)}.chart{display:grid;gap:8px}.chart-row{display:grid;grid-template-columns:minmax(52px,90px) 1fr auto;gap:10px;align-items:center;font-size:14px}.chart-track{height:10px;background:var(--line);border-radius:8px}.chart-bar{height:100%;background:var(--accent);border-radius:8px}.services{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;padding:0;list-style:none}.services li{background:var(--soft);border:1px solid var(--line);padding:12px;border-radius:10px}.services small{display:block;color:var(--muted)}
 </style>
 </head>
 <body>
 <div class="topbar"><div class="top-inner">
 <img src="/wordmark.png" alt="Alishan">
-<a href="https://alishanapp-server.onrender.com">Open Alishan app</a>
+<div class="top-actions"><a href="https://alishanapp-server.onrender.com">Open Alishan app</a><button type="button" id="theme">Switch to Pure White</button></div>
 </div></div>
 <main>
 <header><h1>Alishan Control Center</h1><span id="health" class="pill" role="status">Waiting for first check</span></header>
-<section><h2>System health</h2>
+<nav class="section-nav" aria-label="Monitor sections"><a href="#system">Health</a><a href="#performance">Performance</a><a href="#dependencies">Dependencies</a><a href="#recovery">Recovery</a><a href="#warnings">Warnings</a></nav>
+<section id="system"><h2>System health</h2>
 <div class="health-grid">
 <article>App reachability<strong id="app-state">Unknown</strong><small id="app-age">Waiting for collector</small></article>
 <article>Health round trip<strong id="app-latency">—</strong><small>Includes network and probe processing</small></article>
 <article>Supabase monitor storage<strong id="database-state">Unknown</strong><small id="database-age">Separate history RPC probe</small></article>
 <article>Monthly egress<strong>Unavailable</strong><small>Billing source pending</small></article>
 </div>
-<p id="finding" role="status"></p><h2>Live checks</h2><p id="last">Checking the Alishan health endpoint…</p><p class="subtle">Scheduled checks run every 20 minutes, even when this tab is closed. Imported Android timings stay in this browser.</p><p id="schedule" class="subtle" role="status"></p><button id="check" type="button">Check now</button><details><summary>Recent checks</summary><div class="table"><table><thead><tr><th>Time</th><th>Source</th><th>Result</th><th class="numeric">Round trip</th></tr></thead><tbody id="checks"></tbody></table></div></details></section>
+<p id="finding" role="status"></p><h2>Recent successful health checks</h2><div id="health-chart" class="chart" aria-label="Health round trip in milliseconds"></div><h2 style="margin-top:18px">Live checks</h2><p id="last">Checking the Alishan health endpoint…</p><p class="subtle">Scheduled checks run every 20 minutes, even when this tab is closed. Imported Android timings stay in this browser.</p><p id="schedule" class="subtle" role="status"></p><button id="check" type="button">Check now</button><details><summary>Recent checks</summary><div class="table"><table><thead><tr><th>Time</th><th>Source</th><th>Result</th><th class="numeric">Round trip</th></tr></thead><tbody id="checks"></tbody></table></div></details></section>
 <div class="grid">
 <section><h2>Speed by release</h2><p><a style="color:var(--focus)" href="https://alishanapp-server.onrender.com/performance.html">Open automatic page performance</a> · Alishan sign-in required</p><p>v103 Android baseline se median compare karein. Same phone aur network ke samples use karein.</p><label for="release">Compare release</label><select id="release"></select><div class="table"><table><thead><tr><th>Measurement</th><th class="numeric">v103</th><th id="comparison" class="numeric">Selected</th><th class="numeric">Difference</th></tr></thead><tbody id="speed"></tbody></table></div></section>
 <section><h2>Import Android timings</h2><form id="import"><label for="version">App release</label><input id="version" placeholder="v104" required pattern="v[1-9][0-9]{0,5}"><label for="samples">Speed Timings JSON</label><textarea id="samples" rows="6" required placeholder="Paste the full JSON array"></textarea><button type="submit">Import timings</button><p id="message" role="status"></p></form></section>
 </div>
-<section><h2>Page performance by release</h2>
+<section id="performance"><h2>Page performance by release</h2>
 <p>Import measured page timings with their test conditions. Compare releases within one cohort.</p>
 <form id="cohort-import">
 <label for="cohort-json">Timing JSON</label>
@@ -53,14 +60,55 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 <label>Compare release<select id="cohort-next"></select></label>
 </div>
 <div class="table"><table><thead><tr><th>Release</th><th>Samples</th><th>p50</th><th>p95</th></tr></thead><tbody id="cohort-rows"></tbody></table></div>
-<p id="cohort-finding" role="status"></p>
+<h3>p95 by release</h3><div id="release-chart" class="chart" aria-label="p95 by release in milliseconds"></div><p id="cohort-finding" role="status"></p>
 </section>
-<section><h2>Warning history</h2><p class="subtle">Health warning after two failed checks. Speed warning after at least three samples when the median is at least 25% and 50 ms above the baseline.</p><ol id="events" class="events"></ol><p id="empty">No warnings recorded yet.</p></section>
+<section id="dependencies"><h2>Dependency map</h2>
+<p>Alishan traffic flows from the app to Render APIs and then to Supabase. The scheduler and monitor observe that path separately.</p>
+<ul class="services">
+<li><strong>Render app and APIs</strong><small id="dependency-app">Waiting for app health check</small><small>Failure can affect page opening, server-side reads and saves.</small></li>
+<li><strong>Supabase database</strong><small id="dependency-db">Waiting for monitoring history check</small><small>Database failure can affect records, payments and backup jobs.</small></li>
+<li><strong>Scheduled checks</strong><small id="dependency-schedule">Waiting for scheduled history</small><small>Failure reduces monitoring coverage. App health needs separate evidence.</small></li>
+<li><strong>External sign-in</strong><small>Direct probe unavailable</small><small>Failure can affect new sign-ins where the provider is enabled.</small></li>
+</ul></section>
+<section id="recovery"><h2>Backup and recovery</h2><p>Recovery telemetry is awaiting integration. The production backup contents stay in AlishanApp.</p>
+<div class="table"><table><thead><tr><th>Signal</th><th>Status</th><th>Meaning</th></tr></thead><tbody>
+<tr><td>Last successful backup</td><td>Unavailable</td><td>Last completed backup and its age</td></tr>
+<tr><td>Restore verification</td><td>Unavailable</td><td>Last isolated restore with integrity checks</td></tr>
+<tr><td>Recovery time (RTO)</td><td>Unavailable</td><td>Time to restore a working service in a drill, compared with target</td></tr>
+<tr><td>Recovery point (RPO)</td><td>Unavailable</td><td>Age of the newest verified recoverable data, compared with target</td></tr>
+</tbody></table></div>
+<h3>Runbooks</h3><p>Health checks are available. Retry and cache invalidation are awaiting approval controls. Destructive actions, deployments and database changes require explicit approval.</p>
+</section>
+<section id="warnings"><h2>Warning history</h2><p class="subtle">Health warning after two failed checks. Speed warning after at least three samples when the median is at least 25% and 50 ms above the baseline.</p><ol id="events" class="events"></ol><p id="empty">No warnings recorded yet.</p></section>
 </main>
 <script>
 const byId = id => document.getElementById(id);
 const fmt = n => n == null ? '—' : n + ' ms';
 const localTime = time => new Date(time).toLocaleString();
+const root = document.documentElement;
+function setTheme(theme) {
+  root.dataset.theme = theme;
+  byId('theme').textContent = theme === 'light' ? 'Switch to AMOLED Black' : 'Switch to Pure White';
+}
+try { setTheme(localStorage.getItem('alishan-monitor-theme') === 'light' ? 'light' : 'dark'); } catch { setTheme('dark'); }
+byId('theme').addEventListener('click',()=>{
+  const theme = root.dataset.theme === 'light' ? 'dark' : 'light';
+  setTheme(theme);
+  try { localStorage.setItem('alishan-monitor-theme',theme); } catch {}
+});
+function drawChart(id, readings) {
+  const target = byId(id);
+  target.replaceChildren();
+  if (!readings.length) { target.textContent = 'No measured samples yet.'; return; }
+  const max = Math.max(1,...readings.map(row=>row.ms));
+  for (const {label,ms} of readings) {
+    const row = document.createElement('div'), track = document.createElement('div'), bar = document.createElement('div');
+    row.className = 'chart-row'; track.className = 'chart-track'; bar.className = 'chart-bar';
+    track.setAttribute('aria-hidden','true'); bar.style.width = 100*ms/max+'%'; track.append(bar);
+    row.append(label,track,fmt(ms)); target.append(row);
+  }
+}
+
 let state;
 let scheduledChecks = [];
 let historyError = null;
@@ -156,6 +204,7 @@ function displayStatus(data) {
   const recent = data.checks[0];
 
   byId('last').textContent = recent ? localTime(recent.at) + ' · ' + recent.kind + ' · ' + fmt(recent.ms) : 'Checking the Alishan health endpoint…';
+  drawChart('health-chart',data.checks.filter(row=>row.kind==='ok'&&Number.isFinite(row.ms)&&row.ms>=0).slice(0,8).reverse().map(row=>({label:new Date(row.at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),ms:row.ms})));
   byId('checks').replaceChildren();
   data.checks.forEach(row => cellRow(byId('checks'),[localTime(row.at),row.source,row.kind,fmt(row.ms)]));
   const select = byId('release'), current = select.value;
@@ -199,6 +248,7 @@ function refresh() {
   byId('schedule').textContent = historyError || (stale ? 'Scheduled checker is late. Last scheduled check · '+localTime(scheduled.at) :
     scheduled ? 'Last scheduled check · '+localTime(scheduled.at) :
     historyLoaded ? 'Waiting for the first scheduled result.' : 'Loading scheduled history…');
+  byId('dependency-schedule').textContent = byId('schedule').textContent;
 }
 async function loadHistory() {
   try {
@@ -249,6 +299,8 @@ async function loadOverview() {
     byId('app-latency').textContent = fmt(value.app?.ms);
     byId('database-state').textContent = (!value.stale && labels[value.database?.state]) || 'Unknown';
     byId('database-age').textContent = value.database ? 'History RPC · '+localTime(value.database.at) : 'Waiting for history RPC';
+    byId('dependency-app').textContent = byId('app-state').textContent;
+    byId('dependency-db').textContent = 'Monitor history RPC · '+byId('database-state').textContent;
     byId('finding').textContent = value.appState === 'unavailable' ? 'Critical · Direct and scheduled app checks failed. Inspect Render and the app dependency logs.' :
       value.appState === 'verifying' ? 'Verifying · Recent app probe failed. Waiting for corroboration.' :
       value.stale ? 'Monitoring data is stale or pending.' :
@@ -258,6 +310,7 @@ async function loadOverview() {
     badge.className = 'pill';
     byId('app-latency').textContent = '—';
     byId('app-age').textContent = byId('database-age').textContent = 'Collector unavailable';
+    byId('dependency-app').textContent = byId('dependency-db').textContent = 'Unknown · Collector unavailable';
     byId('finding').textContent = 'Could not read the monitor collector.';
   }
 }
@@ -313,6 +366,7 @@ function showCohorts() {
   const base = byId('cohort-base').value, candidate = byId('cohort-next').value;
   const rows = byId('cohort-rows'); rows.replaceChildren();
   const sample = release=>selected.filter(row=>row.release===release).map(row=>row.ms);
+  drawChart('release-chart',[...new Set([base,candidate])].filter(release=>sample(release).length).map(release=>({label:'v'+release,ms:percentile(sample(release),.95)})));
   for (const release of new Set([base,candidate])) {
     const values = sample(release);
     if (values.length) cellRow(rows,['v'+release,values.length,fmt(percentile(values,.5)),fmt(percentile(values,.95))]);
