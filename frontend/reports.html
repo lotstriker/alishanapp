@@ -1940,12 +1940,16 @@
             try { TAB_DRAW[name](); } catch (err) { console.error(`Reports: ${name} tab failed`, err); }
         }
 
-        function refreshAllReports(recomputeScope) {
+        function refreshAllReports(recomputeScope, visit) {
+            const scopeStarted = performance.now();
             if (recomputeScope) applyScope();
+            window.AlishanPerformance?.phase('reportScopeMs', scopeStarted, visit);
+            const renderStarted = performance.now();
             pendingPage = 1; historyPage = 1; weeklyPage = 1;
             staleTabs = new Set(Object.keys(TAB_DRAW));
             try { updateDashboard(); } catch (err) { console.error('Reports: cards failed', err); }
             drawTab(currentTab());
+            return renderStarted;
         }
 
         // ================= START UP =================
@@ -1956,18 +1960,25 @@
                 AlishanDB: 'db.js', AlishanCalc: 'calc.js', AlishanStore: 'store.js', CommonPagination: 'common-pagination.js',
                 ItemForm: 'item-form.js', ItemModal: 'item-modal.js', ReportEngine: 'report-engine.js', ReportViews: 'report-views.js'
             }, { AlishanSearch: 'search.js', AlishanLoader: 'loader.js', ItemCard: 'item-card.js' }))) return;
-            const info = await AlishanStore.init();         // qualities, colours, inventory, payments
+            const visit = window.AlishanPerformance?.current();
+            const storeStarted = performance.now();
+            const info = await AlishanStore.init();
+            window.AlishanPerformance?.phase('storeWaitMs', storeStarted, visit);
+            window.AlishanPerformance?.dataReady();
             if (info.referenceError) showNotification(info.referenceError, 'error');
             if (info.damaged) showNotification(`${info.damaged} damaged item(s) were set aside and backed up.`, 'warning');
 
+            const setupStarted = performance.now();
             setupEventListeners();
             populateFilters();
             if (typeof AlishanSearch !== 'undefined') AlishanSearch.init({ onSearch });   // the shared search box (search.js)
-            refreshAllReports(true);
+            window.AlishanPerformance?.phase('reportSetupMs', setupStarted, visit);
+            const renderStarted = refreshAllReports(true, visit);
             checkLowStock();
+            if (window.ReportViews) ReportViews.init(); // report cards and the open report
+            window.AlishanPerformance?.phase('reportRenderMs', renderStarted, visit);
             window.AlishanTimings?.pageReady('Reports');
-    window.AlishanPerformance?.ready();
-            if (window.ReportViews) ReportViews.init();          // the eight report cards / the open report
+            window.AlishanPerformance?.ready();          // the eight report cards / the open report
 
             // redraw whenever the store changes: a payment, a stock toggle (also from the
             // Aging tab button), an edit in another page or another tab ...

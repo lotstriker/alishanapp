@@ -2,6 +2,11 @@
  'use strict';
  const $ = id => document.getElementById(id);
  const names = {'index':'Dashboard','inventory':'Inventory','reports':'Reports','setting':'Settings','add-entry':'Add Entry','pending-amount':'Pending Amount','missing-lot':'Missing Lot','missing-completion':'Missing Completion','quality-history':'Quality History'};
+ const startupMeasures = [
+  ['storeWaitMs','Reports shared store wait'], ['reportSetupMs','Reports filters and event setup'], ['reportScopeMs','Reports calculation and scope'],
+  ['reportRenderMs','Reports render and setup'], ['deviceCacheReadMs','Wait for device cache'],
+  ['startupRefreshMs','Startup bundle (saved or fetched)'], ['startupFetchMs','Startup bundle network request']
+ ];
  const measures = [
   ['switchMs','Tap to content'], ['readyMs','Page ready'], ['startupDataReadyMs','Startup data ready'], ['criticalPaintMs','Key content visible'], ['dataToCriticalMs','Data to key content'], ['routePrepareMs','Route preparation'], ['loadMs','Load event'],
   ['domMs','DOM ready'], ['documentWaitMs','Document wait'], ['documentDownloadMs','HTML download'],
@@ -32,7 +37,7 @@
   $('visit-title').textContent=(names[visit.page]||visit.page)+' · '+types[visit.visitType];
   $('visit-note').textContent=visit.release+' · '+new Date(visit.received_at).toLocaleString()+' · '+measure(visit.metrics.readyMs,'readyMs')+' ready. Measurements may overlap.';
   const host=$('visit-bars');host.replaceChildren();
-  const measured=measures.filter(([key])=>!['apiCount','apiErrors'].includes(key)&&Number.isFinite(visit.metrics[key]));
+  const measured=[...measures,...startupMeasures].filter(([key])=>!['apiCount','apiErrors'].includes(key)&&Number.isFinite(visit.metrics[key]));
   const scale=Math.max(1,...measured.map(([key])=>visit.metrics[key]));
   for(const [key,label] of measured){
    const line=document.createElement('div'), track=document.createElement('span'), bar=document.createElement('i'), value=document.createElement('strong');

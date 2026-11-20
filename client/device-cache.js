@@ -76,7 +76,12 @@
    const generation=epoch;
    const task=(async()=>{
     const previous=key&&ram.get(key),conditional=previous?.etag?{etag:previous.etag,value:clone(previous.value),unchanged:false}:null;
-    const result=await network(target,method,args,conditional);
+    const isBundle=target==='Views'&&method==='pageBundle';
+    const visit=isBundle?root.AlishanPerformance?.current():undefined;
+    const started=visit?root.performance.now():undefined;
+    let result;
+    try { result=await network(target,method,args,conditional); }
+    finally { if(visit)root.AlishanPerformance?.phase('startupFetchMs',started,visit); }
     if(conditional?.unchanged){if(generation===epoch&&ram.get(key)===previous){previous.at=now();saveSoon();}return result;}
     const etag=await digest(result);
     if(generation===epoch){if(target==='Views'&&['inventoryPage','homeLatest','pageBundle'].includes(method))await seed(result?.primes,generation);
@@ -97,7 +102,9 @@
   }
   async function call(target,method,args){
    if(!enabled)return network(target,method,args);
+   const cacheStarted=root.performance?.now(), cacheVisit=root.AlishanPerformance?.current();
    await ready;
+   if(cacheStarted!==undefined&&cacheVisit)root.AlishanPerformance?.phase('deviceCacheReadMs',cacheStarted,cacheVisit);
    const reader=isReader(target,method);
    if(!reader){
     // Even an uncertain write clears old views. Never retry or optimistically acknowledge a write.

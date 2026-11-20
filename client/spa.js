@@ -58,6 +58,8 @@
    if(key==='addEventListener')return (...args)=>listen(realWindow,...args);
    if(key==='removeEventListener')return (...args)=>unlisten(realWindow,...args);
    if(key==='AlishanPerformance')return {
+    current:()=>isActive()?realWindow.AlishanPerformance?.current():undefined,
+    phase:(...args)=>{if(isActive())realWindow.AlishanPerformance?.phase(...args);},
     ready:()=>{if(isActive())realWindow.AlishanPerformance?.ready();},
     dataReady:()=>{if(isActive())realWindow.AlishanPerformance?.dataReady();},
     criticalPaint:()=>{if(isActive())realWindow.AlishanPerformance?.criticalPaint();}
@@ -184,17 +186,22 @@
   const page={route,body:document.body,styles:routeStyles(document.head),title:document.title,listeners:[]};
   active=page;pages.set(route,page);
   page.scope=scopeFor(page);factories.get(route)(page.scope);page.scope.runReady();
-  // Warm only the Settings shell after the initial document has settled.
-  if(route!=='setting'){
-   const warmSettings=()=>setTimeout(()=>{
+  // Warm one shell per idle turn after the initial document has settled.
+  {
+   const warmShells=()=>setTimeout(()=>{
     const connection=navigator.connection;
     if(blocked||document.hidden||navigator.onLine===false||connection?.saveData||['slow-2g','2g'].includes(connection?.effectiveType))return;
-    const warm=()=>{if(!blocked&&!document.hidden)void loadPage('setting').catch(()=>{});};
-    if(window.requestIdleCallback)window.requestIdleCallback(warm);
-    else warm();
+    const idle=callback=>window.requestIdleCallback?window.requestIdleCallback(callback):setTimeout(callback,0);
+    const next=async(queue)=>{
+     if(blocked||document.hidden||navigator.onLine===false||!queue.length)return;
+     const target=queue.shift();
+     try { if(active?.route!==target)await loadPage(target); } catch {}
+     if(queue.length)idle(()=>void next(queue));
+    };
+    idle(()=>void next(['setting','add-entry']));
    },3000);
-   if(document.readyState==='complete')warmSettings();
-   else window.addEventListener('load',warmSettings,{once:true});
+   if(document.readyState==='complete')warmShells();
+   else window.addEventListener('load',warmShells,{once:true});
   }
   history.replaceState({alishanSpa:true},'',location.href);
   history.scrollRestoration='manual';

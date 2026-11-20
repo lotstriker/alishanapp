@@ -15,6 +15,8 @@
   sessionStorage.removeItem('alishan:performance-next');
  } catch {}
  let ready, dataReady, criticalPaint, first, last, count = 0, failures = 0, longest, sending = false, recorded = false;
+ const phaseNames = new Set(['storeWaitMs','reportScopeMs','reportRenderMs','deviceCacheReadMs','startupRefreshMs','startupFetchMs','reportSetupMs']);
+ const phases = {};
  const headers = {'Content-Type':'application/json','X-Alishan-Scope':scope};
  const getQueue = () => {
   try { return JSON.parse(sessionStorage.getItem(queueKey) || '[]'); } catch { return []; }
@@ -37,7 +39,7 @@
  function record() {
   if (recorded || !routes.has(page)) return;
   const nav = spaStart===undefined ? performance.getEntriesByType?.('navigation')?.[0] : null;
-  const metrics = {visitType,routePrepareMs,apiCount:count,apiErrors:failures,readyMs:ready===undefined?undefined:ready-(spaStart??0)};
+  const metrics = {...phases,visitType,routePrepareMs,apiCount:count,apiErrors:failures,readyMs:ready===undefined?undefined:ready-(spaStart??0)};
   if (spaStart!==undefined&&ready!==undefined) metrics.switchMs=ready-spaStart;
   if (dataReady!==undefined) metrics.startupDataReadyMs=dataReady-(spaStart??0);
   if (criticalPaint!==undefined) metrics.criticalPaintMs=criticalPaint-(spaStart??0);
@@ -78,6 +80,7 @@
    page=next;visit=crypto.randomUUID();spaStart=started;
    visitType=reused?'return-route':'first-route';routePrepareMs=prepareMs;
    ready=dataReady=criticalPaint=first=last=longest=pendingNavigation=undefined;
+   for (const name of phaseNames) delete phases[name];
    count=failures=0;recorded=false;
    try { sessionStorage.removeItem('alishan:performance-next'); } catch {}
    deadline=setTimeout(record,15000);
@@ -89,6 +92,9 @@
    if (!recorded&&criticalPaint===undefined) criticalPaint=performance.now();
   },
   current:()=>visit,
+  phase(name, start, key) {
+   if (!recorded && key===visit && phaseNames.has(name) && phases[name]===undefined) phases[name]=performance.now()-start;
+  },
   ready() {
    if (!routes.has(page) || ready !== undefined) return;
    const key=visit;
