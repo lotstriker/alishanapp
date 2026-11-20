@@ -89,6 +89,9 @@ section{scroll-margin-top:12px}.chart-row{grid-template-columns:minmax(74px,110p
 <div class="card-heading"><div><h2>Backend, API &amp; releases</h2><p>Operational snapshots from authorized sources</p></div><span id="operations-state" class="status neutral">No data</span></div>
 <div class="table"><table><thead><tr><th>API route</th><th>Requests</th><th>5xx</th><th>p95</th><th>DB wait</th></tr></thead><tbody id="api-rows"></tbody></table></div>
 <div class="table"><table><thead><tr><th>Query family</th><th>Calls</th><th>Returned rows</th></tr></thead><tbody id="db-rows"></tbody></table></div>
+<h3>Live release &amp; server start</h3><p id="live-release">Awaiting live release data.</p>
+<h3>Live page timings</h3><p>Seven-day aggregate. Document load, first visit and return visit are reported separately. Paint columns use supported browser observations.</p>
+<div class="table"><table><thead><tr><th>Page</th><th>Release</th><th>Scenario</th><th>Samples</th><th>Ready p50</th><th>Ready p95</th><th>FCP p50</th><th>Observed LCP p50</th></tr></thead><tbody id="live-page-rows"></tbody></table></div>
 <h3>Release history</h3><div class="table"><table><thead><tr><th>Release</th><th>Commit</th><th>Time</th><th>Outcome</th></tr></thead><tbody id="deploy-rows"></tbody></table></div>
 <details><summary>Import operational snapshot</summary><form id="operations-form">
 <p>Use a single reporting interval. Enter route templates and query family names. Leave out customer identifiers, raw SQL and payloads.</p>
@@ -354,6 +357,7 @@ async function loadOverview() {
     const value = await response.json();
     liveState=value;
     renderRecovery();
+    renderOperations();
     badge.textContent = byId('app-state').textContent = labels[value.appState];
     badge.className = 'pill' + (value.appState === 'reachable' ? ' ok' : value.appState === 'unavailable' ? ' bad' : value.appState === 'verifying' ? ' warn' : '');
     byId('app-age').textContent = value.app ? (value.stale ? 'Stale · ' : 'Last check · ')+localTime(value.app.id) : 'Waiting for collector';
@@ -367,8 +371,9 @@ async function loadOverview() {
       value.stale ? 'Monitoring data is stale or pending.' :
       value.events[0]?.state === 'reachable' ? 'Recovery observed · '+localTime(value.events[0].at) : '';
   } catch {
-    liveState={stale:true,backup:liveState?.backup,backupError:true};
+    liveState={stale:true,backup:liveState?.backup,backupError:true,operations:liveState?.operations,operationsError:true};
     renderRecovery();
+    renderOperations();
     badge.textContent = byId('app-state').textContent = byId('database-state').textContent = 'Unknown';
     badge.className = 'pill';
     byId('app-latency').textContent = '—';
@@ -574,8 +579,15 @@ function renderUsage() {
   drawChart('category-chart',Object.entries(usage.categories).map(([label,ms])=>({label,ms})),bytes);
 }
 function renderOperations() {
-  if(operations)badge('operations-state','Imported · '+localTime(operations.at),'neutral');
-  fillRows('api-rows',(operations?.routes||[]).map(row=>[row.route,row.requests,row.errors+' ('+(row.requests?Math.round(row.errors/row.requests*100):0)+'%)',fmt(row.p95),fmt(row.dbMs)]),'No API snapshot imported.');
+  const live=liveState?.operations;
+  if(live)badge('operations-state',(liveState.operationsError||liveState.stale?'Stale · ':'Live · ')+localTime(live.at),liveState.operationsError||liveState.stale?'warn':'good');
+  else if(operations)badge('operations-state','Imported · '+localTime(operations.at),'neutral');
+  byId('live-release').textContent=live?'v'+live.release+' · '+(live.commit?.slice(0,12)||'Commit unavailable')+' · Process started '+localTime(live.bootedAt):'Awaiting live release data.';
+  fillRows('live-page-rows',(live?.pages||[]).map(row=>[
+    ({index:'Dashboard',inventory:'Inventory',reports:'Reports',setting:'Settings','add-entry':'Add Entry'})[row.page]||row.page,
+    row.release,row.scenario||'Unknown',row.samples,fmt(row.p50),fmt(row.p95),fmt(row.fcpP50),fmt(row.lcpP50)
+  ]),'No eligible page samples yet.');
+  fillRows('api-rows',(live?.routes||operations?.routes||[]).map(row=>[row.route,row.requests,row.errors+' ('+(row.requests?Math.round(row.errors/row.requests*100):0)+'%)',fmt(row.p95),fmt(row.dbMs)]),'No API snapshot imported.');
   fillRows('db-rows',(operations?.queries||[]).map(row=>[row.name,row.calls,row.rows]),'No query statistics imported.');
   fillRows('deploy-rows',[...(operations?.deploys||[])].sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)).map(row=>[row.release,row.commit,localTime(row.at),row.status]),'No deployment snapshot imported.');
 }
@@ -636,7 +648,7 @@ function findings() {
   if(restore?.rto!==null&&restore?.rto>recovery?.rtoTarget&&recovery?.rtoTarget)result.push(['rto',finding('warn','Recovery time target missed',minutes(restore.rto)+' observed versus '+minutes(recovery.rtoTarget)+' target.','Review restore steps and repeat the drill.')]);
   if(restore?.rpo!==null&&restore?.rpo>recovery?.rpoTarget&&recovery?.rpoTarget)result.push(['rpo',finding('warn','Recovery point target missed',minutes(restore.rpo)+' observed versus '+minutes(recovery.rpoTarget)+' target.','Check backup frequency and verify a more recent restore point.')]);
   if(regression)result.push([regression.id,finding('warn','Page performance regression',regression.evidence,'Compare bundle wait, API timings and rendering. The p95 difference establishes impact, with cause still unverified.')]);
-  for(const route of operations?.routes||[]){
+  for(const route of (liveState?.operations&&!liveState.operationsError&&!liveState.stale?liveState.operations.routes:operations?.routes)||[]){
     if(route.requests>=20&&route.errors/route.requests>=.05)result.push(['api:'+route.route,finding('warn','API errors at '+route.route,route.errors+' of '+route.requests+' requests returned 5xx in the reported interval.','Inspect server logs. Use per-request DB timing to test dependency hypotheses.')]);
   }
   return result;

@@ -37,6 +37,19 @@ def backup_health():
     return {key: value.get(key) for key in ("enabled", "frequencyHours", "lastBackupAt", "nextDueAt", "checkedAt")}
 
 
+def operations_health():
+    token = os.environ.get("MONITOR_BACKUP_TOKEN")
+    if not token:
+        return None
+    request = Request(HEALTH.rsplit("/", 1)[0] + "/internal/monitor/operations",
+                      headers={"Authorization": "Bearer " + token})
+    with urlopen(request, timeout=10) as response:
+        value = json.loads(response.read(32768))
+    if not isinstance(value.get("routes"), list) or not isinstance(value.get("pages"), list):
+        raise ValueError("Invalid operations signal")
+    return value
+
+
 class Collector:
     def __init__(self, interval=1200):
         self.interval = interval
@@ -47,6 +60,8 @@ class Collector:
         self.rows = []
         self.backup = None
         self.backup_error = False
+        self.operations = None
+        self.operations_error = False
         self.failures = 0
         self.events = []
         self.previous_state = None
@@ -82,7 +97,15 @@ class Collector:
                 backup = backup_health()
             except (OSError, ValueError, AttributeError):
                 backup_error = True
+            operations, operations_error = None, False
+            try:
+                operations = operations_health()
+            except (OSError, ValueError, AttributeError):
+                operations_error = True
             with self.lock:
+                if operations is not None:
+                    self.operations = operations
+                self.operations_error = operations_error
                 if backup is not None:
                     self.backup = backup
                 self.backup_error = backup_error
@@ -112,7 +135,7 @@ class Collector:
             "unavailable" if self.failures >= 2 and corroborated else "verifying")
         return {"appState": state, "app": self.app, "database": self.database,
                 "stale": stale, "consecutiveFailures": self.failures, "events": self.events,
-                "scheduledCount": len(self.rows), "backup": self.backup, "backupError": self.backup_error, "egress": {"state": "unavailable"}}
+                "scheduledCount": len(self.rows), "backup": self.backup, "backupError": self.backup_error, "operations": self.operations, "operationsError": self.operations_error, "egress": {"state": "unavailable"}}
 
     def loop(self, stop):
         while not stop.is_set():
