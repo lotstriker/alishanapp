@@ -248,7 +248,7 @@ async function start(){
    const legacyOwner=process.env.LEGACY_OWNER_USER_ID||null;
    const {rows:[ownership]}=await pool.query(
      `SELECT EXISTS(SELECT 1 FROM alishan_private.records WHERE workspace_id=$1 AND store IN ('inventory','payments','archive','auditLog')) AS has_legacy,
-       EXISTS(SELECT 1 FROM auth.identities WHERE user_id::text=$2 AND provider='google') AS verified_owner`,
+       alishan_private.verified_google_owner($2) AS verified_owner`,
      [repository.workspace,legacyOwner]
    );
    if((ownership.has_legacy||legacyOwner)&&!ownership.verified_owner)
