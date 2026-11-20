@@ -133,7 +133,7 @@
    else node.setAttribute('media',original);
   }
  }
- function activate(page,url,mode,started){
+ function activate(page,url,mode,started,prepareMs){
   const old=active;
   if(old!==page){
    for(const id of ['deviceCacheStatus','alishan-timing-panel','alishan-sign-out']){const shared=document.getElementById(id);if(shared)page.body.append(shared);}
@@ -149,7 +149,7 @@
   }
   if(mode==='push')history.pushState({alishanSpa:true},'',url.href);
   if(old!==page){
-   window.AlishanPerformance?.navigate(page.route,started);
+   window.AlishanPerformance?.navigate(page.route,started,Boolean(page.scope),prepareMs);
    if(!page.scope){page.scope=scopeFor(page);factories.get(page.route)(page.scope);page.scope.runReady();}
    else {page.scope.enable();window.AlishanPerformance?.ready();}
    document.dispatchEvent(new Event('alishan:route'));
@@ -161,7 +161,7 @@
   try {
    const page=await loadPage(routeOf(url));
    if(ticket!==generation)return;
-   activate(page,url,mode,started);
+   activate(page,url,mode,started,performance.now()-started);
   } catch {
    if(ticket===generation){if(mode==='pop')location.reload();else location.assign(url.href);}
   }

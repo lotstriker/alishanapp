@@ -3,10 +3,10 @@
  const routes = new Set(['index','inventory','reports','setting','add-entry','missing-completion','missing-lot','pending-amount','quality-history']);
  let page = location.pathname === '/' ? 'index' : location.pathname.slice(1).replace(/\.html$/, '');
  const scope = window.ALISHAN_SESSION?.scope;
- if (!scope || !routes.has(page) || !crypto.randomUUID) return;
+ if (!scope || !crypto.randomUUID) return;
  const deviceKey = 'alishan:performance-device';
  const queueKey = 'alishan:performance-queue:' + scope;
- let visit = crypto.randomUUID(), spaStart, deadline;
+ let visit = crypto.randomUUID(), spaStart, deadline, visitType='document', routePrepareMs;
  let device = crypto.randomUUID(), pendingNavigation;
  try {
   device = localStorage.getItem(deviceKey) || device;
@@ -35,9 +35,9 @@
   finally { sending=false; }
  }
  function record() {
-  if (recorded) return;
+  if (recorded || !routes.has(page)) return;
   const nav = spaStart===undefined ? performance.getEntriesByType?.('navigation')?.[0] : null;
-  const metrics = {apiCount:count,apiErrors:failures,readyMs:ready===undefined?undefined:ready-(spaStart??0)};
+  const metrics = {visitType,routePrepareMs,apiCount:count,apiErrors:failures,readyMs:ready===undefined?undefined:ready-(spaStart??0)};
   if (spaStart!==undefined&&ready!==undefined) metrics.switchMs=ready-spaStart;
   if (nav) {
    if (nav.domContentLoadedEventEnd > 0) metrics.domMs = nav.domContentLoadedEventEnd;
@@ -69,11 +69,11 @@
   if (ready !== undefined && document.readyState === 'complete') setTimeout(record,0);
  }
  window.AlishanPerformance = {
-  navigate(next,started) {
-   if (!routes.has(next)) return;
+  navigate(next,started,reused,prepareMs) {
    record();
    clearTimeout(deadline);
    page=next;visit=crypto.randomUUID();spaStart=started;
+   visitType=reused?'return-route':'first-route';routePrepareMs=prepareMs;
    ready=first=last=longest=pendingNavigation=undefined;
    count=failures=0;recorded=false;
    try { sessionStorage.removeItem('alishan:performance-next'); } catch {}
@@ -81,7 +81,7 @@
   },
   current:()=>visit,
   ready() {
-   if (ready !== undefined) return;
+   if (!routes.has(page) || ready !== undefined) return;
    const key=visit;
    requestAnimationFrame(()=>requestAnimationFrame(()=>{
     if (key!==visit) return;
@@ -90,7 +90,7 @@
    }));
   },
   batch(start, headersAt, timing, ok, key) {
-   if ((key && key!==visit) || ready !== undefined || recorded) return;
+   if (!routes.has(page) || (key && key!==visit) || ready !== undefined || recorded) return;
    const end = performance.now();
    first = Math.min(first??start,start); last=end; count++;
    if (!ok) failures++;

@@ -14,7 +14,7 @@ function query(db, ...args) { return measureDatabase(() => db.query(...args)); }
 function connect(pool) { return measureDatabase(() => pool.connect()); }
 
 const pages = new Set(['index','inventory','reports','setting','add-entry','missing-completion','missing-lot','pending-amount','quality-history']);
-const fields = ['switchMs','domMs','loadMs','readyMs','documentWaitMs','documentDownloadMs','dataMs','apiWaitMs','apiServerMs','apiDbMs','apiNetworkMs','apiDecodeMs','afterApiMs','apiCount','apiErrors'];
+const fields = ['switchMs','routePrepareMs','domMs','loadMs','readyMs','documentWaitMs','documentDownloadMs','dataMs','apiWaitMs','apiServerMs','apiDbMs','apiNetworkMs','apiDecodeMs','afterApiMs','apiCount','apiErrors'];
 const id = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 
 function normalize(body) {
@@ -25,6 +25,8 @@ function normalize(body) {
     if (typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 600000) metrics[key] = Math.round(n);
   }
   if (!Object.keys(metrics).length) return null;
+  const mode = body.metrics?.visitType;
+  if (['document','first-route','return-route'].includes(mode)) metrics.visitType=mode;
   return {page:body.page,device:body.device,visit:body.visit,metrics};
 }
 

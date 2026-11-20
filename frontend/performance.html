@@ -7,6 +7,7 @@
 <title>Page performance · Alishan</title>
 <style>
 :root{color-scheme:dark;--bg:#1c0a11;--card:#2c1019;--text:#fdf0ec;--muted:#ebcdc5;--line:#5e2338;--accent:#d9967f}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,sans-serif}header{background:linear-gradient(110deg,#3a0f1d,#6e1f36)}header div,main{max-width:1100px;margin:auto;padding:14px 18px}header div{display:flex;align-items:center;justify-content:space-between;gap:12px}header img{width:130px;height:auto}a{color:var(--text)}main{padding-top:22px}h1{font-size:clamp(25px,5vw,36px);margin:0}p{color:var(--muted)}.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:end}label{display:grid;gap:3px;font-weight:650}select,button{font:inherit;padding:8px 12px;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:8px;min-height:44px}button{background:var(--accent);color:#2a0a14;font-weight:700;cursor:pointer}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,205px),1fr));gap:12px;margin:16px 0}.cards article,.history{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}.cards strong{display:block;font-size:24px}.cards small{color:var(--muted)}.history{overflow:auto;margin-bottom:22px}table{width:100%;border-collapse:collapse;white-space:nowrap;text-align:left;font-size:14px}td,th{border-bottom:1px solid var(--line);padding:9px}summary{cursor:pointer;color:#f0bba8}
+.detail-row{display:grid;grid-template-columns:minmax(95px,1fr) minmax(65px,1.5fr) auto;gap:8px;align-items:center;margin:9px 0;font-size:14px}.detail-track{height:7px;background:#542233;border-radius:5px}.detail-track i{display:block;height:100%;background:var(--accent);border-radius:5px}.inspect{min-height:36px;padding:4px 10px}.history h2{margin-top:0;font-size:20px}.history[hidden]{display:none}
 </style>
 <script src="/performance-view.js" defer></script>
 </head>
@@ -17,6 +18,8 @@
 <p id="account-status"></p>
 <div class="controls">
 <label>Release <select id="release"><option value="">All releases</option></select></label>
+<label>Visit type <select id="visitType"><option value="">All visit types</option></select></label>
+<label>Ready time <select id="slow"><option value="0">Any duration</option><option value="250">250 ms or more</option><option value="1000">1 second or more</option><option value="2000">2 seconds or more</option></select></label>
 <label>Page <select id="page"><option value="">All pages</option></select></label>
 <label>Account <select id="account"><option value="">All listed accounts</option></select></label>
 <label>Device <select id="device"><option value="">All devices</option></select></label>
@@ -24,9 +27,10 @@
 </div>
 <p id="status" role="status">Loading visits…</p>
 <div id="summary" class="cards"></div>
-<div class="history"><table><thead><tr><th>Page</th><th>Release</th><th>Visits</th><th>Median ready</th><th>90th percentile ready</th><th>Slowest visit · largest measured wait</th></tr></thead><tbody id="page-summary"></tbody></table></div>
-<details><summary>How to read the timings</summary><p>Document wait includes the network and the HTML response. API server time covers the processing measured by Alishan. DB round trips include time waiting for and talking to PostgreSQL. API outside server is an estimate that can also include proxies and queuing. Page ready is measured after initial content rendering where available. A dash means the metric was unavailable or did not apply.</p></details>
-<div class="history"><table><thead id="head"></thead><tbody id="rows"></tbody></table></div>
+<div class="history"><table><thead><tr><th>Page</th><th>Release</th><th>Visit type</th><th>Ready / total</th><th>Median ready</th><th>90th percentile ready</th><th>Slowest visit</th></tr></thead><tbody id="page-summary"></tbody></table></div>
+<section id="visit-detail" class="history" hidden aria-label="Selected visit"><h2 id="visit-title"></h2><p id="visit-note"></p><div id="visit-bars"></div></section>
+<details><summary>How to read the timings</summary><p>Document wait includes the network and the HTML response. API server time covers the processing measured by Alishan. DB round trips include time waiting for and talking to PostgreSQL. API outside server is an estimate that can also include proxies and queuing. Page ready is measured after initial content rendering where available. Route preparation measures how long the tap waited for the page HTML and route script to be available. A previously warmed route can show near zero. Older readings can identify document loads when those timings were recorded. Their first and repeat SPA visits remain unclassified. The phase timings may overlap. A dash means the metric was unavailable or did not apply.</p></details>
+<details open><summary>Individual visits</summary><div class="history"><table><thead id="head"></thead><tbody id="rows"></tbody></table></div></details>
 </main>
 </body>
 </html>
