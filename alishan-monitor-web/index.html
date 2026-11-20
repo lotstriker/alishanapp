@@ -36,6 +36,25 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 <section><h2>Speed by release</h2><p><a style="color:var(--focus)" href="https://alishanapp-server.onrender.com/performance.html">Open automatic page performance</a> · Alishan sign-in required</p><p>v103 Android baseline se median compare karein. Same phone aur network ke samples use karein.</p><label for="release">Compare release</label><select id="release"></select><div class="table"><table><thead><tr><th>Measurement</th><th class="numeric">v103</th><th id="comparison" class="numeric">Selected</th><th class="numeric">Difference</th></tr></thead><tbody id="speed"></tbody></table></div></section>
 <section><h2>Import Android timings</h2><form id="import"><label for="version">App release</label><input id="version" placeholder="v104" required pattern="v[1-9][0-9]{0,5}"><label for="samples">Speed Timings JSON</label><textarea id="samples" rows="6" required placeholder="Paste the full JSON array"></textarea><button type="submit">Import timings</button><p id="message" role="status"></p></form></section>
 </div>
+<section><h2>Page performance by release</h2>
+<p>Import measured page timings with their test conditions. Compare releases within one cohort.</p>
+<form id="cohort-import">
+<label for="cohort-json">Timing JSON</label>
+<textarea id="cohort-json" rows="4" required aria-describedby="cohort-format"></textarea>
+<details id="cohort-format"><summary>Import format</summary><pre style="overflow:auto">[{"release":"v118","page":"Inventory","scenario":"cached-reopen",
+  "cache":"warm","device":"android","network":"wifi","source":"android-test",
+  "definition":"page-ready-v1","ms":224}]</pre>
+<p>Scenarios: cold-launch, cached-reopen, direct-navigation, first-in-tab, return-visit. Cache: warm, empty, unknown. Sources: android-test, browser-test, app-telemetry. Cold-launch describes a test after fully closing the app. Use the same timing definition, device class and network class on both releases.</p></details>
+<button type="submit">Import comparison samples</button><p id="cohort-message" role="status"></p>
+</form>
+<div class="health-grid">
+<label>Test cohort<select id="cohort"></select></label>
+<label>Baseline release<select id="cohort-base"></select></label>
+<label>Compare release<select id="cohort-next"></select></label>
+</div>
+<div class="table"><table><thead><tr><th>Release</th><th>Samples</th><th>p50</th><th>p95</th></tr></thead><tbody id="cohort-rows"></tbody></table></div>
+<p id="cohort-finding" role="status"></p>
+</section>
 <section><h2>Warning history</h2><p class="subtle">Health warning after two failed checks. Speed warning after at least three samples when the median is at least 25% and 50 ms above the baseline.</p><ol id="events" class="events"></ol><p id="empty">No warnings recorded yet.</p></section>
 </main>
 <script>
@@ -242,6 +261,85 @@ async function loadOverview() {
     byId('finding').textContent = 'Could not read the monitor collector.';
   }
 }
+const cohortFields = ['page','scenario','cache','device','network','source','definition'];
+const cohortKey = row => JSON.stringify(cohortFields.map(field=>row[field]));
+const cohortStorage = 'alishan-monitor-v2-cohorts';
+let measurements = [];
+try { measurements = JSON.parse(localStorage.getItem(cohortStorage) || '[]'); } catch {}
+function normalizeMeasurements(input) {
+  const choices = {
+    page:['Dashboard','Inventory','Reports','Add Entry','Settings'],
+    scenario:['cold-launch','cached-reopen','direct-navigation','first-in-tab','return-visit'],
+    cache:['warm','empty','unknown'],
+    source:['android-test','browser-test','app-telemetry']
+  };
+  if (!Array.isArray(input) || !input.length || input.length > 500) throw Error('Import between 1 and 500 timing samples.');
+  return input.map(row => {
+    if (!row || typeof row.release !== 'string' || !/^v?\d+(?:\.\d+){0,2}$/.test(row.release) ||
+      row.release.length > 20 || !Number.isFinite(row.ms) || row.ms < 0 || row.ms > 600000 ||
+      Object.entries(choices).some(([key,values])=>!values.includes(row[key])) ||
+      ['device','network','definition'].some(key=>typeof row[key] !== 'string' || !/^[a-z0-9-]{1,40}$/.test(row[key]))) {
+      throw Error('Each row needs a valid release, page, test conditions, timing definition and milliseconds.');
+    }
+    return {...Object.fromEntries(cohortFields.map(key=>[key,row[key]])), release:row.release.replace(/^v/,''), ms:row.ms};
+  });
+}
+function percentile(values,p) {
+  const sorted = [...values].sort((a,b)=>a-b);
+  return sorted[Math.ceil(sorted.length*p)-1];
+}
+function compareCohorts(baseline, candidate) {
+  if (baseline.length < 20 || candidate.length < 20) return 'Exploratory · At least 20 samples per release are needed.';
+  const first = percentile(baseline,.95), second = percentile(candidate,.95);
+  const difference = second-first;
+  return difference >= 50 && difference >= first*.25
+    ? 'Regression warning · p95 increased by '+fmt(difference)+'.'
+    : 'No p95 regression crossed the threshold.';
+}
+function options(select, pairs, fallback) {
+  const previous = select.value;
+  select.replaceChildren(...pairs.map(([value,label])=>new Option(label,value)));
+  if (pairs.some(([value])=>value===previous)) select.value=previous;
+  else if (fallback!==undefined) select.selectedIndex=fallback;
+}
+function showCohorts() {
+  const groups = [...new Set(measurements.map(cohortKey))].sort();
+  options(byId('cohort'),groups.map(key=>[key,JSON.parse(key).join(' · ')]));
+  const selected = measurements.filter(row=>cohortKey(row)===byId('cohort').value);
+  const releases = [...new Set(selected.map(row=>row.release))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+  const choices = releases.map(release=>[release,'v'+release]);
+  options(byId('cohort-base'),choices);
+  options(byId('cohort-next'),choices,choices.length-1);
+  const base = byId('cohort-base').value, candidate = byId('cohort-next').value;
+  const rows = byId('cohort-rows'); rows.replaceChildren();
+  const sample = release=>selected.filter(row=>row.release===release).map(row=>row.ms);
+  for (const release of new Set([base,candidate])) {
+    const values = sample(release);
+    if (values.length) cellRow(rows,['v'+release,values.length,fmt(percentile(values,.5)),fmt(percentile(values,.95))]);
+  }
+  byId('cohort-finding').textContent = releases.length<2 || base===candidate ?
+    'Select two releases in the same cohort.' : compareCohorts(sample(base),sample(candidate));
+}
+byId('cohort-import').addEventListener('submit',event=>{
+  event.preventDefault();
+  const note = byId('cohort-message');
+  try {
+    const input = byId('cohort-json').value;
+    if (input.length>200000) throw Error('Import is too large.');
+    const batch = normalizeMeasurements(JSON.parse(input));
+    if (measurements.length+batch.length>4000) throw Error('This browser reached the 4,000 sample limit.');
+    const fingerprints = JSON.parse(localStorage.getItem(cohortStorage+'-imports')||'[]');
+    const fingerprint = JSON.stringify(batch);
+    if (fingerprints.includes(fingerprint)) throw Error('This exact batch was already imported.');
+    localStorage.setItem(cohortStorage+'-imports',JSON.stringify([...fingerprints,fingerprint]));
+    try { localStorage.setItem(cohortStorage,JSON.stringify([...measurements,...batch])); }
+    catch (error) { localStorage.setItem(cohortStorage+'-imports',JSON.stringify(fingerprints)); throw error; }
+    measurements = [...measurements,...batch]; byId('cohort-next').value = ''; showCohorts();
+    note.textContent = batch.length+' samples saved in this browser.';
+  } catch (error) { note.textContent = error.message; }
+});
+for (const id of ['cohort','cohort-base','cohort-next']) byId(id).addEventListener('change',showCohorts);
+showCohorts();
 async function backgroundRefresh() {
   if (document.hidden) return;
   await Promise.all([loadHistory(),loadOverview()]);
