@@ -109,6 +109,7 @@ function refreshUI() {
     updateDashboard();
     populateQualityFilter();
     renderInventoryCards();
+    window.AlishanTimings?.pageReady('Inventory');
 }
 
 // ================= FILTERS + SEARCH (the store does the work) =================

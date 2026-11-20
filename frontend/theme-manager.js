@@ -40,6 +40,7 @@ class GlobalThemeManager {
     }
     
     const changed = this.currentTheme !== themeName;
+    const measured = persist && changed ? window.AlishanTimings?.action('Theme change') : null;
     // Remove all theme classes
     this.availableThemes.forEach(theme => {
       document.body.classList.remove(`theme-${theme}`);
@@ -59,6 +60,7 @@ class GlobalThemeManager {
     // Dispatch event for other components
     this.notifyThemeChange(themeName);
     if (persist && changed) this.queueThemeSave(themeName);
+    measured?.();
   }
   
   queueThemeSave(themeName) {

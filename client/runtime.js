@@ -91,7 +91,7 @@
   if(target==='Store'&&method==='reviewEntry')return networkCall(target,method,args);
   if(device?.enabled&&target==='DB'&&method==='setTheme')return themePreference(args[0]);
   if(device?.enabled&&target==='DB'&&method==='getTheme')return themePreference();
-  if(device?.enabled&&target==='Store'&&method==='init')return preparePage(pageName()).then(()=>device.call(target,method,args));
+  if(device?.enabled&&target==='Store'&&method==='init')return preparePage(pageName()).catch(()=>{}).then(()=>device.call(target,method,args));
   return device?device.call(target,method,args):networkCall(target,method,args);
  }
  const activeSaves=new Map();
@@ -106,6 +106,7 @@
 
     if(!pending){pending={id:crypto.randomUUID(),input,token};localStorage.setItem(key,JSON.stringify(pending));}
    }catch{return {ok:false,error:'Browser storage is unavailable. Allow storage to safely submit.'};}
+   const measured=window.AlishanTimings?.action(method==='addPayment'?'Payment save confirmation':'Entry save confirmation');
    let result;
    try{
     const status=recovering?await networkCall('Store','submissionStatus',[pending.id]):{};
@@ -121,6 +122,7 @@
    }
    catch{return {ok:false,error:'Save confirm nahi hua. Tap Save again to check the same attempt.'};}
    try{localStorage.removeItem(key);}catch{}
+   if(result.ok)measured?.();
    return result;
   })();
   activeSaves.set(key,task);

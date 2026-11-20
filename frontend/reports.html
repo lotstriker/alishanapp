@@ -1965,6 +1965,7 @@
             if (typeof AlishanSearch !== 'undefined') AlishanSearch.init({ onSearch });   // the shared search box (search.js)
             refreshAllReports(true);
             checkLowStock();
+            window.AlishanTimings?.pageReady('Reports');
             if (window.ReportViews) ReportViews.init();          // the eight report cards / the open report
 
             // redraw whenever the store changes: a payment, a stock toggle (also from the
