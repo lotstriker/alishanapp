@@ -21,6 +21,15 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 button{color:var(--button)}select,input,textarea{background:var(--soft);border-color:var(--line)}
 textarea::placeholder,input::placeholder{color:var(--muted)}.pill{background:var(--paper);border:1px solid var(--line);color:var(--ink)}.pill.ok{background:#174632;color:#dcffeb}.pill.bad{background:#792a36;color:#fff3f4}
 .top-actions,.section-nav{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.section-nav{margin-bottom:18px}.section-nav a{color:var(--focus)}.chart{display:grid;gap:8px}.chart-row{display:grid;grid-template-columns:minmax(52px,90px) 1fr auto;gap:10px;align-items:center;font-size:14px}.chart-track{height:10px;background:var(--line);border-radius:8px}.chart-bar{height:100%;background:var(--accent);border-radius:8px}.services{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;padding:0;list-style:none}.services li{background:var(--soft);border:1px solid var(--line);padding:12px;border-radius:10px}.services small{display:block;color:var(--muted)}
+
+:root{--green:#6ee7a5;--green-bg:#102e22;--yellow:#ffd27a;--yellow-bg:#33270f;--red:#ff98a5;--red-bg:#391a22;--neutral:#b8c9ef;--neutral-bg:#1b2943}
+:root[data-theme="light"]{--green:#155b3e;--green-bg:#e1f6e9;--yellow:#714900;--yellow-bg:#fff0c9;--red:#922333;--red-bg:#ffe5e9;--neutral:#294574;--neutral-bg:#edf2ff}
+main{width:min(1280px,100%);padding-top:24px}.top-inner{width:min(1280px,100%)}.section-nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:10px}.section-nav a{display:block;padding:10px;border:1px solid var(--line);border-radius:9px;text-align:center;text-decoration:none}.section-nav a:hover,.section-nav a:focus-visible{background:var(--neutral-bg)}
+.card-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}.card-heading h2{margin:0}.card-heading p{margin:.25rem 0 1rem}.dashboard-card h3{font-size:1rem;margin:.9rem 0 .45rem}.dashboard-card details{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--soft)}
+.status{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;font-size:.85rem;font-weight:700}.status.good{color:var(--green);background:var(--green-bg)}.status.warn{color:var(--yellow);background:var(--yellow-bg)}.status.critical{color:var(--red);background:var(--red-bg)}.status.neutral{color:var(--neutral);background:var(--neutral-bg)}
+.pill.warn{background:var(--yellow-bg);color:var(--yellow)}.finding-list{display:grid;gap:10px}.finding-card{padding:13px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}.finding-card h3{margin:6px 0}.finding-card p{margin:4px 0}.finding-card select{max-width:320px}.example{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted);font-size:.8rem}.check-label{display:flex;gap:8px;align-items:center;margin:10px 0}.check-label input{width:auto;margin:0}
+section{scroll-margin-top:12px}.chart-row{grid-template-columns:minmax(74px,110px) minmax(30px,1fr) auto}.chart-row span{overflow-wrap:anywhere}.table{margin-block:8px}.top-actions{justify-content:flex-end}
+@media(max-width:430px){main,.top-inner{padding-inline:10px}.top-inner{padding-block:10px}.top-actions{gap:6px}section{padding:12px}.health-grid{grid-template-columns:repeat(auto-fit,minmax(132px,1fr))}.section-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.chart-row{grid-template-columns:minmax(65px,85px) minmax(26px,1fr) auto;gap:6px}}
 </style>
 </head>
 <body>
@@ -30,13 +39,13 @@ textarea::placeholder,input::placeholder{color:var(--muted)}.pill{background:var
 </div></div>
 <main>
 <header><h1>Alishan Control Center</h1><span id="health" class="pill" role="status">Waiting for first check</span></header>
-<nav class="section-nav" aria-label="Monitor sections"><a href="#system">Health</a><a href="#performance">Performance</a><a href="#dependencies">Dependencies</a><a href="#recovery">Recovery</a><a href="#warnings">Warnings</a></nav>
+<nav class="section-nav" aria-label="Monitor sections"><a href="#system">Health</a><a href="#performance">Performance</a><a href="#usage">Egress</a><a href="#api">API and releases</a><a href="#detective">Detective</a><a href="#dependencies">Dependencies</a><a href="#recovery">Recovery</a><a href="#incidents">Incidents</a><a href="#warnings">Warnings</a></nav>
 <section id="system"><h2>System health</h2>
 <div class="health-grid">
 <article>App reachability<strong id="app-state">Unknown</strong><small id="app-age">Waiting for collector</small></article>
 <article>Health round trip<strong id="app-latency">—</strong><small>Includes network and probe processing</small></article>
 <article>Supabase monitor storage<strong id="database-state">Unknown</strong><small id="database-age">Separate history RPC probe</small></article>
-<article>Monthly egress<strong>Unavailable</strong><small>Billing source pending</small></article>
+<article>Billing egress<strong id="usage-headline">Unavailable</strong><small id="usage-headline-source">No provider snapshot</small></article>
 </div>
 <p id="finding" role="status"></p><h2>Recent successful health checks</h2><div id="health-chart" class="chart" aria-label="Health round trip in milliseconds"></div><h2 style="margin-top:18px">Live checks</h2><p id="last">Checking the Alishan health endpoint…</p><p class="subtle">Scheduled checks run every 20 minutes, even when this tab is closed. Imported Android timings stay in this browser.</p><p id="schedule" class="subtle" role="status"></p><button id="check" type="button">Check now</button><details><summary>Recent checks</summary><div class="table"><table><thead><tr><th>Time</th><th>Source</th><th>Result</th><th class="numeric">Round trip</th></tr></thead><tbody id="checks"></tbody></table></div></details></section>
 <div class="grid">
@@ -62,6 +71,42 @@ textarea::placeholder,input::placeholder{color:var(--muted)}.pill{background:var
 <div class="table"><table><thead><tr><th>Release</th><th>Samples</th><th>p50</th><th>p95</th></tr></thead><tbody id="cohort-rows"></tbody></table></div>
 <h3>p95 by release</h3><div id="release-chart" class="chart" aria-label="p95 by release in milliseconds"></div><p id="cohort-finding" role="status"></p>
 </section>
+<section id="usage" class="dashboard-card">
+<div class="card-heading"><div><h2>Database &amp; egress</h2><p>Billing-cycle usage and service breakdown</p></div><span id="usage-state" class="status neutral">No data</span></div>
+<div class="health-grid" id="usage-metrics"></div>
+<h3>Daily transfer</h3><div id="usage-chart" class="chart"></div>
+<h3>Transfer by service</h3><div id="category-chart" class="chart"></div>
+<details><summary>Import Supabase usage snapshot</summary><form id="usage-form">
+<p>Enter reported bytes for one billing cycle. Dates must cover complete UTC days. Include only categories present in the provider report.</p>
+<pre class="example">{"start":"2026-11-01","end":"2026-12-01","asOf":"2026-11-20",
+ "allowance":5000000000,"used":9060000000,
+ "daily":[{"date":"2026-11-19","bytes":3590000000}],
+ "categories":{"Shared Pooler":3590000000}}</pre>
+<label>Provider snapshot JSON<textarea id="usage-input" rows="4" required></textarea></label>
+<button>Save usage snapshot</button><p id="usage-message" role="status"></p></form></details>
+</section>
+<section id="api" class="dashboard-card">
+<div class="card-heading"><div><h2>Backend, API &amp; releases</h2><p>Operational snapshots from authorized sources</p></div><span id="operations-state" class="status neutral">No data</span></div>
+<div class="table"><table><thead><tr><th>API route</th><th>Requests</th><th>5xx</th><th>p95</th><th>DB wait</th></tr></thead><tbody id="api-rows"></tbody></table></div>
+<div class="table"><table><thead><tr><th>Query family</th><th>Calls</th><th>Returned rows</th></tr></thead><tbody id="db-rows"></tbody></table></div>
+<h3>Release history</h3><div class="table"><table><thead><tr><th>Release</th><th>Commit</th><th>Time</th><th>Outcome</th></tr></thead><tbody id="deploy-rows"></tbody></table></div>
+<details><summary>Import operational snapshot</summary><form id="operations-form">
+<p>Use a single reporting interval. Enter route templates and query family names. Leave out customer identifiers, raw SQL and payloads.</p>
+<pre class="example">{"at":"2026-11-20T12:00:00Z","durationMinutes":60,
+ "routes":[{"route":"/api/batch","requests":100,"errors":2,"p95":450,"dbMs":120}],
+ "queries":[{"name":"backup schedule","calls":60,"rows":60}],
+ "deploys":[{"release":"v118","commit":"dd360ca","at":"2026-11-20T12:00:00Z","status":"live"}]}</pre>
+<label>Operational snapshot JSON<textarea id="operations-input" rows="4" required></textarea></label>
+<button>Save operational snapshot</button><p id="operations-message" role="status"></p></form></details>
+</section>
+<section id="detective" class="dashboard-card">
+<div class="card-heading"><div><h2>Problem detective</h2><p>Evidence, impact and next steps</p></div></div>
+<div id="investigations" class="finding-list"></div>
+</section>
+<section id="incidents" class="dashboard-card">
+<div class="card-heading"><div><h2>Incident history</h2><p>Track investigation and resolution in this browser</p></div></div>
+<div id="incident-list" class="finding-list"></div>
+</section>
 <section id="dependencies"><h2>Dependency map</h2>
 <p>Alishan traffic flows from the app to Render APIs and then to Supabase. The scheduler and monitor observe that path separately.</p>
 <ul class="services">
@@ -70,13 +115,27 @@ textarea::placeholder,input::placeholder{color:var(--muted)}.pill{background:var
 <li><strong>Scheduled checks</strong><small id="dependency-schedule">Waiting for scheduled history</small><small>Failure reduces monitoring coverage. App health needs separate evidence.</small></li>
 <li><strong>External sign-in</strong><small>Direct probe unavailable</small><small>Failure can affect new sign-ins where the provider is enabled.</small></li>
 </ul></section>
-<section id="recovery"><h2>Backup and recovery</h2><p>Recovery telemetry is awaiting integration. The production backup contents stay in AlishanApp.</p>
-<div class="table"><table><thead><tr><th>Signal</th><th>Status</th><th>Meaning</th></tr></thead><tbody>
+<section id="recovery"><h2>Backup and recovery</h2><p>Record actual backup and isolated restore-drill results. Evidence is stored in this browser.</p>
+<div class="table"><table><thead><tr><th>Signal</th><th>Status</th><th>Meaning</th></tr></thead><tbody id="recovery-rows">
 <tr><td>Last successful backup</td><td>Unavailable</td><td>Last completed backup and its age</td></tr>
 <tr><td>Restore verification</td><td>Unavailable</td><td>Last isolated restore with integrity checks</td></tr>
 <tr><td>Recovery time (RTO)</td><td>Unavailable</td><td>Time to restore a working service in a drill, compared with target</td></tr>
 <tr><td>Recovery point (RPO)</td><td>Unavailable</td><td>Age of the newest verified recoverable data, compared with target</td></tr>
 </tbody></table></div>
+<details><summary>Record backup or isolated restore drill</summary>
+<form id="recovery-form">
+<div class="health-grid">
+<label>Last successful backup (UTC)<input id="backup-time" type="datetime-local" required></label>
+<label>Backup frequency (hours)<input id="backup-frequency" type="number" min="1" max="8760" value="24" required></label>
+<label>Restore verified at (UTC)<input id="restore-time" type="datetime-local"></label>
+<label>Drill started at (UTC)<input id="restore-start" type="datetime-local"></label>
+<label>Recovered data timestamp (UTC)<input id="restore-point" type="datetime-local"></label>
+<label>RTO target (minutes)<input id="rto-target" type="number" min="1" max="525600"></label>
+<label>RPO target (minutes)<input id="rpo-target" type="number" min="1" max="525600"></label>
+</div>
+<label class="check-label"><input id="restore-checked" type="checkbox"> Isolated restore passed integrity checks</label>
+<button>Save recovery evidence</button><p id="recovery-message" role="status"></p>
+</form></details>
 <h3>Runbooks</h3><p>Health checks are available. Retry and cache invalidation are awaiting approval controls. Destructive actions, deployments and database changes require explicit approval.</p>
 </section>
 <section id="warnings"><h2>Warning history</h2><p class="subtle">Health warning after two failed checks. Speed warning after at least three samples when the median is at least 25% and 50 ms above the baseline.</p><ol id="events" class="events"></ol><p id="empty">No warnings recorded yet.</p></section>
@@ -96,7 +155,7 @@ byId('theme').addEventListener('click',()=>{
   setTheme(theme);
   try { localStorage.setItem('alishan-monitor-theme',theme); } catch {}
 });
-function drawChart(id, readings) {
+function drawChart(id, readings, format=fmt) {
   const target = byId(id);
   target.replaceChildren();
   if (!readings.length) { target.textContent = 'No measured samples yet.'; return; }
@@ -105,7 +164,7 @@ function drawChart(id, readings) {
     const row = document.createElement('div'), track = document.createElement('div'), bar = document.createElement('div');
     row.className = 'chart-row'; track.className = 'chart-track'; bar.className = 'chart-bar';
     track.setAttribute('aria-hidden','true'); bar.style.width = 100*ms/max+'%'; track.append(bar);
-    row.append(label,track,fmt(ms)); target.append(row);
+    const caption=document.createElement('span');caption.textContent=label;row.append(caption,track,format(ms)); target.append(row);
   }
 }
 
@@ -293,8 +352,9 @@ async function loadOverview() {
     const response = await fetch('/v2/overview',{cache:'no-store'});
     if (!response.ok) throw Error('Collector unavailable');
     const value = await response.json();
+    liveState=value;
     badge.textContent = byId('app-state').textContent = labels[value.appState];
-    badge.className = 'pill' + (value.appState === 'reachable' ? ' ok' : value.appState === 'unavailable' ? ' bad' : '');
+    badge.className = 'pill' + (value.appState === 'reachable' ? ' ok' : value.appState === 'unavailable' ? ' bad' : value.appState === 'verifying' ? ' warn' : '');
     byId('app-age').textContent = value.app ? (value.stale ? 'Stale · ' : 'Last check · ')+localTime(value.app.id) : 'Waiting for collector';
     byId('app-latency').textContent = fmt(value.app?.ms);
     byId('database-state').textContent = (!value.stale && labels[value.database?.state]) || 'Unknown';
@@ -306,6 +366,7 @@ async function loadOverview() {
       value.stale ? 'Monitoring data is stale or pending.' :
       value.events[0]?.state === 'reachable' ? 'Recovery observed · '+localTime(value.events[0].at) : '';
   } catch {
+    liveState={stale:true};
     badge.textContent = byId('app-state').textContent = byId('database-state').textContent = 'Unknown';
     badge.className = 'pill';
     byId('app-latency').textContent = '—';
@@ -313,6 +374,7 @@ async function loadOverview() {
     byId('dependency-app').textContent = byId('dependency-db').textContent = 'Unknown · Collector unavailable';
     byId('finding').textContent = 'Could not read the monitor collector.';
   }
+  renderFindings();
 }
 const cohortFields = ['page','scenario','cache','device','network','source','definition'];
 const cohortKey = row => JSON.stringify(cohortFields.map(field=>row[field]));
@@ -371,8 +433,10 @@ function showCohorts() {
     const values = sample(release);
     if (values.length) cellRow(rows,['v'+release,values.length,fmt(percentile(values,.5)),fmt(percentile(values,.95))]);
   }
-  byId('cohort-finding').textContent = releases.length<2 || base===candidate ?
-    'Select two releases in the same cohort.' : compareCohorts(sample(base),sample(candidate));
+  const comparison=releases.length<2||base===candidate?'Select two releases in the same cohort.':compareCohorts(sample(base),sample(candidate));
+  byId('cohort-finding').textContent=comparison;
+  regression=comparison.startsWith('Regression warning')?{id:'regression:'+byId('cohort').value+':'+base+':'+candidate,evidence:'v'+base+' → v'+candidate+' · '+comparison}:null;
+  renderFindings();
 }
 byId('cohort-import').addEventListener('submit',event=>{
   event.preventDefault();
@@ -393,6 +457,234 @@ byId('cohort-import').addEventListener('submit',event=>{
   } catch (error) { note.textContent = error.message; }
 });
 for (const id of ['cohort','cohort-base','cohort-next']) byId(id).addEventListener('change',showCohorts);
+const dayMs = 86400000;
+const bytes = value=>new Intl.NumberFormat(undefined,{maximumFractionDigits:2}).format(value/1e9)+' GB';
+const minutes = value=>Math.round(value)+' min';
+const storagePrefix = 'alishan-monitor-intelligence-';
+const limits = {usage:1,operations:1,recovery:1,incidents:1};
+function loadLocal(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(storagePrefix+key)) ?? fallback; }
+  catch { return fallback; }
+}
+function saveLocal(key, value) {
+  if (!Object.hasOwn(limits,key)) throw Error('Unknown data type.');
+  localStorage.setItem(storagePrefix+key,JSON.stringify(value));
+}
+function within(value, ceiling=Number.MAX_SAFE_INTEGER) {
+  return Number.isFinite(value) && value>=0 && value<=ceiling;
+}
+function dateOnly(value) {
+  return typeof value==='string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) &&
+    new Date(value).toISOString().slice(0,10)===value;
+}
+function timestamp(value) {
+  return typeof value==='string' && /^\d{4}-\d{2}-\d{2}T/.test(value) && Number.isFinite(Date.parse(value)) && Date.parse(value)<=Date.now();
+}
+function usageSnapshot(input) {
+  if (!input || !['start','end','asOf'].every(key=>dateOnly(input[key])) ||
+      !(input.start<=input.asOf && input.asOf<=input.end && input.start<input.end && Date.parse(input.asOf)<=Date.now()) ||
+      !within(input.allowance) || input.allowance===0 || !within(input.used)) throw Error('Enter a valid billing period, cutoff, usage and allowance.');
+  const daily=input.daily??[], categories=input.categories??{};
+  if(!Array.isArray(daily)||daily.length>93||!categories||typeof categories!=='object'||Array.isArray(categories)) throw Error('Invalid daily usage or categories.');
+  const seen=new Set();
+  for(const row of daily){
+    if(!row||!dateOnly(row.date)||row.date<input.start||row.date>=input.asOf||seen.has(row.date)||!within(row.bytes)) throw Error('Daily usage needs distinct complete days within the billing period.');
+    seen.add(row.date);
+  }
+  const allowed=['Shared Pooler','Direct Database','PostgREST','Storage','Auth','Realtime','Edge Functions','Other'];
+  const breakdown=Object.entries(categories);
+  if(breakdown.some(([name,value])=>!allowed.includes(name)||!within(value)))throw Error('Use supported service categories and non-negative bytes.');
+  if(daily.reduce((sum,row)=>sum+row.bytes,0)>input.used||breakdown.reduce((sum,[,value])=>sum+value,0)>input.used)throw Error('Daily and service totals cannot exceed the reported cycle total.');
+  return {start:input.start,end:input.end,asOf:input.asOf,allowance:input.allowance,used:input.used,daily:daily.map(({date,bytes})=>({date,bytes})).sort((a,b)=>a.date.localeCompare(b.date)),categories:Object.fromEntries(breakdown)};
+}
+function operationsSnapshot(input) {
+  if(!input||!timestamp(input.at)||!within(input.durationMinutes,10080)||input.durationMinutes===0)throw Error('Enter a valid report time and duration.');
+  const list=(name,valid,project)=>{
+    const values=input[name]??[];
+    if(!Array.isArray(values)||values.length>100||values.some(row=>!row||!valid(row)))throw Error('Invalid '+name+' rows.');
+    return values.map(project);
+  };
+  const label=value=>typeof value==='string'&&/^[a-z0-9 :/_{}.-]{1,80}$/i.test(value);
+  const routes=list('routes',r=>label(r.route)&&r.route.startsWith('/api/')&&Number.isSafeInteger(r.requests)&&Number.isSafeInteger(r.errors)&&within(r.requests)&&within(r.errors,r.requests)&&within(r.p95,600000)&&(r.dbMs===undefined||within(r.dbMs,600000)),
+    ({route,requests,errors,p95,dbMs})=>({route,requests,errors,p95,dbMs}));
+  const queries=list('queries',r=>label(r.name)&&Number.isSafeInteger(r.calls)&&Number.isSafeInteger(r.rows)&&within(r.calls)&&within(r.rows),
+    ({name,calls,rows})=>({name,calls,rows}));
+  const deploys=list('deploys',r=>typeof r.release==='string'&&/^v?\d+(?:\.\d+){0,2}$/.test(r.release)&&r.release.length<20&&typeof r.commit==='string'&&/^[a-f0-9]{7,40}$/i.test(r.commit)&&timestamp(r.at)&&['live','failed','rollback','canceled'].includes(r.status),
+    ({release,commit,at,status})=>({release,commit,at,status}));
+  return {at:input.at,durationMinutes:input.durationMinutes,routes,queries,deploys};
+}
+function recoverySnapshot() {
+  const value=id=>byId(id).value;
+  const utc=id=>value(id)?new Date(value(id)+'Z').toISOString():null;
+  const backup=utc('backup-time'), verifiedAt=utc('restore-time'), startedAt=utc('restore-start'), point=utc('restore-point');
+  const frequency=Number(value('backup-frequency'));
+  const rtoTarget=Number(value('rto-target'))||null, rpoTarget=Number(value('rpo-target'))||null;
+  const passed=byId('restore-checked').checked;
+  if (!timestamp(backup)||!within(frequency,8760)||frequency<1||[rtoTarget,rpoTarget].some(v=>v!==null&&(!within(v,525600)||v<1)))throw Error('Use a valid backup time, frequency and targets.');
+  if ([verifiedAt,startedAt,point].some(Boolean)||passed) {
+    if(!timestamp(verifiedAt)||!timestamp(startedAt)||!timestamp(point)||Date.parse(startedAt)>Date.parse(verifiedAt)||Date.parse(point)>Date.parse(startedAt))throw Error('Enter all drill times in order: recovered point, start, finish.');
+  }
+  return {backup,verifiedAt,startedAt,point,frequency,rtoTarget,rpoTarget,passed};
+}
+let usage=loadLocal('usage',null), operations=loadLocal('operations',null), recovery=loadLocal('recovery',null);
+let incidents=loadLocal('incidents',[]);
+let liveState=null;
+let regression=null;
+function badge(id, label, tone) {
+  const element=byId(id);
+  element.className='status '+tone;
+  element.textContent=label;
+}
+function metrics(id, entries) {
+  const target=byId(id);target.replaceChildren();
+  for(const [label,value,note] of entries){
+    const card=document.createElement('article'),number=document.createElement('strong'),hint=document.createElement('small');
+    number.textContent=value;hint.textContent=note;card.append(label,number,hint);target.append(card);
+  }
+}
+function fillRows(id, rows, blank) {
+  const target=byId(id);target.replaceChildren();
+  if(!rows.length) {const td=target.insertRow().insertCell();td.colSpan=10;td.textContent=blank;return;}
+  for(const row of rows)cellRow(target,row);
+}
+function forecastUsage(report) {
+  const dates=report.daily.slice(-7);
+  const complete=dates.length===7&&dates.every((row,i)=>Date.parse(report.asOf)-Date.parse(row.date)===(7-i)*dayMs);
+  if(!complete)return null;
+  return report.used+dates.reduce((sum,row)=>sum+row.bytes,0)/dates.length*(Date.parse(report.end)-Date.parse(report.asOf))/dayMs;
+}
+function renderUsage() {
+  if(!usage){
+    metrics('usage-metrics',[['Billing usage','Unavailable','Import a provider snapshot to calculate quota and trends.']]);
+    drawChart('usage-chart',[],bytes);drawChart('category-chart',[],bytes);return;
+  }
+  const ratio=usage.used/usage.allowance, forecast=forecastUsage(usage);
+  const tone=ratio>=1?'critical':ratio>=.8||forecast>usage.allowance?'warn':'good';
+  badge('usage-state',tone==='critical'?'Quota reached':tone==='warn'?'Watch quota':'Within quota',tone);
+  byId('usage-headline').textContent=Math.round(ratio*100)+'%';
+  byId('usage-headline-source').textContent='Imported snapshot · '+usage.asOf;
+  metrics('usage-metrics',[
+    ['Reported transfer',bytes(usage.used),'Cutoff · '+usage.asOf],
+    ['Cycle allowance',bytes(usage.allowance),usage.start+' → '+usage.end],
+    ['Projected cycle total',forecast===null?'Unavailable':bytes(forecast),forecast===null?'Needs seven consecutive complete days':'Estimate from the last seven complete days']
+  ]);
+  drawChart('usage-chart',usage.daily.slice(-14).map(row=>({label:row.date,ms:row.bytes})),bytes);
+  drawChart('category-chart',Object.entries(usage.categories).map(([label,ms])=>({label,ms})),bytes);
+}
+function renderOperations() {
+  if(operations)badge('operations-state','Imported · '+localTime(operations.at),'neutral');
+  fillRows('api-rows',(operations?.routes||[]).map(row=>[row.route,row.requests,row.errors+' ('+(row.requests?Math.round(row.errors/row.requests*100):0)+'%)',fmt(row.p95),fmt(row.dbMs)]),'No API snapshot imported.');
+  fillRows('db-rows',(operations?.queries||[]).map(row=>[row.name,row.calls,row.rows]),'No query statistics imported.');
+  fillRows('deploy-rows',[...(operations?.deploys||[])].sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)).map(row=>[row.release,row.commit,localTime(row.at),row.status]),'No deployment snapshot imported.');
+}
+function recoveryStatus() {
+  if(!recovery)return null;
+  const age=(Date.now()-Date.parse(recovery.backup))/60000;
+  const rto=recovery.passed?(Date.parse(recovery.verifiedAt)-Date.parse(recovery.startedAt))/60000:null;
+  const rpo=recovery.passed?(Date.parse(recovery.startedAt)-Date.parse(recovery.point))/60000:null;
+  return {age,rto,rpo,overdue:age>recovery.frequency*60};
+}
+function renderRecovery() {
+  const result=recoveryStatus();
+  if(!result)return;
+  const {age,rto,rpo,overdue}=result;
+  const target=(actual,goal)=>actual===null?'Unavailable':minutes(actual)+(goal?' / '+minutes(goal)+' target · '+(actual>goal?'Missed':'Met'):' · Target unset');
+  fillRows('recovery-rows',[
+    ['Last successful backup',overdue?'Overdue':'Current',localTime(recovery.backup)+' · '+minutes(age)+' old · Next due '+localTime(Date.parse(recovery.backup)+recovery.frequency*3600000)],
+    ['Restore verification',recovery.passed?'Passed':recovery.verifiedAt?'Failed / unverified':'Unavailable',recovery.verifiedAt?localTime(recovery.verifiedAt):'No isolated drill recorded'],
+    ['Recovery time (RTO)',target(rto,recovery.rtoTarget),'Elapsed drill time'],
+    ['Recovery point (RPO)',target(rpo,recovery.rpoTarget),'Gap from drill start to recovered data']
+  ],'No recovery evidence.');
+  const tones=[overdue?'warn':'good',recovery.passed?'good':recovery.verifiedAt?'critical':'neutral',
+    rto===null||!recovery.rtoTarget?'neutral':rto>recovery.rtoTarget?'warn':'good',
+    rpo===null||!recovery.rpoTarget?'neutral':rpo>recovery.rpoTarget?'warn':'good'];
+  Array.from(byId('recovery-rows').rows).forEach((row,i)=>{
+    const status=row.cells[1], label=document.createElement('span');
+    label.className='status '+tones[i];label.textContent=status.textContent;status.replaceChildren(label);
+  });
+}
+function finding(severity,title,evidence,next) {return {severity,title,evidence,next};}
+function findings() {
+  const result=[];
+  if(liveState?.appState==='unavailable')result.push(['availability',finding('critical','App unavailable','Direct and scheduled probes failed.','Inspect Render app and dependency logs.')]);
+  else if(liveState?.appState==='verifying')result.push(['availability-check',finding('warn','App health is being verified','The direct probe failed. Corroboration is pending.','Run the approved health check or wait for the next scheduled result.')]);
+  if(liveState?.stale)result.push(['collector',finding('warn','Monitoring signal is stale','Recent app reachability is unavailable.','Inspect the monitor collector before reporting an outage.')]);
+  if(usage&&usage.used>=usage.allowance)result.push(['egress:'+usage.start,finding('critical','Billing allowance reached',bytes(usage.used)+' reported against '+bytes(usage.allowance)+' as of '+usage.asOf+'.','Compare provider service breakdown and query counts. Query rows alone do not establish transfer bytes.')]);
+  else if(usage&&(usage.used>=usage.allowance*.8||forecastUsage(usage)>usage.allowance))result.push(['egress:'+usage.start,finding('warn','Egress quota at risk',bytes(usage.used)+' reported as of '+usage.asOf+'.','Check the latest provider snapshot and compare complete-day usage.')]);
+  if(usage&&usage.daily.length>=8){
+    const days=usage.daily.slice(-8);
+    const last=days.at(-1);
+    const consecutive=days.every((row,i)=>Date.parse(last.date)-Date.parse(row.date)===(7-i)*dayMs);
+    const average=days.slice(0,-1).reduce((sum,row)=>sum+row.bytes,0)/7;
+    if(consecutive&&last.bytes>=average*2&&last.bytes-average>=250000000){
+      result.push(['usage-spike:'+last.date,finding('warn','Daily egress spike',last.date+' used '+bytes(last.bytes)+' against a previous seven-day average of '+bytes(average)+'.','Compare service categories and query activity for the same date.')]);
+    }
+  }
+  const restore=recoveryStatus();
+  if(restore?.overdue)result.push(['backup',finding('warn','Backup freshness is overdue','Saved evidence is '+minutes(restore.age)+' old.','Check the scheduled backup history and record the latest result.')]);
+  if(recovery?.verifiedAt&&!recovery.passed)result.push(['restore',finding('critical','Restore drill did not pass verification','The recorded isolated drill has no passing integrity check.','Inspect drill evidence and repeat the isolated restore before relying on the backup.')]);
+  if(restore?.rto!==null&&restore?.rto>recovery?.rtoTarget&&recovery?.rtoTarget)result.push(['rto',finding('warn','Recovery time target missed',minutes(restore.rto)+' observed versus '+minutes(recovery.rtoTarget)+' target.','Review restore steps and repeat the drill.')]);
+  if(restore?.rpo!==null&&restore?.rpo>recovery?.rpoTarget&&recovery?.rpoTarget)result.push(['rpo',finding('warn','Recovery point target missed',minutes(restore.rpo)+' observed versus '+minutes(recovery.rpoTarget)+' target.','Check backup frequency and verify a more recent restore point.')]);
+  if(regression)result.push([regression.id,finding('warn','Page performance regression',regression.evidence,'Compare bundle wait, API timings and rendering. The p95 difference establishes impact, with cause still unverified.')]);
+  for(const route of operations?.routes||[]){
+    if(route.requests>=20&&route.errors/route.requests>=.05)result.push(['api:'+route.route,finding('warn','API errors at '+route.route,route.errors+' of '+route.requests+' requests returned 5xx in the reported interval.','Inspect server logs. Use per-request DB timing to test dependency hypotheses.')]);
+  }
+  return result;
+}
+const lifecycle=['Detected','Investigating','Acknowledged','Resolved'];
+function appendFinding(target,item) {
+  const card=document.createElement('article'),tag=document.createElement('span'),heading=document.createElement('h3');
+  const evidence=document.createElement('p'),action=document.createElement('p');
+  card.className='finding-card';tag.className='status '+item.severity;tag.textContent=item.severity==='critical'?'Critical':'Warning';
+  heading.textContent=item.title;evidence.textContent=item.evidence;action.textContent=item.next;
+  card.append(tag,heading,evidence,action);target.append(card);return card;
+}
+function renderFindings() {
+  const target=byId('investigations');target.replaceChildren();
+  const active=findings();
+  if(!active.length)target.textContent=liveState?.appState==='reachable'?'No active warnings in the available signals.':'Waiting for health or imported evidence.';
+  for(const [id,item] of active) {
+    appendFinding(target,item);
+    const existing=incidents.find(row=>row.id===id);
+    if(existing)Object.assign(existing,item);
+    else incidents=[{id,...item,at:new Date().toISOString(),status:'Detected',timeline:[]},...incidents].slice(0,100);
+  }
+  try{saveLocal('incidents',incidents);}catch{}
+  const list=byId('incident-list');list.replaceChildren();
+  if(!incidents.length)list.textContent='No recorded incidents yet.';
+  for(const entry of incidents){
+    const card=appendFinding(list,entry),date=document.createElement('p'),select=document.createElement('select');
+    date.textContent='First detected · '+localTime(entry.at);select.setAttribute('aria-label','Status for '+entry.title);
+    select.replaceChildren(...lifecycle.map(label=>new Option(label,label)));select.value=entry.status;
+    select.addEventListener('change',()=>{
+      entry.status=select.value;entry.timeline=[{at:new Date().toISOString(),status:entry.status},...entry.timeline].slice(0,20);
+      try{saveLocal('incidents',incidents);}catch{}
+      renderFindings();
+    });
+    card.append(date,select);
+    if(entry.timeline.length){
+      const history=document.createElement('small');history.textContent=entry.timeline.map(change=>change.status+' · '+localTime(change.at)).join(' / ');card.append(history);
+    }
+  }
+}
+function bindSnapshot(key, read, render) {
+  byId(key+'-form').addEventListener('submit',event=>{
+    event.preventDefault();
+    const note=byId(key+'-message');
+    try { const value=read();saveLocal(key,value);render(value);renderFindings();note.textContent='Saved in this browser.'; }
+    catch(error) { note.textContent=error.message; }
+  });
+}
+function readJson(id) {
+  const value=byId(id).value;
+  if(value.length>100000)throw Error('Snapshot is too large.');
+  return JSON.parse(value);
+}
+bindSnapshot('usage',()=>usageSnapshot(readJson('usage-input')),value=>{usage=value;renderUsage();});
+bindSnapshot('operations',()=>operationsSnapshot(readJson('operations-input')),value=>{operations=value;renderOperations();});
+bindSnapshot('recovery',recoverySnapshot,value=>{recovery=value;renderRecovery();});
+renderUsage();renderOperations();renderRecovery();renderFindings();
+
 showCohorts();
 async function backgroundRefresh() {
   if (document.hidden) return;
