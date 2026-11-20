@@ -116,3 +116,21 @@ test('startup lookup distinguishes a cache miss, a running read and a saved proj
  assert.deepEqual(await cache.lookup('Store','summary',[]),{kind:'miss'});
  cache.close();
 });
+
+test('manual sync keeps a saved view on unchanged revision and on network failure',async()=>{
+ const storage=memoryDisk();let now=100000,requests=0,changes=0,offline=false,revision='1';
+ const cache=create(opts(async()=>({count:7}),{
+  storage,now:()=>now,checkIntervalMs:43200000,onChange:()=>changes++,
+  fetchStatus:async()=>{requests++;if(offline)throw Error('offline');return {...session,revision};}
+ }));
+ await cache.ready;cache.acceptRevision(revision);
+ await cache.call('Store','summary',[]);
+ await cache.check(true);
+ assert.equal(cache.inspect().entries,1);
+ now+=61000;await cache.check();assert.equal(requests,1);
+ offline=true;assert.equal((await cache.check(true)).ok,false);assert.equal(cache.inspect().entries,1);
+ offline=false;revision='2';assert.equal((await cache.check(true)).changed,true);
+ assert.equal(changes,1);assert.equal(cache.inspect().entries,0);
+ cache.close();
+ assert.equal(storage.records.get(cache.inspect().namespace).checkedAt,now);
+});

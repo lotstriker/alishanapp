@@ -7,9 +7,10 @@
   const enabled=!!session?.scope,namespace=enabled?`${session.scope}:${session.release}`:'disabled';
   const ram=new Map(),flights=new Map();const MAX_BYTES=8*1024*1024,MAX_ENTRIES=600,MAX_AGE=24*3600000;
   let epoch=0,revision=null,bytes=0,db=null,timer=null,checking=null,closed=false,disabled=false,lastCheck=0;
+  const CHECK_INTERVAL=options.checkIntervalMs??15000;
   const now=options.now||Date.now,storage=options.storage||root.indexedDB;
   const clone=value=>wire.decode(structuredClone(value));
-  function status(kind){onStatus(kind);}
+  function status(kind){onStatus(kind,lastCheck);}
   const ready=(async()=>{
    if(!enabled||!storage)return;
    const initialEpoch=epoch;
@@ -18,6 +19,7 @@
     const saved=await new Promise((resolve,reject)=>{const req=db.transaction('views').objectStore('views').get(namespace);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});
     if(epoch===initialEpoch&&saved&&saved.at>now()-MAX_AGE&&Array.isArray(saved.entries)){
      revision=saved.revision??null;
+     lastCheck=Number.isFinite(saved.checkedAt)&&saved.checkedAt<=now()?saved.checkedAt:0;
      for(const [key,entry] of saved.entries){if(typeof key==='string'&&entry&&entry.at>now()-MAX_AGE){ram.set(key,entry);bytes+=entry.bytes||0;}}
      trim();if(ram.size)status('saved');
     }
@@ -26,7 +28,7 @@
   function trim(){while(bytes>MAX_BYTES||ram.size>MAX_ENTRIES){const key=ram.keys().next().value,entry=ram.get(key);bytes-=entry?.bytes||0;ram.delete(key);}}
   function persist(){
    if(!db||closed)return;
-   try{const tx=db.transaction('views','readwrite');tx.objectStore('views').put({revision,at:now(),entries:[...ram]},namespace);tx.onerror=()=>{};tx.onabort=()=>{};}catch{}
+   try{const tx=db.transaction('views','readwrite');tx.objectStore('views').put({revision,checkedAt:lastCheck,at:now(),entries:[...ram]},namespace);tx.onerror=()=>{};tx.onabort=()=>{};}catch{}
   }
   function saveSoon(){if(!db)return;clearTimeout(timer);timer=setTimeout(persist,200);timer?.unref?.();}
   async function keyFor(target,method,args){
@@ -50,7 +52,7 @@
    for(const {p,key,etag} of rows)if(isReader(p.target,p.method)&&p.target!=='Groups'){put(key,p.result,etag);if(p.target==='Views'&&['inventoryPage','homeLatest'].includes(p.method))await seed(p.result?.primes,generation);}
   }
   function invalidate(announce=false){
-   epoch++;ram.clear();bytes=0;flights.clear();revision=null;persist();
+   epoch++;ram.clear();bytes=0;flights.clear();revision=null;lastCheck=0;persist();
    if(announce)broadcast();
   }
   function acceptRevision(value,authoritative=false){
@@ -63,12 +65,13 @@
   }
   async function check(force=false){
    if(!enabled||closed||!fetchStatus||disabled)return;
-   if(checking)return checking;if(!force&&now()-lastCheck<15000)return;
+   if(checking)return checking;if(!force&&lastCheck&&now()-lastCheck<CHECK_INTERVAL)return;
    checking=(async()=>{try{
     status(ram.size?'updating':'loading');const current=await fetchStatus();
     if(current.scope!==session.scope||current.release!==session.release){invalidate();disabled=true;status('reload');return;}
-    acceptRevision(current.revision,true);lastCheck=now();status('current');
-   }catch(e){if(e.status===401){invalidate();disabled=true;status('signin');}else status('offline');}
+    const previous=revision;acceptRevision(current.revision,true);lastCheck=now();saveSoon();status('current');
+    return {ok:true,changed:previous!==null&&previous!==revision,checkedAt:lastCheck};
+   }catch(e){if(e.status===401){invalidate();disabled=true;status('signin');}else status('offline');return {ok:false};}
    finally{checking=null;}})();return checking;
   }
   async function digest(value){if(!root.crypto?.subtle)return null;const buffer=await root.crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(wire.encode(value))));return Array.from(new Uint8Array(buffer),n=>n.toString(16).padStart(2,'0')).join('');}
@@ -139,7 +142,7 @@
      status('updating');const before=JSON.stringify(entry.value);
      load(target,method,args,key,true).then(result=>{if(JSON.stringify(wire.encode(result))!==before)onChange();status('current');}).catch(()=>status('offline'));
     }
-    if(now()-lastCheck>15000){status('updating');void check();}
+    if(!lastCheck||now()-lastCheck>=CHECK_INTERVAL)void check();
     const value=clone(entry.value);if(target==='Views'&&['inventoryPage','homeLatest','pageBundle'].includes(method))await seed(value?.primes,epoch);
     return value;
    }
@@ -147,7 +150,7 @@
   }
   function close(){clearTimeout(timer);persist();closed=true;db?.close();}
   function revoke(){invalidate();disabled=true;status('signin');}
-  return {enabled,ready,call,lookup,seed,check,revoke,acceptRevision,invalidate,persist,close,inspect:()=>({entries:ram.size,bytes,revision,epoch,namespace})};
+  return {enabled,ready,call,lookup,seed,check,revoke,acceptRevision,invalidate,persist,close,inspect:()=>({entries:ram.size,bytes,revision,epoch,namespace,checkedAt:lastCheck})};
  }
  root.AlishanCreateDeviceCache=create;
  if(typeof module!=='undefined'&&module.exports)module.exports={create};

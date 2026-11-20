@@ -79,19 +79,21 @@
  }
  const isReader=(target,method)=>ALISHAN_META[target]?.[method]?.read??(['Calc','Reports','Views','Search','Groups'].includes(target)||target==='DB'&&['init','get','getAll','getAllFrom','getSetting','getTheme','getSearchAnalytics','getSearchHistory','getInventory','getPayments','getArchive','getQualityHistory','getRecentActivity'].includes(method));
  function shellMessage(type){navigator.serviceWorker?.controller?.postMessage({type,session:window.ALISHAN_SESSION,scope:window.ALISHAN_SESSION?.scope});}
- function cacheStatus(kind){
+ function cacheStatus(kind,checkedAt=device?.inspect().checkedAt){
   if(['signin','reload'].includes(kind)){
    window.AlishanRouter?.block();
    if(typeof navigator!=='undefined')shellMessage('CLEAR_VIEW_SESSION');
   }
   if(kind==='current'&&typeof navigator!=='undefined')shellMessage('BIND_VIEW_SESSION');
   if(typeof document==='undefined')return;
-  const paint=()=>{let el=document.getElementById('deviceCacheStatus');if(!el){el=document.createElement('button');el.id='deviceCacheStatus';el.type='button';el.setAttribute('role','status');el.style.cssText='position:fixed;right:12px;bottom:calc(82px + env(safe-area-inset-bottom));max-width:calc(100vw - 24px);z-index:2200;padding:6px 10px;border:1px solid var(--border-color,#aaa);border-radius:16px;background:var(--bg-secondary,#fff);color:var(--text-primary,#222);font:12px sans-serif;box-shadow:0 2px 8px #0002';el.onclick=()=>{if(el.dataset.state==='reload'){shellMessage('CLEAR_VIEW_SESSION');location.reload();}else{device.invalidate(true);changed();void device.check(true);}};document.body.appendChild(el);}
-   const labels={saved:'Saved view',updating:'Saved view · updating…',loading:'Loading…',current:'Up to date',offline:'Offline · saved view',reload:'App updated · Reload',signin:'Please sign in again'};
-   el.dataset.state=kind;el.textContent=labels[kind]||kind;el.title='Tap to refresh the saved view';};
+  const paint=()=>{let el=document.getElementById('deviceCacheStatus');if(!el){el=document.createElement('button');el.id='deviceCacheStatus';el.type='button';el.setAttribute('role','status');el.style.cssText='position:fixed;right:12px;bottom:calc(82px + env(safe-area-inset-bottom));max-width:calc(100vw - 24px);z-index:2200;padding:6px 10px;border:1px solid var(--border-color,#aaa);border-radius:16px;background:var(--bg-secondary,#fff);color:var(--text-primary,#222);font:12px sans-serif;box-shadow:0 2px 8px #0002';el.onclick=()=>{if(el.dataset.state==='reload'){shellMessage('CLEAR_VIEW_SESSION');location.reload();}else{void syncNow();}};document.body.appendChild(el);}
+   const labels={saved:'Saved view',updating:'Saved view · updating…',loading:'Loading…',current:'Sync Now',offline:'Offline · saved view',reload:'App updated · Reload',signin:'Please sign in again'};
+   el.dataset.state=kind;el.textContent=(labels[kind]||kind)+(checkedAt&&['current','saved','offline'].includes(kind)?' · Last checked '+new Date(checkedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'');el.title='Check the server for changes';};
   if(document.body)paint();else document.addEventListener('DOMContentLoaded',paint,{once:true});
  }
- device=window.AlishanCreateDeviceCache?.({wire:ALISHAN_WIRE,network:networkCall,session:window.ALISHAN_SESSION,isReader,onChange:changed,onStatus:cacheStatus,broadcast:()=>channel?.postMessage('changed'),fetchStatus:async()=>{
+ const autoCheckInterval=12*3600000;
+ async function syncNow(){await device?.ready;return device?.check(true);}
+ device=window.AlishanCreateDeviceCache?.({checkIntervalMs:autoCheckInterval,wire:ALISHAN_WIRE,network:networkCall,session:window.ALISHAN_SESSION,isReader,onChange:changed,onStatus:cacheStatus,broadcast:()=>channel?.postMessage('changed'),fetchStatus:async()=>{
   const response=await fetch('/api/cache-status',{headers:scopedHeaders(),credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(10000)});
   if(!response.ok)throw Object.assign(new Error('Status unavailable'),{status:response.status});return response.json();
  }});
@@ -227,7 +229,13 @@
  window.AlishanRequire=async needed=>AlishanHas(needed);
  window.AlishanRemote={call,submitEntry,preparePage,readStartupCache,cacheInfo:()=>device?.inspect(),clearDeviceCache(){device?.invalidate(true);changed();void device?.check(true);}};
  if(device?.enabled){
-  const addCacheControl=()=>{const host=document.getElementById('backup');if(!host||document.getElementById('refreshDeviceView'))return;const card=document.createElement('div');card.className='card';card.style.marginTop='18px';card.innerHTML='<div class="card-header"><h2 class="card-title">Saved Device View</h2></div><div class="card-body"><p class="settings-help">Loaded views are kept on this device for faster opening. Server records remain the source of truth.</p><button id="refreshDeviceView" type="button" class="btn btn-secondary">Refresh saved view</button></div>';host.appendChild(card);card.querySelector('button').onclick=()=>{AlishanRemote.clearDeviceCache();if(typeof showNotification==='function')showNotification('Refreshing saved view. Server records are unchanged.','success');};};
+  const addCacheControl=()=>{const host=document.getElementById('backup');if(!host||document.getElementById('refreshDeviceView'))return;const card=document.createElement('div');card.className='card';card.style.marginTop='18px';card.innerHTML='<div class="card-header"><h2 class="card-title">Saved Device View</h2></div><div class="card-body"><p class="settings-help">Loaded views are kept on this device for faster opening. Server records remain the source of truth.</p><button id="refreshDeviceView" type="button" class="btn btn-secondary">Sync Now</button></div>';host.appendChild(card);card.querySelector('button').onclick=async event=>{
+   const button=event.currentTarget;button.disabled=true;
+   try{
+    const result=await syncNow();
+    if(typeof showNotification==='function')showNotification(result?.ok?(result.changed?'Server changes found. Updating saved views.':'Server checked. No new revision.'):'Server check unavailable. Saved views kept if still authorized.',result?.ok?'success':'warning');
+   }finally{button.disabled=false;}
+  };};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addCacheControl,{once:true});else addCacheControl();
   const warmLink=e=>{
    const link=e.target.closest?.('a');
@@ -248,10 +256,12 @@
    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addSignOut,{once:true});else addSignOut();
   }
   void device.ready.then(()=>device.check(true));
-  const poll=setInterval(()=>{if(document.visibilityState!=='hidden')void device.check();},15000);poll?.unref?.();
-  window.addEventListener('focus',()=>void device.check(true));window.addEventListener('online',()=>void device.check(true));window.addEventListener('offline',()=>cacheStatus('offline'));
+  const poll=setInterval(()=>{if(document.visibilityState!=='hidden')void device.check();},autoCheckInterval);poll?.unref?.();
+  let lastForeground=0;
+  const checkForeground=()=>{if(Date.now()-lastForeground>=60000){lastForeground=Date.now();void device.check(true);}};
+  window.addEventListener('focus',checkForeground);window.addEventListener('online',()=>void device.check(true));window.addEventListener('offline',()=>cacheStatus('offline'));
   window.addEventListener('pagehide',()=>device.persist());
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void device.check(true);});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkForeground();});
  }
  // Async equivalents preserve array callback semantics after calls move to the server.
  window.AlishanAsync={
