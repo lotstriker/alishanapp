@@ -36,6 +36,16 @@
   } catch {}
   finally { sending=false; }
  }
+ let lcp;
+ let paintObserver;
+ if(typeof PerformanceObserver==='function'){
+  try{
+   paintObserver=new PerformanceObserver(list=>{
+    if(spaStart===undefined&&!recorded)lcp=list.getEntries().at(-1)?.startTime??lcp;
+   });
+   paintObserver.observe({type:'largest-contentful-paint',buffered:true});
+  }catch{}
+ }
  function record() {
   if (recorded || !routes.has(page)) return;
   const nav = spaStart===undefined ? performance.getEntriesByType?.('navigation')?.[0] : null;
@@ -45,6 +55,11 @@
   if (criticalPaint!==undefined) metrics.criticalPaintMs=criticalPaint-(spaStart??0);
   if (dataReady!==undefined&&criticalPaint!==undefined) metrics.dataToCriticalMs=Math.max(0,criticalPaint-dataReady);
   if (nav) {
+   const fcp=performance.getEntriesByName?.('first-contentful-paint','paint')?.[0]?.startTime;
+   const lastPaint=paintObserver?.takeRecords().at(-1)?.startTime??lcp;
+   if(Number.isFinite(fcp))metrics.fcpMs=fcp;
+   if(Number.isFinite(lastPaint))metrics.lcpObservedMs=lastPaint;
+   paintObserver?.disconnect();
    if (nav.domContentLoadedEventEnd > 0) metrics.domMs = nav.domContentLoadedEventEnd;
    if (nav.loadEventEnd > 0) metrics.loadMs = nav.loadEventEnd;
    if (nav.responseStart > 0) metrics.documentWaitMs = nav.responseStart - nav.requestStart;

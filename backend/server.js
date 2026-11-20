@@ -15,14 +15,42 @@ const hash=s=>createHash('sha256').update(s).digest();
 function createApp({repository,username,password,auth,repositoryFor,legacyOwnerId,telemetry}){
  if((!auth&&!username)||!password||password.length<20)throw new Error('APP_USERNAME and APP_PASSWORD (20+ characters) are required');
  let pureDomain;
+ const bootedAt=new Date().toISOString();
  const basicScope=hash(JSON.stringify([repository.workspace||'alishan',username,password,process.env.DATABASE_URL||'local'])).toString('hex').slice(0,32);
  const {entryReview}=require('./entry-review');
  const app=express();app.disable('x-powered-by');
  app.use((req,res,next)=>{res.set({'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY','Cache-Control':'no-store'});next();});
- app.get('/internal/monitor/backup',async(req,res)=>{
+ function monitorAuthorized(req){
    const token=process.env.MONITOR_BACKUP_TOKEN;
-   const supplied=req.get('authorization')||'';
-   if(!token||token.length<32||!timingSafeEqual(hash(supplied),hash('Bearer '+token)))return res.sendStatus(404);
+   return token&&token.length>=32&&timingSafeEqual(hash(req.get('authorization')||''),hash('Bearer '+token));
+ }
+ const apiWindow=new Map();
+ app.use((req,res,next)=>{
+   if(req.path==='/api/batch'||req.path==='/api/rpc'){
+     const route=req.path,start=performance.now();
+     res.once('finish',()=>{
+       const values=apiWindow.get(route)||[];
+       values.push({at:Date.now(),ms:Math.round(performance.now()-start),status:res.statusCode,db:res.locals.monitorDb});
+       if(values.length>500)values.shift();
+       apiWindow.set(route,values);
+     });
+   }
+   next();
+ });
+ app.get('/internal/monitor/operations',async(req,res)=>{
+   if(!monitorAuthorized(req))return res.sendStatus(404);
+   const percentile=(values,p)=>values.length?values.sort((a,b)=>a-b)[Math.ceil(values.length*p)-1]:null;
+   const routes=[...apiWindow].map(([route,buffer])=>{
+     const samples=buffer.filter(x=>x.at>Date.now()-3600000);
+     return {route,requests:samples.length,errors:samples.filter(x=>x.status>=500).length,
+       p95:percentile(samples.map(x=>x.ms),.95),dbMs:percentile(samples.map(x=>x.db).filter(Number.isFinite),.95)};
+   }).filter(row=>row.requests>0);
+   try{res.json({release,commit:process.env.RENDER_GIT_COMMIT||null,bootedAt,at:new Date().toISOString(),routes,
+     pages:telemetry?.monitorSummary?await telemetry.monitorSummary():[]});}
+   catch{res.status(503).json({status:'unavailable'});}
+ });
+ app.get('/internal/monitor/backup',async(req,res)=>{
+   if(!monitorAuthorized(req))return res.sendStatus(404);
    try{res.json(await repository.backupHealth());}
    catch{res.status(503).json({status:'unavailable'});}
  });
@@ -76,6 +104,7 @@ function createApp({repository,username,password,auth,repositoryFor,legacyOwnerI
  async function timedRun(calls,res){
    const started=performance.now(),timings={db:0};
    const result=await metrics.context.run(timings,()=>run(calls,res.locals.account));
+   res.locals.monitorDb=Math.round(timings.db);
    res.set('Server-Timing',`app;dur=${(performance.now()-started).toFixed(1)}, db;dur=${timings.db.toFixed(1)}`);
    return result;
  }

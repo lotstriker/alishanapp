@@ -1,6 +1,6 @@
 {
   "name": "alishanapp",
-  "version": "119.0.0",
+  "version": "120.0.0",
   "description": "this is a inventory app",
   "main": "index.js",
   "directories": {

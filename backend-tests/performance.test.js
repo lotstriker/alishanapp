@@ -102,3 +102,25 @@ test('backup monitor exposes only schedule metadata behind its dedicated token',
  assert.equal(body.lastBackupAt,now);assert.equal(body.frequencyHours,24);
  assert.deepEqual(Object.keys(body).sort(),['checkedAt','enabled','frequencyHours','lastBackupAt','nextDueAt']);
 });
+
+test('monitor groups anonymous timings and bounds API statistics behind its token',async t=>{
+ const {repo,pg}=await setup(t);
+ await pg.exec(require('node:fs').readFileSync(require('node:path').join(__dirname,'../deployment/performance.sql'),'utf8').split('select cron.schedule')[0]);
+ const telemetry=require('../backend/performance').telemetryStore(pg);
+ const {randomUUID,randomBytes}=require('node:crypto');
+ for(const readyMs of [70,80,150])await telemetry.put('private-scope','120.0.0',{
+  visit:randomUUID(),device:randomUUID(),page:'index',metrics:{visitType:'document',readyMs,fcpMs:50,lcpObservedMs:75}
+ });
+ const values=await telemetry.monitorSummary();
+ assert.equal(values.length,1);assert.equal(values[0].p50,80);assert.equal(values[0].fcpP50,50);
+ assert.doesNotMatch(JSON.stringify(values),/private-scope|device/);
+ const token=randomBytes(32).toString('hex'),previous=process.env.MONITOR_BACKUP_TOKEN;
+ process.env.MONITOR_BACKUP_TOKEN=token;
+ t.after(()=>{if(previous===undefined)delete process.env.MONITOR_BACKUP_TOKEN;else process.env.MONITOR_BACKUP_TOKEN=previous;});
+ const server=createApp({repository:repo,username:'test',password:'test-only-password-123456789',telemetry}).listen(0,'127.0.0.1');
+ await new Promise(resolve=>server.once('listening',resolve));t.after(()=>server.close());
+ const base='http://127.0.0.1:'+server.address().port;
+ assert.equal((await fetch(base+'/internal/monitor/operations')).status,404);
+ const result=await fetch(base+'/internal/monitor/operations',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json());
+ assert.equal(result.pages[0].samples,3);assert.equal(result.release,'120.0.0');
+});
