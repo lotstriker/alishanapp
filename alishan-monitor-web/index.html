@@ -72,7 +72,7 @@ section{scroll-margin-top:12px}.chart-row{grid-template-columns:minmax(74px,110p
 <h3>p95 by release</h3><div id="release-chart" class="chart" aria-label="p95 by release in milliseconds"></div><p id="cohort-finding" role="status"></p>
 </section>
 <section id="usage" class="dashboard-card">
-<div class="card-heading"><div><h2>Database &amp; egress</h2><p>Billing-cycle usage and service breakdown</p></div><span id="usage-state" class="status neutral">No data</span></div>
+<div class="card-heading"><div><h2>Database &amp; egress</h2><p>Billing-cycle usage and service breakdown · <a href="https://supabase.com/dashboard/org/gerwsteryhhtbrfnqoet/usage">Open Supabase usage</a></p></div><span id="usage-state" class="status neutral">No data</span></div>
 <div class="health-grid" id="usage-metrics"></div>
 <h3>Daily transfer</h3><div id="usage-chart" class="chart"></div>
 <h3>Transfer by service</h3><div id="category-chart" class="chart"></div>
@@ -136,7 +136,7 @@ section{scroll-margin-top:12px}.chart-row{grid-template-columns:minmax(74px,110p
 <label class="check-label"><input id="restore-checked" type="checkbox"> Isolated restore passed integrity checks</label>
 <button>Save recovery evidence</button><p id="recovery-message" role="status"></p>
 </form></details>
-<h3>Runbooks</h3><p>Health checks are available. Retry and cache invalidation are awaiting approval controls. Destructive actions, deployments and database changes require explicit approval.</p>
+<p id="backup-source" role="status"></p><h3>Runbooks</h3><p>Health checks are available. Retry and cache invalidation are awaiting approval controls. Destructive actions, deployments and database changes require explicit approval.</p>
 </section>
 <section id="warnings"><h2>Warning history</h2><p class="subtle">Health warning after two failed checks. Speed warning after at least three samples when the median is at least 25% and 50 ms above the baseline.</p><ol id="events" class="events"></ol><p id="empty">No warnings recorded yet.</p></section>
 </main>
@@ -353,6 +353,7 @@ async function loadOverview() {
     if (!response.ok) throw Error('Collector unavailable');
     const value = await response.json();
     liveState=value;
+    renderRecovery();
     badge.textContent = byId('app-state').textContent = labels[value.appState];
     badge.className = 'pill' + (value.appState === 'reachable' ? ' ok' : value.appState === 'unavailable' ? ' bad' : value.appState === 'verifying' ? ' warn' : '');
     byId('app-age').textContent = value.app ? (value.stale ? 'Stale · ' : 'Last check · ')+localTime(value.app.id) : 'Waiting for collector';
@@ -366,7 +367,8 @@ async function loadOverview() {
       value.stale ? 'Monitoring data is stale or pending.' :
       value.events[0]?.state === 'reachable' ? 'Recovery observed · '+localTime(value.events[0].at) : '';
   } catch {
-    liveState={stale:true};
+    liveState={stale:true,backup:liveState?.backup,backupError:true};
+    renderRecovery();
     badge.textContent = byId('app-state').textContent = byId('database-state').textContent = 'Unknown';
     badge.className = 'pill';
     byId('app-latency').textContent = '—';
@@ -586,18 +588,24 @@ function recoveryStatus() {
 }
 function renderRecovery() {
   const result=recoveryStatus();
-  if(!result)return;
-  const {age,rto,rpo,overdue}=result;
+  const signal=liveState?.backup, last=signal?.lastBackupAt, due=signal?.nextDueAt;
+  const stale=signal&&(liveState.backupError||Date.now()-Date.parse(signal.checkedAt)>28*60000);
+  byId('backup-source').textContent=signal?'Alishan backup metadata · '+localTime(signal.checkedAt)+(stale?' · Stale':''):'Live backup metadata unavailable. Manual evidence is shown when supplied.';
+  if(!result&&!signal)return;
+  const {age,rto,rpo,overdue}=result||{};
+  const scheduleStatus=stale?'Stale':!signal?.enabled?'Disabled':!last?'No retained backup':due&&Date.parse(due)<=Date.now()?'Overdue':'Current';
+  const scheduleNote=(last?localTime(last):'No successful backup recorded')+(due?' · Next scheduled check due '+localTime(due):'');
   const target=(actual,goal)=>actual===null?'Unavailable':minutes(actual)+(goal?' / '+minutes(goal)+' target · '+(actual>goal?'Missed':'Met'):' · Target unset');
   fillRows('recovery-rows',[
-    ['Last successful backup',overdue?'Overdue':'Current',localTime(recovery.backup)+' · '+minutes(age)+' old · Next due '+localTime(Date.parse(recovery.backup)+recovery.frequency*3600000)],
-    ['Restore verification',recovery.passed?'Passed':recovery.verifiedAt?'Failed / unverified':'Unavailable',recovery.verifiedAt?localTime(recovery.verifiedAt):'No isolated drill recorded'],
-    ['Recovery time (RTO)',target(rto,recovery.rtoTarget),'Elapsed drill time'],
-    ['Recovery point (RPO)',target(rpo,recovery.rpoTarget),'Gap from drill start to recovered data']
+    ['Last successful backup',signal?scheduleStatus:overdue?'Overdue':'Current',signal?scheduleNote:localTime(recovery.backup)+' · '+minutes(age)+' old'],
+    ['Restore verification',recovery?.passed?'Passed':recovery?.verifiedAt?'Failed / unverified':'Unavailable',recovery?.verifiedAt?localTime(recovery.verifiedAt):'No isolated drill recorded'],
+    ['Recovery time (RTO)',target(rto??null,recovery?.rtoTarget),'Elapsed drill time'],
+    ['Recovery point (RPO)',target(rpo??null,recovery?.rpoTarget),'Gap from drill start to recovered data']
   ],'No recovery evidence.');
-  const tones=[overdue?'warn':'good',recovery.passed?'good':recovery.verifiedAt?'critical':'neutral',
-    rto===null||!recovery.rtoTarget?'neutral':rto>recovery.rtoTarget?'warn':'good',
-    rpo===null||!recovery.rpoTarget?'neutral':rpo>recovery.rpoTarget?'warn':'good'];
+  const tones=[signal?(scheduleStatus==='Current'?'good':scheduleStatus==='Disabled'?'neutral':'warn'):overdue?'warn':'good',
+    recovery?.passed?'good':recovery?.verifiedAt?'critical':'neutral',
+    rto==null||!recovery?.rtoTarget?'neutral':rto>recovery.rtoTarget?'warn':'good',
+    rpo==null||!recovery?.rpoTarget?'neutral':rpo>recovery.rpoTarget?'warn':'good'];
   Array.from(byId('recovery-rows').rows).forEach((row,i)=>{
     const status=row.cells[1], label=document.createElement('span');
     label.className='status '+tones[i];label.textContent=status.textContent;status.replaceChildren(label);
@@ -621,7 +629,9 @@ function findings() {
     }
   }
   const restore=recoveryStatus();
-  if(restore?.overdue)result.push(['backup',finding('warn','Backup freshness is overdue','Saved evidence is '+minutes(restore.age)+' old.','Check the scheduled backup history and record the latest result.')]);
+  const backup=liveState?.backup;
+  if(backup?.enabled&&!liveState.backupError&&!liveState.stale&&backup.nextDueAt&&Date.parse(backup.nextDueAt)<Date.now())result.push(['backup-live',finding('warn','Backup schedule overdue','The live backup schedule passed its due time.','Inspect scheduled backup logs.')]);
+  if(!backup&&restore?.overdue)result.push(['backup',finding('warn','Backup freshness is overdue','Saved evidence is '+minutes(restore.age)+' old.','Check the scheduled backup history and record the latest result.')]);
   if(recovery?.verifiedAt&&!recovery.passed)result.push(['restore',finding('critical','Restore drill did not pass verification','The recorded isolated drill has no passing integrity check.','Inspect drill evidence and repeat the isolated restore before relying on the backup.')]);
   if(restore?.rto!==null&&restore?.rto>recovery?.rtoTarget&&recovery?.rtoTarget)result.push(['rto',finding('warn','Recovery time target missed',minutes(restore.rto)+' observed versus '+minutes(recovery.rtoTarget)+' target.','Review restore steps and repeat the drill.')]);
   if(restore?.rpo!==null&&restore?.rpo>recovery?.rpoTarget&&recovery?.rpoTarget)result.push(['rpo',finding('warn','Recovery point target missed',minutes(restore.rpo)+' observed versus '+minutes(recovery.rpoTarget)+' target.','Check backup frequency and verify a more recent restore point.')]);

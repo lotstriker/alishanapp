@@ -24,6 +24,19 @@ def history():
         return rows
 
 
+def backup_health():
+    token = os.environ.get("MONITOR_BACKUP_TOKEN")
+    if not token:
+        return None
+    request = Request(HEALTH.rsplit("/", 1)[0] + "/internal/monitor/backup",
+                      headers={"Authorization": "Bearer " + token})
+    with urlopen(request, timeout=10) as response:
+        value = json.loads(response.read(4096))
+    if not isinstance(value.get("enabled"), bool) or not isinstance(value.get("checkedAt"), str):
+        raise ValueError("Invalid backup signal")
+    return {key: value.get(key) for key in ("enabled", "frequencyHours", "lastBackupAt", "nextDueAt", "checkedAt")}
+
+
 class Collector:
     def __init__(self, interval=1200):
         self.interval = interval
@@ -32,6 +45,8 @@ class Collector:
         self.app = None
         self.database = None
         self.rows = []
+        self.backup = None
+        self.backup_error = False
         self.failures = 0
         self.events = []
         self.previous_state = None
@@ -62,7 +77,15 @@ class Collector:
                 database = {"state": "unavailable", "at": int(time.time() * 1000)}
             except (OSError, ValueError):
                 database = {"state": "unknown", "at": int(time.time() * 1000)}
+            backup, backup_error = None, False
+            try:
+                backup = backup_health()
+            except (OSError, ValueError, AttributeError):
+                backup_error = True
             with self.lock:
+                if backup is not None:
+                    self.backup = backup
+                self.backup_error = backup_error
                 self.app, self.database = app, database
                 if rows is not None:
                     self.rows = rows
@@ -89,7 +112,7 @@ class Collector:
             "unavailable" if self.failures >= 2 and corroborated else "verifying")
         return {"appState": state, "app": self.app, "database": self.database,
                 "stale": stale, "consecutiveFailures": self.failures, "events": self.events,
-                "scheduledCount": len(self.rows), "egress": {"state": "unavailable"}}
+                "scheduledCount": len(self.rows), "backup": self.backup, "backupError": self.backup_error, "egress": {"state": "unavailable"}}
 
     def loop(self, stop):
         while not stop.is_set():
