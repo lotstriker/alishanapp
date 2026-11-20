@@ -1966,6 +1966,7 @@
             refreshAllReports(true);
             checkLowStock();
             window.AlishanTimings?.pageReady('Reports');
+    window.AlishanPerformance?.ready();
             if (window.ReportViews) ReportViews.init();          // the eight report cards / the open report
 
             // redraw whenever the store changes: a payment, a stock toggle (also from the

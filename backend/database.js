@@ -1,4 +1,5 @@
 'use strict';
+const performanceDb=require('./performance');
 const { randomUUID } = require('node:crypto');
 const stores = ['inventory','payments','qualities','colors','settings','searchAnalytics','users','editHistory','auditLog','archive'];
 const blank = () => Object.fromEntries(stores.map(k => [k, []]));
@@ -52,13 +53,13 @@ function createDatabase(state, actor) {
 }
 class PostgresRepository {
   constructor(pool,workspace='alishan'){this.pool=pool;this.workspace=workspace;this.readCache=new Map();}
-  async revision(){const r=await this.pool.query('SELECT revision FROM alishan_private.workspaces WHERE id=$1',[this.workspace]);return String(r.rows[0]?.revision||0);}
-  async ready(){await this.pool.query('SELECT 1 FROM alishan_private.workspaces LIMIT 1');}
+  async revision(){const r=await performanceDb.query(this.pool,'SELECT revision FROM alishan_private.workspaces WHERE id=$1',[this.workspace]);return String(r.rows[0]?.revision||0);}
+  async ready(){await performanceDb.query(this.pool,'SELECT 1 FROM alishan_private.workspaces LIMIT 1');}
   // One MVCC statement: readers never take the workspace write lock. Revision and
   // projected records come from the same committed snapshot, even during a restore.
   async read(fn,selection={stores,settings:null}){
     const cacheKey=JSON.stringify(selection),cached=this.readCache.get(cacheKey);
-    const result=await this.pool.query(`SELECT w.revision,
+    const result=await performanceDb.query(this.pool,`SELECT w.revision,
       CASE WHEN w.revision=$2::bigint THEN NULL ELSE COALESCE((
         SELECT jsonb_agg(jsonb_build_object('store',r.store,'payload',r.payload))
         FROM alishan_private.records r WHERE r.workspace_id=w.id
@@ -81,49 +82,49 @@ class PostgresRepository {
   async themePreference(value) {
     const key = keyText('selectedTheme');
     if (value === undefined) {
-      const result = await this.pool.query(
+      const result = await performanceDb.query(this.pool,
         "SELECT payload->>'value' AS theme FROM alishan_private.records WHERE workspace_id=$1 AND store='settings' AND record_key=$2",
         [this.workspace, key]
       );
       return result.rows[0]?.theme;
     }
-    const client = await this.pool.connect();
+    const client = await performanceDb.connect(this.pool);
     try {
-      await client.query('BEGIN');
-      await client.query("SET LOCAL lock_timeout = '10s'");
-      await client.query('INSERT INTO alishan_private.workspaces(id) VALUES($1) ON CONFLICT DO NOTHING',[this.workspace]);
-      await client.query('SELECT id FROM alishan_private.workspaces WHERE id=$1 FOR UPDATE',[this.workspace]);
-      await client.query(
+      await performanceDb.query(client,'BEGIN');
+      await performanceDb.query(client,"SET LOCAL lock_timeout = '10s'");
+      await performanceDb.query(client,'INSERT INTO alishan_private.workspaces(id) VALUES($1) ON CONFLICT DO NOTHING',[this.workspace]);
+      await performanceDb.query(client,'SELECT id FROM alishan_private.workspaces WHERE id=$1 FOR UPDATE',[this.workspace]);
+      await performanceDb.query(client,
         "INSERT INTO alishan_private.records(workspace_id,store,record_key,payload) VALUES($1,'settings',$2,$3::jsonb) ON CONFLICT(workspace_id,store,record_key) DO UPDATE SET payload=EXCLUDED.payload",
         [this.workspace,key,JSON.stringify({key:'selectedTheme',value})]
       );
-      await client.query('COMMIT');
+      await performanceDb.query(client,'COMMIT');
       this.readCache.clear();
       return true;
     } catch (error) {
-      await client.query('ROLLBACK').catch(()=>{});
+      await performanceDb.query(client,'ROLLBACK').catch(()=>{});
       throw error;
     } finally {
       client.release();
     }
   }
   async transaction(fn){
-    const client=await this.pool.connect();
+    const client=await performanceDb.connect(this.pool);
     try{
-      await client.query('BEGIN');
-      await client.query("SET LOCAL statement_timeout = '20s'");
-      await client.query("SET LOCAL lock_timeout = '10s'");
-      await client.query('INSERT INTO alishan_private.workspaces(id) VALUES($1) ON CONFLICT DO NOTHING',[this.workspace]);
-      const locked=await client.query('SELECT revision FROM alishan_private.workspaces WHERE id=$1 FOR UPDATE',[this.workspace]);
-      const rows=await client.query('SELECT store,payload FROM alishan_private.records WHERE workspace_id=$1',[this.workspace]);
+      await performanceDb.query(client,'BEGIN');
+      await performanceDb.query(client,"SET LOCAL statement_timeout = '20s'");
+      await performanceDb.query(client,"SET LOCAL lock_timeout = '10s'");
+      await performanceDb.query(client,'INSERT INTO alishan_private.workspaces(id) VALUES($1) ON CONFLICT DO NOTHING',[this.workspace]);
+      const locked=await performanceDb.query(client,'SELECT revision FROM alishan_private.workspaces WHERE id=$1 FOR UPDATE',[this.workspace]);
+      const rows=await performanceDb.query(client,'SELECT store,payload FROM alishan_private.records WHERE workspace_id=$1',[this.workspace]);
       const state=blank();for(const r of rows.rows)state[r.store].push(r.payload);
       const before=structuredClone(state);
       const issueQualityCode=async()=>{
-        const {rows}=await client.query("SELECT nextval('alishan_private.quality_codes')::text AS code");
+        const {rows}=await performanceDb.query(client,"SELECT nextval('alishan_private.quality_codes')::text AS code");
         return rows[0].code;
       };
       const result=await fn(state,Number(locked.rows[0].revision),issueQualityCode);
-      if(result?.ok===false){await client.query('ROLLBACK');return result;}
+      if(result?.ok===false){await performanceDb.query(client,'ROLLBACK');return result;}
       let changed=false;
       for(const s of stores){
         const old=new Map(before[s].map(r=>[keyText(keyOf(s,r)),JSON.stringify(r)]));
@@ -131,15 +132,15 @@ class PostgresRepository {
         for(const row of state[s]){const key=keyText(keyOf(s,row)),json=JSON.stringify(row);if(old.get(key)!==json)updates.push({record_key:key,payload:row});old.delete(key);}
         // Bounded multi-row writes replace hundreds of network round trips.
         for(let offset=0;offset<updates.length;offset+=100){
-          await client.query(`INSERT INTO alishan_private.records(workspace_id,store,record_key,payload)
+          await performanceDb.query(client,`INSERT INTO alishan_private.records(workspace_id,store,record_key,payload)
             SELECT $1,$2,x.record_key,x.payload FROM jsonb_to_recordset($3::jsonb) AS x(record_key text,payload jsonb)
             ON CONFLICT(workspace_id,store,record_key) DO UPDATE SET payload=EXCLUDED.payload`,[this.workspace,s,JSON.stringify(updates.slice(offset,offset+100))]);changed=true;
         }
-        if(old.size){await client.query('DELETE FROM alishan_private.records WHERE workspace_id=$1 AND store=$2 AND record_key=ANY($3::text[])',[this.workspace,s,[...old.keys()]]);changed=true;}
+        if(old.size){await performanceDb.query(client,'DELETE FROM alishan_private.records WHERE workspace_id=$1 AND store=$2 AND record_key=ANY($3::text[])',[this.workspace,s,[...old.keys()]]);changed=true;}
       }
-      if(changed)await client.query('UPDATE alishan_private.workspaces SET revision=revision+1 WHERE id=$1',[this.workspace]);
-      await client.query('COMMIT');if(changed)this.readCache.clear();return result;
-    }catch(e){await client.query('ROLLBACK').catch(()=>{});throw e;}finally{client.release();}
+      if(changed)await performanceDb.query(client,'UPDATE alishan_private.workspaces SET revision=revision+1 WHERE id=$1',[this.workspace]);
+      await performanceDb.query(client,'COMMIT');if(changed)this.readCache.clear();return result;
+    }catch(e){await performanceDb.query(client,'ROLLBACK').catch(()=>{});throw e;}finally{client.release();}
   }
 }
 module.exports={stores,blank,keyOf,createDatabase,PostgresRepository};

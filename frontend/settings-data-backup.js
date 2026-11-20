@@ -107,7 +107,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    refresh().catch(e => message(e.message || 'Could not load backup settings.', false));
+    refresh().then(()=>window.AlishanPerformance?.ready()).catch(e => message(e.message || 'Could not load backup settings.', false));
     $('saveAlishanBackupSettings')?.addEventListener('click', () => saveSettings());
     $('createLocalAlishanBackup')?.addEventListener('click', createBackup);
     $('restoreLatestAlishanBackup')?.addEventListener('click', () => restoreLatest().catch(e => message(e.message || 'Restore failed.', false)));

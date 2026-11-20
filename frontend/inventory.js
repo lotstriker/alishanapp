@@ -110,6 +110,7 @@ function refreshUI() {
     populateQualityFilter();
     renderInventoryCards();
     window.AlishanTimings?.pageReady('Inventory');
+    window.AlishanPerformance?.ready();
 }
 
 // ================= FILTERS + SEARCH (the store does the work) =================

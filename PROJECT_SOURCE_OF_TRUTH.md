@@ -598,6 +598,7 @@ Rule: see section 0, rule 8. Newest at the bottom.
 | v101 | `AlishanApp-v101-Reviewed-Entries.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-001` | Entry review, permanent Quality Codes, retry confirmation, live form preview, extra received and export counts. |
 | v102 | `AlishanApp-v102-Google-Login.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-002` | Google sign-in candidate, private per-user workspaces, navigation prefetch and changed-record cache priming. |
 | v103 | `AlishanApp-v103-Speed-Timings.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-003` | Opt-in device timings for page loads, page switches, theme changes and confirmed saves. |
+| v104 | `AlishanApp-v104-Page-Performance.zip` | 2026-11-20 | `ALISHAN-CHG-2026-11-20-004` | Automatic page visits, API and database timings, and filtered performance history. |
 
 > **Note on two ZIPs named v90 (added 2026-11-11, history kept):** an earlier ZIP, `AlishanApp-v90-Visual-Manual-Workflow-Fixes.zip` (change ID `ALISHAN-CHG-2026-11-09-008`: Expand All / Collapse All fix, Add Entry order Quality Type → Quality → Cup, 32 PDF screenshots), was delivered on a separate branch. Its changes are **not** contained in the v90 row above or in v91. This lineage continues from `AlishanApp-v90-Visual-Screenshot-Tutorials.zip`. Whether to bring those fixes into this lineage is an open owner decision.
 
@@ -1085,3 +1086,7 @@ Google mode links a verified Google-backed Supabase user ID to a private server 
 ### ALISHAN-CHG-2026-11-20-003 — Device speed timings
 
 Open Dashboard with `?timing=1` to capture navigation and action timings locally in the current tab. Measurements contain labels and durations only. Report times are grouped by page and shown in milliseconds. Startup continues through ordinary readers if a page warm-up request fails. Real Android measurements are pending.
+
+### ALISHAN-CHG-2026-11-20-004 — Automatic page performance
+
+Records approved timing fields per authenticated account and random browser-device identifier. Owners can filter across accounts. Shared password mode separates devices only. Measurements exclude business data and are kept for 30 days.

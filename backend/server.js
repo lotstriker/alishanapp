@@ -9,8 +9,9 @@ const {encode,decode}=require('./wire');
 const {dispatch,domain,invoke}=require('./domain');
 const {PostgresRepository,blank}=require('./database');
 const {isReader,selection}=require('./operations');
+const metrics=require('./performance');
 const hash=s=>createHash('sha256').update(s).digest();
-function createApp({repository,username,password,auth,repositoryFor,legacyOwnerId}){
+function createApp({repository,username,password,auth,repositoryFor,legacyOwnerId,telemetry}){
  if((!auth&&!username)||!password||password.length<20)throw new Error('APP_USERNAME and APP_PASSWORD (20+ characters) are required');
  let pureDomain;
  const basicScope=hash(JSON.stringify([repository.workspace||'alishan',username,password,process.env.DATABASE_URL||'local'])).toString('hex').slice(0,32);
@@ -48,7 +49,28 @@ function createApp({repository,username,password,auth,repositoryFor,legacyOwnerI
    if(auth&&req.get('X-Alishan-Scope')!==res.locals.account.session.scope)
      return res.status(401).json({error:'Reload to use the signed-in account'});
    const origin=req.get('origin');if(req.get('sec-fetch-site')==='cross-site'||(origin&&origin!==`${req.protocol}://${req.get('host')}`&&origin!==`https://${req.get('host')}`))return res.status(403).json({error:'Cross-site request rejected'});next();});
+ if(telemetry){
+   app.post('/api/performance',express.json({limit:'4kb',strict:true}),async(req,res)=>{
+     const visit=metrics.normalize(req.body);
+     if(!visit)return res.status(400).json({error:'Invalid performance visit'});
+     await telemetry.put(res.locals.account.session.scope,release,visit);
+     res.sendStatus(204);
+   });
+   app.get('/api/performance',async(req,res)=>{
+     const {actor,session}=res.locals.account;
+     const owner=!auth||actor===legacyOwnerId;
+     const all=owner&&req.query.view==='all';
+     res.json({google:!!auth,owner,rows:await telemetry.list(session.scope,all)});
+
+   });
+ }
  app.use(express.json({limit:'15mb',strict:true}));
+ async function timedRun(calls,res){
+   const started=performance.now(),timings={db:0};
+   const result=await metrics.context.run(timings,()=>run(calls,res.locals.account));
+   res.set('Server-Timing',`app;dur=${(performance.now()-started).toFixed(1)}, db;dur=${timings.db.toFixed(1)}`);
+   return result;
+ }
  const {gzip}=require('node:zlib');
  function sendReadResponse(req,res,value){
    const body=JSON.stringify(encode(value));
@@ -92,7 +114,7 @@ function createApp({repository,username,password,auth,repositoryFor,legacyOwnerI
  const valid=c=>c&&['Calc','Store','Reports','Archive','Groups','DB','Search','Views'].includes(c.target)&&typeof c.method==='string'&&c.method.length<=100&&Array.isArray(c.args)&&c.args.length<=10;
  app.post('/api/rpc',async(req,res,next)=>{try{
    if(!valid(req.body))return res.status(400).json({error:'Invalid operation'});
-   const started=performance.now();const output=await run([req.body],res.locals.account);res.set('Server-Timing',`app;dur=${(performance.now()-started).toFixed(1)}`);if(output.revision!==null&&output.revision!==undefined)res.set('X-Alishan-Revision',output.revision);if(isReader(req.body))sendReadResponse(req,res,output.results[0]);else res.json(encode(output.results[0]));
+   const output=await timedRun([req.body],res);if(output.revision!==null&&output.revision!==undefined)res.set('X-Alishan-Revision',output.revision);if(isReader(req.body))sendReadResponse(req,res,output.results[0]);else res.json(encode(output.results[0]));
  }catch(e){next(e);}});
  app.post('/api/batch',async(req,res,next)=>{try{
    // Batch argument references are request-local, bounded by the JSON body limit.
@@ -108,7 +130,7 @@ function createApp({repository,username,password,auth,repositoryFor,legacyOwnerI
      req.body=calls;
    }
    if(!Array.isArray(req.body)||req.body.length<1||req.body.length>1000||!req.body.every(valid))return res.status(400).json({error:'Invalid batch'});
-   const started=performance.now();const output=await run(req.body,res.locals.account);res.set('Server-Timing',`app;dur=${(performance.now()-started).toFixed(1)}`);if(output.revision!==null&&output.revision!==undefined)res.set('X-Alishan-Revision',output.revision);if(req.body.every(isReader))sendReadResponse(req,res,output.results||[]);else res.json(encode(output.results||[]));
+   const output=await timedRun(req.body,res);if(output.revision!==null&&output.revision!==undefined)res.set('X-Alishan-Revision',output.revision);if(req.body.every(isReader))sendReadResponse(req,res,output.results||[]);else res.json(encode(output.results||[]));
  }catch(e){next(e);}});
  app.get('/api/theme',async(req,res,next)=>{try{
    const {repository}=res.locals.account;
@@ -174,7 +196,7 @@ async function start(){
    return userRepositories.get(workspace);
  };
  const app=createApp({repository,username:process.env.APP_USERNAME,password:process.env.APP_PASSWORD,
-   auth,repositoryFor,legacyOwnerId:process.env.LEGACY_OWNER_USER_ID});
+   auth,repositoryFor,legacyOwnerId:process.env.LEGACY_OWNER_USER_ID,telemetry:metrics.telemetryStore(pool)});
  const server=app.listen(Number(process.env.PORT)||10000,'0.0.0.0',()=>console.log('Alishan server ready'));
  const backupTimer=setInterval(()=>repository.transaction(async state=>{await domain(state);return {ok:true};}).catch(e=>console.error('Automatic backup check failed:',e.code||e.name)),60000);backupTimer.unref();
  let stopping=false;const stop=()=>{if(stopping)return;stopping=true;clearInterval(backupTimer);server.close(async()=>{await pool.end();process.exit(0);});setTimeout(()=>process.exit(1),25000).unref();};process.on('SIGTERM',stop);process.on('SIGINT',stop);

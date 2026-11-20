@@ -29,18 +29,22 @@
   for(let start=0;start<queued.length;start+=500)await sendBatch(queued.slice(start,start+500));
  }
  async function sendBatch(batch){
+  const clock=window.performance||Date;
+  const start=clock.now();let headersAt,timing;
   try{
    const response=await fetch('/api/batch',{method:'POST',headers:{'Content-Type':'application/json',...scopedHeaders()},credentials:'same-origin',body:pack(batch),signal:AbortSignal.timeout(batch.some(x=>['restoreComplete','importBackup','restoreBackup','importEntries'].includes(x.method))?180000:45000)});
+   headersAt=clock.now();timing=response.headers?.get?.('Server-Timing');
    if(response.status===401)device?.revoke?.();
    if(!response.ok)throw new Error(response.status===401?'Please sign in again.':'Server connection failed. Please try again.');
    device?.acceptRevision(response.headers?.get?.('X-Alishan-Revision'));
    const output=decode(await response.json());if(!Array.isArray(output)||output.length!==batch.length)throw new Error('Invalid server response. Please retry.');
+   window.AlishanPerformance?.batch(start,headersAt,timing,!output.some(row=>row.error));
    output.forEach((r,i)=>{if(r.unchanged&&batch[i].conditional){batch[i].conditional.unchanged=true;batch[i].resolve(batch[i].conditional.value);return;}if(r.error)batch[i].reject(new Error(r.error));else{
      if(batch[i].target==='Groups')batch[i].args.forEach((arg,n)=>{if(arg&&typeof arg==='object'&&!Array.isArray(arg)&&r.args[n]){for(const k of Object.keys(arg))delete arg[k];Object.assign(arg,r.args[n]);}});
      if(batch[i].conditional?.write)batch[i].conditional.primes=r.primes;
      batch[i].resolve(r.result);
    }});
-  }catch(e){batch.forEach(x=>x.reject(e));}
+  }catch(e){window.AlishanPerformance?.batch(start,headersAt,timing,false);batch.forEach(x=>x.reject(e));}
  }
  const mutations=new Set(['addItem','updateItem','deleteItem','toggleStock','setCompletionDate','addPayment','deletePayment','importEntries','undoImport','importBackup','restoreComplete','restoreBackup','restore','deleteForever','cleanLeftovers','saveInventory','replaceInventoryAndPayments']);
  const referenceMethods=new Set(['getColorStyle','getColorStyleSafe','colorDisplayName','getPrice','getProductTypes','getColors','getQualityData']);

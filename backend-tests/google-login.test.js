@@ -33,7 +33,12 @@ test('Google PKCE scopes reads, writes, exports and logout to the verified user'
       return Response.json({user:{id:auth_code,app_metadata:{providers:['google']}}});
     }
   });
-  const app=createApp({repository:legacy,password:'fixture-only-long-password',auth,repositoryFor,legacyOwnerId:owner});
+  const telemetryRows=[];
+  const telemetry={
+    put(scope,release,visit){telemetryRows.push({scope,release,...visit});},
+    list(scope,all){return telemetryRows.filter(row=>all||row.scope===scope);}
+  };
+  const app=createApp({repository:legacy,telemetry,password:'fixture-only-long-password',auth,repositoryFor,legacyOwnerId:owner});
   const server=app.listen(0,'127.0.0.1');
   t.after(()=>server.close());
   await new Promise(resolve=>server.once('listening',resolve));
@@ -66,6 +71,22 @@ test('Google PKCE scopes reads, writes, exports and logout to the verified user'
   assert.equal((await (await rpc(accountB,'backupFile',['fixture'])).json()).result.inventory.length,0);
   assert.equal((await (await rpc(accountB,'updateItem',[item.id,{}])).json()).result.ok,false);
   assert.equal((await rpc(accountB,'getItems',[],accountA.scope)).status,401);
+  const perf=(account,payload,scope=account.scope)=>fetch(base+'/api/performance?view=all',{
+    method:payload?'POST':'GET',headers:{Cookie:account.cookie,'X-Alishan-Scope':scope,'Content-Type':'application/json'},
+    body:payload?JSON.stringify(payload):undefined
+  });
+  const uid='33333333-3333-4333-8333-333333333333';
+  const report={page:'inventory',visit:uid,device:uid,scope:accountA.scope,metrics:{loadMs:12,sensitive:'ignored'}};
+  assert.equal((await perf(accountB,report,accountA.scope)).status,401);
+  assert.equal((await perf(accountB,{...report,page:'unknown'})).status,400);
+  assert.equal((await perf(accountA,report)).status,204);
+  assert.equal((await perf(accountB,report)).status,204);
+  assert.deepEqual(telemetryRows[1].metrics,{loadMs:12});
+  assert.equal(telemetryRows[1].scope,accountB.scope);
+  const users=await (await perf(accountB)).json();
+  assert.equal(users.owner,false);
+  assert.deepEqual(users.rows.map(row=>row.scope),[accountB.scope]);
+  assert.equal((await (await perf(accountA)).json()).rows.length,2);
   const logout=await fetch(base+'/auth/logout',{method:'POST',headers:{Origin:origin,Cookie:accountB.cookie},redirect:'manual'});
   assert.equal(logout.headers.get('location'),'/login');
   assert.equal((await rpc(accountB,'getItems',[])).status,401);

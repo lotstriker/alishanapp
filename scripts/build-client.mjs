@@ -11,7 +11,7 @@ const root=path.resolve(import.meta.dirname,'..'),src=path.join(root,'frontend')
 fs.rmSync(out,{recursive:true,force:true});fs.cpSync(src,out,{recursive:true});
 const remoteNames=new Set(['AlishanCalc','AlishanStore','ReportEngine','AlishanArchive','AlishanDB','AlishanGroupCore']);
 const release=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version;
-const assetTag=release+'-'+require('node:crypto').createHash('sha256').update(['client/runtime.js','client/timings.js','client/device-cache.js','client/view-shell-worker.js','scripts/build-client.mjs'].map(p=>fs.readFileSync(path.join(root,p),'utf8')).join('\0')).digest('hex').slice(0,12);
+const assetTag=release+'-'+require('node:crypto').createHash('sha256').update(['client/runtime.js','client/performance.js','client/timings.js','client/device-cache.js','client/view-shell-worker.js','scripts/build-client.mjs'].map(p=>fs.readFileSync(path.join(root,p),'utf8')).join('\0')).digest('hex').slice(0,12);
 const replaced=new Set(['calc.js','store.js','db.js','archive.js','report-engine.js','sw.js','pwa.js']);
 const units=[];
 const calcSource=fs.readFileSync(path.join(src,'calc.js'),'utf8');
@@ -189,7 +189,7 @@ for(const key of ['getColors','getQualityData','getProductTypes'])meta.Store[key
 fs.writeFileSync(path.join(out,'bootstrap.js'),`window.ALISHAN_META=${JSON.stringify(meta).replace(/</g,'\\u003c')};`);
 for(const name of fs.readdirSync(out))if(name.endsWith('.html')){const file=path.join(out,name);fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace(/((?:src|href)=")(\/?[a-zA-Z0-9_./-]+\.(?:js|css))(")/g,`$1$2?v=${assetTag}$3`));}
 const wire=fs.readFileSync(path.join(root,'backend/wire.js'),'utf8').replace("'use strict';",'').replace('module.exports = { encode, decode };','window.ALISHAN_WIRE={encode,decode};');
-fs.writeFileSync(path.join(out,'server-client.js'),wire+'\n'+fs.readFileSync(path.join(root,'client/device-cache.js'),'utf8')+'\n'+fs.readFileSync(path.join(root,'client/runtime.js'),'utf8')+'\n'+fs.readFileSync(path.join(root,'client/timings.js'),'utf8'));
+fs.writeFileSync(path.join(out,'server-client.js'),wire+'\n'+fs.readFileSync(path.join(root,'client/device-cache.js'),'utf8')+'\n'+fs.readFileSync(path.join(root,'client/runtime.js'),'utf8')+'\n'+fs.readFileSync(path.join(root,'client/timings.js'),'utf8')+'\n'+fs.readFileSync(path.join(root,'client/performance.js'),'utf8'));
 for(const name of replaced)fs.writeFileSync(path.join(out,name),'/* This module runs on the server. Client API is installed by server-client.js. */\n');
 // Only app files are cached by this worker. API/business writes always use the network.
 fs.writeFileSync(path.join(out,'sw.js'),"self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.registration.unregister()));");

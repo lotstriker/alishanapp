@@ -685,6 +685,7 @@ function refreshUI() {
     updateTotalInventory();
     renderHomeLatestQualities();
     window.AlishanTimings?.pageReady('Dashboard');
+    window.AlishanPerformance?.ready();
 }
 
 // called by search.js whenever a search is run (or cleared)
