@@ -105,15 +105,23 @@ function createApp({repository,username,password,auth,repositoryFor,legacyOwnerI
    const started=performance.now(),timings={db:0};
    const result=await metrics.context.run(timings,()=>run(calls,res.locals.account));
    res.locals.monitorDb=Math.round(timings.db);
-   res.set('Server-Timing',`app;dur=${(performance.now()-started).toFixed(1)}, db;dur=${timings.db.toFixed(1)}`);
+   res.set('Server-Timing',[
+     ['app',performance.now()-started],['db',timings.db],['dbpool',timings.pool||0],
+     ['dbsnapshot',timings.snapshot||0],['dbsql',timings.sql||0]
+   ].map(([name,value])=>name+';dur='+value.toFixed(1)).join(', '));
    return result;
  }
  const {gzip}=require('node:zlib');
  function sendReadResponse(req,res,value){
+   const serializeStart=performance.now();
    const body=JSON.stringify(encode(value));
+   res.append('Server-Timing','serialize;dur='+(performance.now()-serializeStart).toFixed(1));
+   res.set('X-Alishan-Decoded-Bytes',String(Buffer.byteLength(body)));
    res.vary('Accept-Encoding');
    if(body.length<4096||req.acceptsEncodings('gzip','identity')!=='gzip')return res.type('json').send(body);
+   const compressionStart=performance.now();
    gzip(body,{level:3},(error,compressed)=>{
+     res.append('Server-Timing','compress;dur='+(performance.now()-compressionStart).toFixed(1));
      if(error)return res.type('json').send(body);
      res.set('Content-Encoding','gzip').type('json').send(compressed);
    });

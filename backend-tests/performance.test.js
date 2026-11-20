@@ -41,7 +41,7 @@ test('client deduplicates repeated report scopes and bounds large call queues',a
  const vm=require('node:vm'),wire=require('../backend/wire');const sent=[];
  const context={ALISHAN_WIRE:wire,ALISHAN_META:Object.fromEntries(['Calc','Store','Reports','Archive','Groups','DB'].map(k=>[k,{}])),console,structuredClone,Date,Map,Set,Promise,AbortSignal,setTimeout,addEventListener(){},fetch:async(url,options)=>{
    const body=JSON.parse(options.body);sent.push({bytes:Buffer.byteLength(options.body),count:body.calls.length,shared:body.shared.length});
-   return {ok:true,json:async()=>body.calls.map(c=>({result:c.args[1]}))};
+   return {ok:true,text:async()=>JSON.stringify(body.calls.map(c=>({result:c.args[1]})))};
  }};context.window=context;vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../client/runtime.js'),'utf8'),context);
  const scope=Array.from({length:390},(_,id)=>({id,notes:'x'.repeat(1000)}));
  const results=await Promise.all(Array.from({length:1201},(_,i)=>context.AlishanRemote.call('Store','weeklyReport',[scope,i])));
@@ -123,4 +123,16 @@ test('monitor groups anonymous timings and bounds API statistics behind its toke
  assert.equal((await fetch(base+'/internal/monitor/operations')).status,404);
  const result=await fetch(base+'/internal/monitor/operations',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json());
  assert.equal(result.pages[0].samples,3);assert.equal(result.release,require('../package.json').version);
+});
+
+test('startup traces retain bounded timing and size fields without operation payloads',()=>{
+ const {normalize}=require('../backend/performance');
+ const {randomUUID}=require('node:crypto');
+ const metrics={routeJsDecodedBytes:203418,waterfall:[
+  {kind:'inventory-bundle',startMs:12,endMs:100,poolMs:3,snapshotMs:35,wireBytes:700000,encoding:'gzip',payload:'private'},
+  {kind:'private operation',startMs:5}
+ ]};
+ const result=normalize({page:'inventory',device:randomUUID(),visit:randomUUID(),metrics});
+ assert.equal(result.metrics.routeJsDecodedBytes,203418);
+ assert.deepEqual(result.metrics.waterfall,[{kind:'inventory-bundle',startMs:12,endMs:100,poolMs:3,snapshotMs:35,wireBytes:700000,encoding:'gzip'}]);
 });

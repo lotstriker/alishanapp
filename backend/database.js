@@ -60,7 +60,10 @@ class PostgresRepository {
   // projected records come from the same committed snapshot, even during a restore.
   async read(fn,selection={stores,settings:null}){
     const cacheKey=JSON.stringify(selection),cached=this.readCache.get(cacheKey);
-    const result=await performanceDb.query(this.pool,`SELECT w.revision,
+    const client=await performanceDb.connect(this.pool);
+    let result;
+    try {
+      result=await performanceDb.query(client,`SELECT w.revision,
       CASE WHEN w.revision=$2::bigint THEN NULL ELSE COALESCE((
         SELECT jsonb_agg(jsonb_build_object('store',r.store,'payload',r.payload))
         FROM alishan_private.records r WHERE r.workspace_id=w.id
@@ -68,6 +71,7 @@ class PostgresRepository {
       ),'[]'::jsonb) END AS records
       FROM alishan_private.workspaces w WHERE w.id=$1`,
       [this.workspace,cached?.revision??-1,selection.stores,selection.settings]);
+    }finally{client.release();}
     const row=result.rows[0];let state;
     if(!row)state=blank();
     else if(row.records===null&&cached)state=cached.state;

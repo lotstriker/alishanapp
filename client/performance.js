@@ -17,6 +17,7 @@
  let ready, dataReady, criticalPaint, first, last, count = 0, failures = 0, longest, sending = false, recorded = false;
  const phaseNames = new Set(['startupCacheHitMs','startupCacheMissMs','startupSharedWaitMs','storeWaitMs','reportScopeMs','reportRenderMs','deviceCacheReadMs','startupRefreshMs','startupFetchMs','reportSetupMs']);
  const phases = {};
+ const waterfall=[];
  const headers = {'Content-Type':'application/json','X-Alishan-Scope':scope};
  const getQueue = () => {
   try { return JSON.parse(sessionStorage.getItem(queueKey) || '[]'); } catch { return []; }
@@ -49,7 +50,18 @@
  function record() {
   if (recorded || !routes.has(page)) return;
   const nav = spaStart===undefined ? performance.getEntriesByType?.('navigation')?.[0] : null;
-  const metrics = {...phases,visitType,routePrepareMs,apiCount:count,apiErrors:failures,readyMs:ready===undefined?undefined:ready-(spaStart??0)};
+  const metrics = {...phases,waterfall:[...waterfall].sort((a,b)=>a.startMs-b.startMs),visitType,routePrepareMs,apiCount:count,apiErrors:failures,readyMs:ready===undefined?undefined:ready-(spaStart??0)};
+  const routeScript=performance.getEntriesByType?.('resource')?.find(entry=>{
+   const url=new URL(entry.name,location.href);
+   return url.origin===location.origin&&url.pathname==='/route-'+page+'.js';
+  });
+  if(routeScript?.decodedBodySize>0){
+   metrics.routeJsDecodedBytes=routeScript.decodedBodySize;
+   metrics.routeJsEncodedBytes=routeScript.encodedBodySize;
+   metrics.routeJsTransferBytes=routeScript.transferSize;
+   metrics.routeJsFetchMs=routeScript.duration;
+   metrics.routeJsCached=Number(routeScript.transferSize===0);
+  }
   if (spaStart!==undefined&&ready!==undefined) metrics.switchMs=ready-spaStart;
   if (dataReady!==undefined) metrics.startupDataReadyMs=dataReady-(spaStart??0);
   if (criticalPaint!==undefined) metrics.criticalPaintMs=criticalPaint-(spaStart??0);
@@ -96,6 +108,7 @@
    visitType=reused?'return-route':'first-route';routePrepareMs=prepareMs;
    ready=dataReady=criticalPaint=first=last=longest=pendingNavigation=undefined;
    for (const name of phaseNames) delete phases[name];
+   waterfall.length=0;
    count=failures=0;recorded=false;
    try { sessionStorage.removeItem('alishan:performance-next'); } catch {}
    deadline=setTimeout(record,15000);
@@ -119,7 +132,7 @@
     whenComplete();
    }));
   },
-  batch(start, headersAt, timing, ok, key) {
+  batch(start, headersAt, timing, ok, key, trace) {
    if (!routes.has(page) || (key && key!==visit) || ready !== undefined || recorded) return;
    const end = performance.now();
    first = Math.min(first??start,start); last=end; count++;
@@ -130,6 +143,21 @@
     return part ? Number(part.split('=')[1]) : undefined;
    };
    const app=value('app'), db=value('db');
+   if(trace&&waterfall.length<6){
+    const origin=spaStart??0, resource=trace.resource;
+    const elapsed=(a,b)=>a>0&&b>=a?b-a:undefined;
+    waterfall.push({
+     kind:trace.kind,startMs:start-origin,headersMs:headersAt===undefined?undefined:headersAt-origin,endMs:end-origin,
+     queueMs:trace.queueMs,serverMs:app,poolMs:value('dbpool'),snapshotMs:value('dbsnapshot'),sqlMs:value('dbsql'),
+     serializeMs:value('serialize'),compressMs:value('compress'),encoding:trace.encoding,
+     responseBytes:trace.responseBytes,wireBytes:resource?.encodedBodySize,bodyDecodeMs:trace.bodyDecodeMs,
+     connectMs:elapsed(resource?.connectStart,resource?.connectEnd),tlsMs:elapsed(resource?.secureConnectionStart,resource?.connectEnd),
+     dnsMs:elapsed(resource?.domainLookupStart,resource?.domainLookupEnd),
+     browserBeforeRequestMs:elapsed(resource?.fetchStart,resource?.requestStart),
+     requestToResponseMs:elapsed(resource?.requestStart,resource?.responseStart),
+     responseDownloadMs:elapsed(resource?.responseStart,resource?.responseEnd)
+    });
+   }
    if (!longest || wait > longest.apiWaitMs) longest={
     apiWaitMs:wait, apiServerMs:app, apiDbMs:db,
     apiNetworkMs:app===undefined?undefined:Math.max(0,wait-app),

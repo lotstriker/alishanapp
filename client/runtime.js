@@ -30,21 +30,39 @@
  }
  async function sendBatch(batch){
   const clock=window.performance||Date;
-  const start=clock.now(),visit=window.AlishanPerformance?.current();let headersAt,timing;
+  const start=clock.now(),visit=window.AlishanPerformance?.current();
+  const bundle=batch.find(x=>x.target==='Views'&&x.method==='pageBundle')?.args[0];
+  const kind=['home','inventory','reports'].includes(bundle)?bundle+'-bundle':
+    batch.some(x=>x.target==='Views'&&x.method==='inventoryPage')?'inventory-page':
+    batch.some(x=>x.target==='Store'&&x.method==='summary')?'dashboard-summary':
+    batch.every(x=>isReader(x.target,x.method))?'read':'mixed';
+  let headersAt,timing,response,decodeStarted;
+  function capture(ok){
+   const resource=clock.getEntriesByName?.(new URL('/api/batch',location.href).href,'resource')
+    ?.filter(entry=>entry.startTime>=start&&entry.startTime<=(headersAt??clock.now()))
+    .sort((a,b)=>Math.abs(a.responseStart-(headersAt??0))-Math.abs(b.responseStart-(headersAt??0)))[0];
+   window.AlishanPerformance?.batch(start,headersAt,timing,ok,visit,{
+    kind,queueMs:Math.max(0,start-Math.min(...batch.map(row=>row.queuedAt))),resource,
+    encoding:response?.headers?.get?.('Content-Encoding')||'identity',
+    responseBytes:Number(response?.headers?.get?.('X-Alishan-Decoded-Bytes'))||resource?.decodedBodySize,
+    bodyDecodeMs:decodeStarted===undefined?undefined:clock.now()-decodeStarted
+   });
+  }
   try{
-   const response=await fetch('/api/batch',{method:'POST',headers:{'Content-Type':'application/json',...scopedHeaders()},credentials:'same-origin',body:pack(batch),signal:AbortSignal.timeout(batch.some(x=>['restoreComplete','importBackup','restoreBackup','importEntries'].includes(x.method))?180000:45000)});
+   response=await fetch('/api/batch',{method:'POST',headers:{'Content-Type':'application/json',...scopedHeaders()},credentials:'same-origin',body:pack(batch),signal:AbortSignal.timeout(batch.some(x=>['restoreComplete','importBackup','restoreBackup','importEntries'].includes(x.method))?180000:45000)});
    headersAt=clock.now();timing=response.headers?.get?.('Server-Timing');
    if(response.status===401)device?.revoke?.();
    if(!response.ok)throw new Error(response.status===401?'Please sign in again.':'Server connection failed. Please try again.');
    device?.acceptRevision(response.headers?.get?.('X-Alishan-Revision'));
-   const output=decode(await response.json());if(!Array.isArray(output)||output.length!==batch.length)throw new Error('Invalid server response. Please retry.');
-   window.AlishanPerformance?.batch(start,headersAt,timing,!output.some(row=>row.error),visit);
+   const body=await response.text();decodeStarted=clock.now();
+   const output=decode(JSON.parse(body));if(!Array.isArray(output)||output.length!==batch.length)throw new Error('Invalid server response. Please retry.');
+   capture(!output.some(row=>row.error));
    output.forEach((r,i)=>{if(r.unchanged&&batch[i].conditional){batch[i].conditional.unchanged=true;batch[i].resolve(batch[i].conditional.value);return;}if(r.error)batch[i].reject(new Error(r.error));else{
      if(batch[i].target==='Groups')batch[i].args.forEach((arg,n)=>{if(arg&&typeof arg==='object'&&!Array.isArray(arg)&&r.args[n]){for(const k of Object.keys(arg))delete arg[k];Object.assign(arg,r.args[n]);}});
      if(batch[i].conditional?.write)batch[i].conditional.primes=r.primes;
      batch[i].resolve(r.result);
    }});
-  }catch(e){window.AlishanPerformance?.batch(start,headersAt,timing,false,visit);batch.forEach(x=>x.reject(e));}
+  }catch(e){capture(false);batch.forEach(x=>x.reject(e));}
  }
  const mutations=new Set(['addItem','updateItem','deleteItem','toggleStock','setCompletionDate','addPayment','deletePayment','importEntries','undoImport','importBackup','restoreComplete','restoreBackup','restore','deleteForever','cleanLeftovers','saveInventory','replaceInventoryAndPayments']);
  const referenceMethods=new Set(['getColorStyle','getColorStyleSafe','colorDisplayName','getPrice','getProductTypes','getColors','getQualityData']);
@@ -52,7 +70,7 @@
   const pure=!device?.enabled&&(target==='Calc'||target==='Reports'||target==='Store'&&referenceMethods.has(method));
   const key=pure?JSON.stringify([target,method,Math.floor(Date.now()/60000),encode(args)]):null;
   if(key&&cache.has(key))return cache.get(key);
-  const promise=new Promise((resolve,reject)=>{pending.push({target,method,args,conditional,resolve,reject});if(!scheduled){scheduled=true;setTimeout(flush,0);}}).then(r=>{
+  const promise=new Promise((resolve,reject)=>{pending.push({target,method,args,conditional,resolve,reject,queuedAt:(window.performance||Date).now()});if(!scheduled){scheduled=true;setTimeout(flush,0);}}).then(r=>{
    if(!device?.enabled&&mutations.has(method)&&r?.ok!==false){changed();if(channel)channel.postMessage('changed');}
    return r;
   });

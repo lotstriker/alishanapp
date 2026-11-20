@@ -2,19 +2,25 @@
 const { AsyncLocalStorage } = require('node:async_hooks');
 const context = new AsyncLocalStorage();
 
-async function measureDatabase(fn) {
+async function measureDatabase(kind, fn) {
   const timings = context.getStore();
   if (!timings) return fn();
   const start = performance.now();
   try { return await fn(); }
-  finally { timings.db += performance.now() - start; }
+  finally {
+    const elapsed = performance.now() - start;
+    timings.db += elapsed;
+    timings[kind] = (timings[kind] || 0) + elapsed;
+  }
 }
 
-function query(db, ...args) { return measureDatabase(() => db.query(...args)); }
-function connect(pool) { return measureDatabase(() => pool.connect()); }
+function query(db, ...args) { return measureDatabase(typeof args[0]==='string'&&args[0].startsWith('SELECT w.revision,')?'snapshot':'sql', () => db.query(...args)); }
+function connect(pool) { return measureDatabase('pool', () => pool.connect()); }
 
 const pages = new Set(['index','inventory','reports','setting','add-entry','missing-completion','missing-lot','pending-amount','quality-history']);
 const fields = ['fcpMs','lcpObservedMs','startupCacheHitMs','startupCacheMissMs','startupSharedWaitMs','storeWaitMs','reportScopeMs','reportRenderMs','deviceCacheReadMs','startupRefreshMs','startupFetchMs','reportSetupMs','switchMs','startupDataReadyMs','criticalPaintMs','dataToCriticalMs','routePrepareMs','domMs','loadMs','readyMs','documentWaitMs','documentDownloadMs','dataMs','apiWaitMs','apiServerMs','apiDbMs','apiNetworkMs','apiDecodeMs','afterApiMs','apiCount','apiErrors'];
+const waterfallFields=['startMs','headersMs','endMs','queueMs','serializeMs','compressMs','serverMs','poolMs','snapshotMs','sqlMs','responseBytes','wireBytes','connectMs','tlsMs','dnsMs','browserBeforeRequestMs','requestToResponseMs','responseDownloadMs','bodyDecodeMs'];
+const waterfallKinds=new Set(['home-bundle','inventory-bundle','reports-bundle','dashboard-summary','inventory-page','read','mixed']);
 const id = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 
 function normalize(body) {
@@ -23,6 +29,21 @@ function normalize(body) {
   for (const key of fields) {
     const n = body.metrics?.[key];
     if (typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 600000) metrics[key] = Math.round(n);
+  }
+  if(Array.isArray(body.metrics?.waterfall)){
+    metrics.waterfall=body.metrics.waterfall.slice(0,6).filter(row=>row&&waterfallKinds.has(row.kind)).map(row=>{
+      const entry={kind:row.kind};
+      for(const field of waterfallFields){
+        const value=row[field],limit=field.endsWith('Bytes')?15000000:600000;
+        if(Number.isFinite(value)&&value>=0&&value<=limit)entry[field]=Math.round(value);
+      }
+      if(['gzip','br','identity'].includes(row.encoding))entry.encoding=row.encoding;
+      return entry;
+    });
+  }
+  for(const field of ['routeJsDecodedBytes','routeJsEncodedBytes','routeJsTransferBytes','routeJsFetchMs','routeJsCached']){
+    const value=body.metrics?.[field];
+    if(Number.isFinite(value)&&value>=0&&value<=15000000)metrics[field]=Math.round(value);
   }
   if (!Object.keys(metrics).length) return null;
   const mode = body.metrics?.visitType;

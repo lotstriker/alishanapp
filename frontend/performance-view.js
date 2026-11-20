@@ -2,6 +2,19 @@
  'use strict';
  const $ = id => document.getElementById(id);
  const names = {'index':'Dashboard','inventory':'Inventory','reports':'Reports','setting':'Settings','add-entry':'Add Entry','pending-amount':'Pending Amount','missing-lot':'Missing Lot','missing-completion':'Missing Completion','quality-history':'Quality History'};
+ const assetMeasures=[
+  ['routeJsDecodedBytes','Route JS decoded size'], ['routeJsEncodedBytes','Route JS encoded body'],
+  ['routeJsTransferBytes','Route JS transfer including headers'], ['routeJsFetchMs','Route JS resource duration'],
+  ['routeJsCached','Route JS served locally']
+ ];
+ const traceFields=[
+  ['startMs','Start'],['headersMs','Headers received'],['endMs','Response processed'],
+  ['queueMs','Client batch queue'],['browserBeforeRequestMs','Browser before request'],['dnsMs','DNS'],['connectMs','Connection'],['tlsMs','TLS'],
+  ['requestToResponseMs','Request to response headers'],['serverMs','Application work'],
+  ['poolMs','DB client acquisition'],['snapshotMs','DB snapshot query elapsed'],['sqlMs','Other SQL elapsed'],
+  ['serializeMs','Response serialization'],['compressMs','Compression elapsed'],['responseDownloadMs','Response download'],['bodyDecodeMs','JSON parse / wire decode'],
+  ['responseBytes','Decoded bytes'],['wireBytes','Encoded bytes']
+ ];
  const startupMeasures = [
   ['fcpMs','First contentful paint'], ['lcpObservedMs','Latest observed LCP candidate'],
   ['startupCacheHitMs','Startup view cache hit (lookup)'], ['startupCacheMissMs','Startup view cache miss (lookup)'], ['startupSharedWaitMs','Wait for a request already in progress'],
@@ -16,12 +29,13 @@
   ['apiDbMs','DB round trips'], ['apiNetworkMs','API outside server'], ['apiDecodeMs','API download / decode'],
   ['afterApiMs','Last API to UI'], ['apiCount','API batches'], ['apiErrors','Failed batches']
  ];
- const allMeasures=[...measures,...startupMeasures];
+ const allMeasures=[...measures,...startupMeasures,...assetMeasures];
  const metricGroups={
   'Page and rendering':['switchMs','readyMs','startupDataReadyMs','criticalPaintMs','dataToCriticalMs','routePrepareMs','afterApiMs'],
   'Reports':['storeWaitMs','reportSetupMs','reportScopeMs','reportRenderMs'],
   'Device cache and startup':['deviceCacheReadMs','startupRefreshMs','startupFetchMs','startupCacheHitMs','startupCacheMissMs','startupSharedWaitMs'],
-  'Document':['loadMs','domMs','documentWaitMs','documentDownloadMs'],
+  'Document':['fcpMs','lcpObservedMs','loadMs','domMs','documentWaitMs','documentDownloadMs'],
+  'Route JavaScript':assetMeasures.map(([key])=>key),
   'API and database':['dataMs','apiWaitMs','apiServerMs','apiDbMs','apiNetworkMs','apiDecodeMs','apiCount','apiErrors']
  };
  const pickedVisits=new Set();
@@ -34,7 +48,19 @@
   if(Object.hasOwn(types,type))return type;
   return ['domMs','loadMs','documentWaitMs','documentDownloadMs'].some(key=>Number.isFinite(visit.metrics[key]))?'document':'unknown';
  }
- const measure = (value,key) => Number.isFinite(value) ? value + (key==='apiCount'||key==='apiErrors'?'':' ms') : '—';
+ const measure = (value,key) => {
+  if(!Number.isFinite(value))return '—';
+  if(key==='routeJsCached')return value?'Yes':'No';
+  if(key.endsWith('Bytes'))return value+' bytes';
+  return value+(key==='apiCount'||key==='apiErrors'?'':' ms');
+ };
+ function traceLines(visit){
+  return (visit.metrics.waterfall||[]).map(batch=>{
+   const values=traceFields.filter(([key])=>Number.isFinite(batch[key])).map(([key,label])=>label+' '+measure(batch[key],key));
+   return batch.kind+(batch.encoding?' ('+batch.encoding+')':'')+' — '+values.join(' · ');
+  });
+ }
+
  function row(container, values, tag='td') {
   const tr=document.createElement('tr');
   for (const value of values) {
@@ -45,11 +71,12 @@
  const measured=(visit,entries=allMeasures)=>entries.filter(([key])=>Number.isFinite(visit.metrics[key]));
  const visitName=visit=>names[visit.page]||visit.page;
  const visitTime=visit=>new Date(visit.received_at).toLocaleString();
- function exportVisit(visit,entries) {
+ function exportVisit(visit,entries,includeTrace=false) {
   return [
    '## '+visitName(visit)+' · '+visitTime(visit),
    'Release '+visit.release+' · '+types[visit.visitType],
-   ...entries.map(([key,label])=>'- '+label+': '+measure(visit.metrics[key],key))
+   ...entries.map(([key,label])=>'- '+label+': '+measure(visit.metrics[key],key)),
+   ...(includeTrace?traceLines(visit).map(line=>'- API batch '+line):[])
   ].join('\n');
  }
  async function copy(blocks) {
@@ -83,7 +110,7 @@
   const copyMetrics=$('copy-metrics');
   copyMetrics.disabled=true;
   copyMetrics.onclick=()=>copy([exportVisit(visit,entries.filter(([key])=>checked.has(key)))]);
-  $('copy-visit').onclick=()=>copy([exportVisit(visit,entries)]);
+  $('copy-visit').onclick=()=>copy([exportVisit(visit,entries,true)]);
   for(const [group,keys] of Object.entries(metricGroups)){
    const groupEntries=entries.filter(([key])=>keys.includes(key));
    if(!groupEntries.length)continue;
@@ -107,7 +134,17 @@
    }
    host.append(section);
   }
-  if(!entries.length)host.textContent='Timing details were unavailable for this visit.';
+  const trace=traceLines(visit);
+  if(trace.length){
+   const section=document.createElement('details'),title=document.createElement('summary');
+   title.textContent='API waterfall · offsets from this visit';
+   const note=document.createElement('p');
+   note.textContent='DB query elapsed includes driver and database transit. DNS and TLS can overlap connection time. Missing browser timing is omitted.';
+   section.append(title,note);
+   for(const line of trace){const entry=document.createElement('p');entry.textContent=line;section.append(entry);}
+   host.append(section);
+  }
+  if(!entries.length&&!trace.length)host.textContent='Timing details were unavailable for this visit.';
   panel.scrollIntoView?.({block:'nearest'});
  }
  function details(visit,label) {
@@ -187,7 +224,7 @@
   for(const input of $('rows').querySelectorAll('input'))input.checked=checked;
   selectionState();
  };
- $('copy-visits').onclick=()=>copy(visibleVisits.filter(visit=>pickedVisits.has(visit)).map(visit=>exportVisit(visit,measured(visit))));
+ $('copy-visits').onclick=()=>copy(visibleVisits.filter(visit=>pickedVisits.has(visit)).map(visit=>exportVisit(visit,measured(visit),true)));
  for(const key of filters)$(key).addEventListener('change',render);
  $('slow').addEventListener('change',render);
  $('reload').addEventListener('click',load);
