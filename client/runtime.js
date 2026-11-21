@@ -184,36 +184,180 @@
   task.finally(()=>activeSaves.delete(key));
   return task;
  }
- const draftQuotes=new Map();
- async function submitEntry(input){
-  const key='alishan:pending:'+window.ALISHAN_SESSION?.scope+':addItem:entry';
-  let pending;
-  try{pending=JSON.parse(localStorage.getItem(key)||'null');}catch{}
-  if(pending){
-   if(!window.confirm('A previous submission is unconfirmed. Check or retry that same entry?'))
-    return {ok:false,error:'Previous submission is still unconfirmed.'};
-   const result=await saveOnce('addItem',pending.input,pending.token);
-   if(result.ok&&JSON.stringify(pending.input)!==JSON.stringify(input))
-    return {ok:false,error:'Previous entry confirmed. Your current form has been kept.'};
-   return result;
+ const reviewHash='#entry-review';
+ const reviewKey='alishan:reviews:'+window.ALISHAN_SESSION?.scope;
+ let reviewEntries=[];
+ let reviewBusy=false, addingReview=false;
+ try {
+  const stored=sessionStorage.getItem(reviewKey);
+  if(stored) reviewEntries=JSON.parse(stored);
+ } catch {}
+ function writeReviews(entries){
+  sessionStorage.setItem(reviewKey,JSON.stringify(entries));
+  reviewEntries=entries;
+ }
+ function reviewNode(tag,label,className){
+  const node=document.createElement(tag);
+  node.textContent=label;
+  if(className)node.className=className;
+  return node;
+ }
+ function reviewButton(label,action,style='btn btn-secondary'){
+  const button=reviewNode('button',label,style);
+  button.type='button';
+  button.onclick=action;
+  return button;
+ }
+ function pendingEntry(){
+  return JSON.parse(localStorage.getItem('alishan:pending:'+window.ALISHAN_SESSION?.scope+':addItem:entry')||'null');
+ }
+ function setReviewPage(open){
+  if((location.hash===reviewHash)!==open){
+   history.pushState(history.state,'',location.pathname+location.search+(open?reviewHash:''));
   }
-  const quoteKey=String(input.quality).trim().toUpperCase();
-  let review;
-  try{
-   review=await call('Store','reviewEntry',[input,draftQuotes.get(quoteKey)]);
-   if(!review.ok)return review;
-   draftQuotes.set(quoteKey,review.quote);
-   if(review.preview.price!==review.currentPrice&&window.confirm('The price changed. Use the current master price of ₹'+review.currentPrice+'? Cancel keeps the draft price of ₹'+review.preview.price+'.')){
-    review=await call('Store','reviewEntry',[input]);
-    if(!review.ok)return review;
+  renderEntryReviews();
+  document.querySelector(open?'#entry-review-title':'#entry-review-link')?.focus();
+ }
+ function renderEntryReviews(){
+  const form=document.getElementById('productForm');
+  const main=form?.closest('main');
+  if(!main||!location.pathname.endsWith('/add-entry.html'))return;
+  const open=location.hash===reviewHash;
+  const outer=main.querySelector('#entry-review-summary')||reviewNode('section','','card');
+  outer.id='entry-review-summary';
+  if(!outer.parentNode)main.prepend(outer);
+  outer.hidden=open;
+  outer.style.display=open?'none':'';
+  const formButton=form.querySelector('button[type=submit]');
+  if(formButton)formButton.textContent='Send to Review';
+  const inside=reviewNode('div','','card-body');
+  const count=reviewEntries.length;
+  inside.append(reviewNode('h2',count+' '+(count===1?'quality':'qualities')+' pending review','card-title'));
+  const link=reviewButton('Open Review',()=>setReviewPage(true));
+  link.id='entry-review-link';
+  inside.append(link);
+  outer.style.marginBottom='16px';
+  outer.replaceChildren(inside);
+  const screen=main.querySelector('#entry-review-page')||reviewNode('section','');
+  screen.id='entry-review-page';
+  if(!screen.parentNode)main.append(screen);
+  for(const child of main.children){
+   if(child===screen||child===outer)continue;
+   if(open&&!child.hidden){child.hidden=true;child.dataset.hiddenForReview='true';}
+   if(!open&&child.dataset.hiddenForReview){child.hidden=false;delete child.dataset.hiddenForReview;}
+  }
+  screen.hidden=!open;
+  if(!open){screen.style.display='none';return;}
+  const heading=reviewNode('h1','Entry Review');
+  heading.id='entry-review-title';
+  heading.tabIndex=-1;
+  const back=reviewButton('Back to Add Entry',()=>setReviewPage(false));
+  screen.replaceChildren(heading,back);
+  screen.style.cssText='display:grid;gap:16px';
+  let pending=null;
+  try{pending=pendingEntry();}catch{}
+  if(pending&&!reviewEntries.some(entry=>JSON.stringify(entry.input)===JSON.stringify(pending.input))){
+   const recovery=reviewNode('article','','card');
+   const body=reviewNode('div','','card-body');
+   body.append(reviewNode('h2',pending.input.quality,'card-title'),reviewNode('p','Previous submission is awaiting confirmation.'));
+   body.append(reviewButton('Check previous submission',()=>submitReviewed({input:pending.input,review:{token:pending.token}},true),'btn'));
+   recovery.append(body);
+   screen.append(recovery);
+  }
+  if(!count&&!pending)screen.append(reviewNode('p','No qualities waiting for review.'));
+  for(const entry of reviewEntries){
+   const {input,review}=entry;
+   const p=review.preview;
+   const card=reviewNode('article','','card');
+   const header=reviewNode('header','','card-header');
+   header.append(reviewNode('h2',p.quality,'card-title'));
+   const body=reviewNode('div','','card-body');
+   const facts=reviewNode('dl','');
+   facts.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:0 0 16px';
+   const sizes=values=>Object.entries(values||{}).map(([size,quantity])=>
+    size+': '+(typeof quantity==='object'?(quantity.dozens||0)+' dz '+(quantity.pieces||0)+' pcs':quantity)
+   ).join(' · ');
+   const sizeDetails=input.sizeOption==='different'
+    ?(input.colorSizes||[]).map(group=>group.name+' — '+sizes(group.sizes)).join(' / ')
+    :sizes(input.sizes);
+   for(const [label,value] of [
+    ['Product',p.productType],['Cup size',p.cupSize],['Colours',p.colors.map(c=>c.name||c).join(', ')],
+    ['Sizes',sizeDetails],['Pieces',p.pieces],['Dozens',AlishanCalc.fmtDozens(p.dozens)],
+    ['Price',AlishanCalc.fmtMoney(p.price)],['Total amount',AlishanCalc.fmtMoney(p.amount)],
+    ['Entry date',input.entry?.mode==='old'?input.entry.date+' '+input.entry.time:'Today'],
+    ['Material',input.material],['Weight',input.weight],['Notes',input.notes]
+   ]){
+    const fact=reviewNode('div','');
+    fact.append(reviewNode('dt',label),reviewNode('dd',String(value??'')||'—'));
+    facts.append(fact);
    }
-  }catch{return {ok:false,error:'Review could not load. Your entry is still in the form.'};}
-  const p=review.preview;
-  if(!window.confirm('Review and submit this entry?\n'+p.productType+' · '+p.quality+' · '+p.cupSize+'\n'+p.colors.map(c=>c.name||c).join(', ')+'\nPieces: '+p.pieces+' | Dozens: '+p.dozens+'\nPrice: ₹'+p.price+' | Amount: ₹'+p.amount+'\nSizes: '+JSON.stringify(input.sizeOption==='different'?input.colorSizes||input.sizes:input.sizes)+'\nEntry date: '+(input.entry?.mode==='old'?input.entry.date+' '+input.entry.time:'Today')+'\nMaterial: '+(input.material||'—')+' | Weight: '+(input.weight||'—')+'\nNotes: '+(input.notes||'—')))
-   return {ok:false,error:'Entry kept in the form. Nothing was submitted.'};
-  const result=await saveOnce('addItem',input,review.token);
-  if(result.ok)draftQuotes.delete(quoteKey);
-  return result;
+   const actions=reviewNode('div','');
+   actions.style.cssText='display:flex;flex-wrap:wrap;gap:8px';
+   const matchesPending=pending&&JSON.stringify(pending.input)===JSON.stringify(input);
+   const submit=reviewButton(matchesPending?'Check submission':'Submit',()=>submitReviewed(entry),'btn');
+   submit.disabled=reviewBusy||Boolean(pending&&!matchesPending);
+   actions.append(submit);
+   if(review.currentPrice!==p.price&&!pending){
+    const update=reviewButton('Use current price '+AlishanCalc.fmtMoney(review.currentPrice),async()=>{
+     if(reviewBusy)return;
+     reviewBusy=true;
+     renderEntryReviews();
+     try{
+      const fresh=await call('Store','reviewEntry',[input]);
+      if(!fresh.ok)throw new Error(fresh.error);
+      writeReviews(reviewEntries.map(item=>item===entry?{...entry,review:fresh}:item));
+     }catch(error){reportError(error);}
+     finally{reviewBusy=false;renderEntryReviews();}
+    });
+    update.disabled=reviewBusy;
+    actions.append(update);
+   }
+   const remove=reviewButton('Remove draft',()=>{
+    try{writeReviews(reviewEntries.filter(item=>item!==entry));renderEntryReviews();}
+    catch(error){reportError(error);}
+   });
+   remove.disabled=reviewBusy||Boolean(matchesPending);
+   actions.append(remove);
+   body.append(facts,actions);
+   card.append(header,body);
+   screen.append(card);
+  }
+ }
+ async function submitReviewed(entry,recovery=false){
+  if(reviewBusy)return;
+  reviewBusy=true;
+  renderEntryReviews();
+  try{
+   const pending=pendingEntry();
+   if(pending&&JSON.stringify(pending.input)!==JSON.stringify(entry.input))
+    throw new Error('Check the previous submission first.');
+   const result=await saveOnce('addItem',entry.input,entry.review.token);
+   if(!result.ok)throw new Error(result.error);
+   if(!recovery){
+    const remaining=reviewEntries.filter(item=>item!==entry);
+    try{writeReviews(remaining);}catch{reviewEntries=remaining;}
+   }
+   const code=result.item?.code;
+   window.showNotification?.(code?'Entry saved · Quality Code '+code:result.message||'Entry saved','success');
+  }catch(error){reportError(error);}
+  finally{reviewBusy=false;renderEntryReviews();}
+ }
+ async function submitEntry(input){
+  if(addingReview)return {ok:false,error:'Review is loading.'};
+  addingReview=true;
+  try{
+   const review=await call('Store','reviewEntry',[input]);
+   if(!review.ok)return review;
+   writeReviews([...reviewEntries,{input,review}]);
+   setReviewPage(true);
+   return {ok:true,message:'Entry added to Review.'};
+  }catch{return {ok:false,error:'Review could not be saved. Your entry is still in the form.'};}
+  finally{addingReview=false;}
+ }
+ if(typeof document!=='undefined'){
+ document.addEventListener('DOMContentLoaded',renderEntryReviews);
+ document.addEventListener('alishan:route',renderEntryReviews);
+ window.addEventListener('popstate',renderEntryReviews);
  }
  const make=target=>{
   const out={};
