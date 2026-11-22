@@ -94,6 +94,8 @@ test('a persisted bundle is reused across reopen until the background revision c
  await cache.call('Views','pageBundle',['home',null]);await cache.check(true);
  assert.equal(calls,1);
  revision='2';await cache.check(true);assert.equal(events,1);
+ cache.close();cache=open();await cache.ready;
+ assert.deepEqual(await cache.lookup('Store','summary',[],{allowStale:true}),{kind:'stale',value:{count:1}});
  await cache.call('Views','pageBundle',['home',null]);
  assert.equal((await cache.call('Store','summary',[])).count,2);
  assert.equal(calls,2);cache.close();
@@ -130,7 +132,9 @@ test('manual sync keeps a saved view on unchanged revision and on network failur
  now+=61000;await cache.check();assert.equal(requests,1);
  offline=true;assert.equal((await cache.check(true)).ok,false);assert.equal(cache.inspect().entries,1);
  offline=false;revision='2';assert.equal((await cache.check(true)).changed,true);
- assert.equal(changes,1);assert.equal(cache.inspect().entries,0);
+ assert.equal(changes,1);
+ assert.deepEqual(await cache.lookup('Store','summary',[]),{kind:'miss'});
+ assert.deepEqual(await cache.lookup('Store','summary',[],{allowStale:true}),{kind:'stale',value:{count:7}});
  cache.close();
  assert.equal(storage.records.get(cache.inspect().namespace).checkedAt,now);
 });
