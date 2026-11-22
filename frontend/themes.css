@@ -15,8 +15,8 @@ body.theme-light-default {          /* the default theme changes nothing on the 
     --bg-active: #e9ecef;
     --bg-modal: #ffffff;
     --text-primary: #212529;
-    --text-secondary: #6c757d;
-    --text-muted: #adb5bd;
+    --text-secondary: #555e67;
+    --text-muted: #616a73;
     --border-primary: #e9ecef;
     --border-secondary: #dee2e6;
     --shadow-color: rgba(0, 0, 0, 0.1);
@@ -34,8 +34,8 @@ html.theme-light-warm, body.theme-light-warm {
     --bg-active: #fad7a0;
     --bg-modal: #ffffff;
     --text-primary: #5a4a42;
-    --text-secondary: #8b7355;
-    --text-muted: #b4957a;
+    --text-secondary: #614932;
+    --text-muted: #654e39;
     --border-primary: #fdebd0;
     --border-secondary: #fad7a0;
     --shadow-color: rgba(0, 0, 0, 0.08);
@@ -173,9 +173,9 @@ html:is(.theme-dark-deep, .theme-dark-blue, .theme-gold, .theme-midnight-slate, 
     --tint-ok: rgba(76, 175, 80, 0.18);
 }
 /* ---- accessible accent / text-on-colour per existing theme ---- */
-html.theme-light-warm, body.theme-light-warm { --primary: #c2610c; --secondary: #92400e; }
-html.theme-mint, body.theme-mint { --primary: #0f766e; --secondary: #115e59; --text-secondary: #2a7f79; }
-html.theme-dark-deep, body.theme-dark-deep { --accent-text: #8fa5ff; }
+html.theme-light-warm, body.theme-light-warm { --primary: #92400e; --secondary: #78350f; --accent-text: #78350f; }
+html.theme-mint, body.theme-mint { --primary: #115e59; --secondary: #134e4a; --accent-text: #134e4a; --text-secondary: #245e58; --text-muted: #245e58; }
+html.theme-dark-deep, body.theme-dark-deep { --accent-text: #b3c3ff; }
 html.theme-gold, body.theme-gold { --on-color: #1a1a1a; }
 
 /* ---- dark themes: shared component corrections for existing dark palettes ---- */
