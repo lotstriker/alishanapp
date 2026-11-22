@@ -49,7 +49,7 @@
    });
   }
   try{
-   response=await fetch('/api/batch',{method:'POST',headers:{'Content-Type':'application/json',...scopedHeaders()},credentials:'same-origin',body:pack(batch),signal:AbortSignal.timeout(batch.some(x=>['restoreComplete','importBackup','restoreBackup','importEntries'].includes(x.method))?180000:45000)});
+   response=await fetch('/api/batch',{method:'POST',headers:{'Content-Type':'application/json','X-Alishan-Card-View':'1',...scopedHeaders()},credentials:'same-origin',body:pack(batch),signal:AbortSignal.timeout(batch.some(x=>['restoreComplete','importBackup','restoreBackup','importEntries'].includes(x.method))?180000:45000)});
    headersAt=clock.now();timing=response.headers?.get?.('Server-Timing');
    if(response.status===401)device?.revoke?.();
    if(!response.ok)throw new Error(response.status===401?'Please sign in again.':'Server connection failed. Please try again.');
@@ -60,9 +60,25 @@
    output.forEach((r,i)=>{if(r.unchanged&&batch[i].conditional){batch[i].conditional.unchanged=true;batch[i].resolve(batch[i].conditional.value);return;}if(r.error)batch[i].reject(new Error(r.error));else{
      if(batch[i].target==='Groups')batch[i].args.forEach((arg,n)=>{if(arg&&typeof arg==='object'&&!Array.isArray(arg)&&r.args[n]){for(const k of Object.keys(arg))delete arg[k];Object.assign(arg,r.args[n]);}});
      if(batch[i].conditional?.write)batch[i].conditional.primes=r.primes;
-     batch[i].resolve(r.result);
+     const result=r.result;
+     if(batch[i].target==='Views'){
+      if(['inventoryPage','homeLatest'].includes(batch[i].method))expandCardView(result);
+      if(batch[i].method==='pageBundle')for(const prime of result?.primes||[]){
+       if(prime.target==='Views'&&['inventoryPage','homeLatest'].includes(prime.method))expandCardView(prime.result);
+      }
+     }
+     batch[i].resolve(result);
    }});
   }catch(e){capture(false);batch.forEach(x=>x.reject(e));}
+ }
+ function expandCardView(view){
+  const items=view?.paged?.items||view?.items;
+  if(!Array.isArray(items))return;
+  for(const prime of view.primes||[]){
+   if(!Number.isInteger(prime.itemIndex))continue;
+   prime.args=[items[prime.itemIndex]];
+   delete prime.itemIndex;
+  }
  }
  const mutations=new Set(['addItem','updateItem','deleteItem','toggleStock','setCompletionDate','addPayment','deletePayment','importEntries','undoImport','importBackup','restoreComplete','restoreBackup','restore','deleteForever','cleanLeftovers','saveInventory','replaceInventoryAndPayments']);
  const referenceMethods=new Set(['getColorStyle','getColorStyleSafe','colorDisplayName','getPrice','getProductTypes','getColors','getQualityData']);
@@ -109,12 +125,12 @@
  function advancedOptions(){if(window.AlishanAdvancedSearch?.getOptions)return window.AlishanAdvancedSearch.getOptions();try{return JSON.parse(localStorage.getItem('alishan.advancedSearch.v1')||'null');}catch{return null;}}
  async function readStartupCache(target,method,args){
   const visit=window.AlishanPerformance?.current(),started=performance.now();
-  const hit=await device?.lookup(target,method,args);
+  const hit=await device?.lookup(target,method,args,{allowStale:true});
   if(visit&&hit?.kind!=='shared'){
-   const phases={hit:'startupCacheHitMs',miss:'startupCacheMissMs'};
+   const phases={hit:'startupCacheHitMs',stale:'startupCacheHitMs',miss:'startupCacheMissMs'};
    window.AlishanPerformance?.phase(phases[hit?.kind||'miss'],started,visit);
   }
-  return hit?.kind==='hit'?hit.value:undefined;
+  return ['hit','stale'].includes(hit?.kind)?hit.value:undefined;
  }
  async function preparePage(name){
   if(!device?.enabled||!name)return;
