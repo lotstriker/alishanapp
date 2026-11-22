@@ -187,12 +187,21 @@
  const reviewKey='alishan:reviews:'+window.ALISHAN_SESSION?.scope;
  let reviewEntries=[];
  let reviewBusy=false, addingReview=false;
- try {
-  const stored=sessionStorage.getItem(reviewKey);
-  if(stored) reviewEntries=JSON.parse(stored);
- } catch {}
- function writeReviews(entries){
-  sessionStorage.setItem(reviewKey,JSON.stringify(entries));
+ if(window.ALISHAN_SESSION?.scope){
+  try {
+   const legacy=JSON.parse(sessionStorage.getItem(reviewKey)||'[]');
+   const saved=JSON.parse(localStorage.getItem(reviewKey)||'[]');
+   reviewEntries=saved.concat(legacy.filter(entry=>!saved.some(item=>item.review.token===entry.review.token)));
+   if(legacy.length||saved.some(entry=>!entry.draftId)){
+    reviewEntries=reviewEntries.map(entry=>entry.draftId?entry:{...entry,draftId:crypto.randomUUID()});
+    localStorage.setItem(reviewKey,JSON.stringify(reviewEntries));
+    sessionStorage.removeItem(reviewKey);
+   }
+  } catch {}
+ }
+ function writeReviews(update){
+  const entries=update(JSON.parse(localStorage.getItem(reviewKey)||JSON.stringify(reviewEntries)));
+  localStorage.setItem(reviewKey,JSON.stringify(entries));
   reviewEntries=entries;
  }
  function reviewNode(tag,label,className){
@@ -219,11 +228,18 @@
   const count=reviewEntries.length;
   const quickActions=document.querySelector('.quick-actions');
   if(quickActions&&['/','/index.html'].includes(location.pathname)){
-   const link=quickActions.querySelector('#entry-review-link')||reviewNode('a','','quick-action-btn');
-   link.id='entry-review-link';
-   link.href='entry-review.html';
-   link.textContent='Entry Review · '+count+' pending';
-   if(!link.parentNode)quickActions.prepend(link);
+   let button=quickActions.querySelector('#entry-review-link');
+   if(!button){
+    button=reviewNode('button','','quick-action-btn');
+    button.id='entry-review-link';
+    button.type='button';
+    button.setAttribute('onclick',"location.href='entry-review.html'");
+    const icon=reviewNode('i','','fas fa-clipboard-check');
+    icon.setAttribute('aria-hidden','true');
+    button.append(icon,reviewNode('span',''));
+    quickActions.prepend(button);
+   }
+   button.lastElementChild.textContent='Entry Review · '+count+' pending';
    return;
   }
   const screen=document.getElementById('entry-review-page');
@@ -299,7 +315,7 @@
      try{
       const fresh=await call('Store','reviewEntry',[input]);
       if(!fresh.ok)throw new Error(fresh.error);
-      writeReviews(reviewEntries.map(item=>item===entry?{...entry,review:fresh}:item));
+      writeReviews(entries=>entries.map(item=>item.draftId===entry.draftId?{...item,review:fresh}:item));
      }catch(error){reportError(error);}
      finally{reviewBusy=false;renderEntryReviews();}
     });
@@ -307,7 +323,7 @@
     actions.append(update);
    }
    const remove=reviewButton('Delete',()=>{
-    try{writeReviews(reviewEntries.filter(item=>item!==entry));renderEntryReviews();}
+    try{writeReviews(entries=>entries.filter(item=>item.draftId!==entry.draftId));renderEntryReviews();}
     catch(error){reportError(error);}
    },'audit-btn audit-btn-danger');
    remove.disabled=reviewBusy||Boolean(matchesPending);
@@ -327,8 +343,8 @@
    const result=await saveOnce('addItem',entry.input,entry.review.token);
    if(!result.ok)throw new Error(result.error);
    if(!recovery){
-    const remaining=reviewEntries.filter(item=>item!==entry);
-    try{writeReviews(remaining);}catch{reviewEntries=remaining;}
+    const remaining=entries=>entries.filter(item=>item.draftId!==entry.draftId);
+    try{writeReviews(remaining);}catch{reviewEntries=remaining(reviewEntries);}
    }
    const code=result.item?.code;
    window.showNotification?.(code?'Entry saved · Quality Code '+code:result.message||'Entry saved','success');
@@ -341,12 +357,16 @@
   try{
    const review=await call('Store','reviewEntry',[input]);
    if(!review.ok)return review;
-   writeReviews([...reviewEntries,{input,review}]);
+   writeReviews(entries=>[...entries,{draftId:crypto.randomUUID(),input,review}]);
    return {ok:true,message:'Entry added to Review in Dashboard → Quick Actions.'};
   }catch{return {ok:false,error:'Review could not be saved. Your entry is still in the form.'};}
   finally{addingReview=false;}
  }
  if(typeof document!=='undefined'){
+ window.addEventListener('storage',event=>{
+  if(event.key!==reviewKey)return;
+  try{reviewEntries=JSON.parse(event.newValue||'[]');renderEntryReviews();}catch{}
+ });
  document.addEventListener('DOMContentLoaded',renderEntryReviews);
  document.addEventListener('alishan:route',renderEntryReviews);
  }
