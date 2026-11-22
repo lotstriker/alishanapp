@@ -76,8 +76,28 @@ self.addEventListener('fetch',event=>{
   event.respondWith((async()=>{
    const path=url.pathname==='/'?'/index.html':url.pathname;
    if(PAGES.includes(path)){
-    const session=await navigationSession(event);
-    if(session&&!session.google){try{const response=await(await caches.open(SHELL)).match(new Request(new URL(path,self.location.origin)));if(response){const text=await response.text();if(event.resultingClientId)await bind(event.resultingClientId,session);return new Response(text.replace('/*ALISHAN_SESSION*/',`window.ALISHAN_SESSION=${JSON.stringify(session)};`),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Frame-Options':'DENY','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin'}});}}catch{}}
+    try{
+     const response=await(await caches.open(SHELL)).match(new Request(new URL(path,self.location.origin)));
+     if(response){
+      const html=await response.text();
+      const bound=await navigationSession(event);
+      let session=bound&&!bound.google?bound:null;
+      if(!session&&html.includes('?v='+BUILD)){
+       const verified=await fetch(new Request(self.location.origin+'/api/view-session',{
+        credentials:'same-origin',cache:'no-store',headers:{'X-Alishan-Route-Shell':BUILD}
+       }));
+       if(verified.status===401&&!verified.headers.has('WWW-Authenticate'))return Response.redirect(self.location.origin+'/login',303);
+       if(verified.ok)session=await verified.json();
+      }
+      if(session?.release===RELEASE&&/^[a-f0-9]{32}$/.test(session.scope)&&html.includes('/*ALISHAN_SESSION*/')){
+       if(event.resultingClientId)await bind(event.resultingClientId,session);
+       return new Response(html.replace('/*ALISHAN_SESSION*/',`window.ALISHAN_SESSION=${JSON.stringify(session)};`),{headers:{
+        'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Frame-Options':'DENY',
+        'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Alishan-Shell-Cache':'hit'
+       }});
+      }
+     }
+    }catch{}
    }
    // Without a bound initiating app window, use normal server authentication.
    const response=await fetch(request);

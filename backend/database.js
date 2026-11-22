@@ -69,7 +69,15 @@ class PostgresRepository {
     if(BigInt(since)>BigInt(row.revision)||row.changes.length>100)return {revision:row.revision,reset:true};
     return row;
   }
-  async ready(){await performanceDb.query(this.pool,'SELECT 1 FROM alishan_private.workspaces LIMIT 1');}
+  async ready(){
+    const started=performance.now();
+    const client=await performanceDb.connect(this.pool);
+    const acquired=performance.now();
+    try {
+      await performanceDb.query(client,'SELECT 1 FROM alishan_private.workspaces LIMIT 1');
+      return {pool:acquired-started,query:performance.now()-acquired};
+    } finally { client.release(); }
+  }
   // One MVCC statement: readers never take the workspace write lock. Revision and
   // projected records come from the same committed snapshot, even during a restore.
   async read(fn,selection={stores,settings:null}){

@@ -52,3 +52,25 @@ test('SPA report shells reuse only sanitized current-build HTML in a bound tab',
  await env.message({type:'CLEAR_VIEW_SESSION',scope:'a'.repeat(32)});
  assert.equal((await load('99.0.0')).status,401);
 });
+
+test('Google reopen verifies the current session before hydrating a cached shell', async () => {
+ const env=setup(), cache=await env.storage.open('alishan-shell-99.0.0');
+ await cache.put(new Request('https://app.test/inventory.html'),new Response(
+  '<script>/*ALISHAN_SESSION*/</script><script src="/route-inventory.js?v=99.0.0"></script>'));
+ await env.message({type:'BIND_VIEW_SESSION',session:{scope:'a'.repeat(32),release:'99.0.0',google:true}});
+ env.context.fetch=async request=>{
+  assert.equal(request.url,'https://app.test/api/view-session');
+  assert.equal(request.headers.get('X-Alishan-Route-Shell'),'99.0.0');
+  return Response.json({scope:'b'.repeat(32),release:'99.0.0',google:true});
+ };
+ const response=await env.navigate('');
+ assert.equal(response.headers.get('X-Alishan-Shell-Cache'),'hit');
+ const html=await response.text();
+ assert.ok(html.includes('b'.repeat(32)));
+ assert.ok(!html.includes('a'.repeat(32)));
+ env.context.fetch=async()=>new Response(null,{status:401});
+ assert.equal((await env.navigate('first')).headers.get('location'),'https://app.test/login');
+ env.context.fetch=async request=>request.url.endsWith('/api/view-session')
+  ?new Response(null,{status:409}):new Response('new network build');
+ assert.equal(await (await env.navigate('')).text(),'new network build');
+});

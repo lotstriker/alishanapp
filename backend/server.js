@@ -15,6 +15,7 @@ const hash=s=>createHash('sha256').update(s).digest();
 function createApp({repository,username,password,auth,googleSetup,repositoryFor,legacyOwnerId,telemetry}){
  if((!auth&&!username)||!password||password.length<20)throw new Error('APP_USERNAME and APP_PASSWORD (20+ characters) are required');
  let pureDomain;
+ const compressedReads=new Map();
  const bootedAt=new Date().toISOString();
  const basicScope=hash(JSON.stringify([repository.workspace||'alishan',username,password,process.env.DATABASE_URL||'local'])).toString('hex').slice(0,32);
  const {entryReview}=require('./entry-review');
@@ -54,7 +55,7 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
    try{res.json(await repository.backupHealth());}
    catch{res.status(503).json({status:'unavailable'});}
  });
- app.get('/healthz',async(req,res)=>{try{await repository.ready();res.json({status:'ok'});}catch{res.status(503).json({status:'unavailable'});}});
+ app.get('/healthz',async(req,res)=>{try{const probe=await repository.ready();if(probe)res.set('Server-Timing',`dbpool;dur=${probe.pool.toFixed(1)}, dbping;dur=${probe.query.toFixed(1)}`);res.json({status:'ok'});}catch{res.status(503).json({status:'unavailable'});}});
  // Chrome may fetch installation metadata without the browser tab's credentials.
  const installAssets=new Set(['/manifest.webmanifest','/icons/icon-192.png','/icons/icon-512.png','/icons/icon-maskable-512.png']);
  app.get([...installAssets],(req,res,next)=>{
@@ -81,6 +82,10 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
    if(!timingSafeEqual(hash(supplied),hash(`${username}:${password}`))){res.set('WWW-Authenticate','Basic realm="Alishan", charset="UTF-8"');return res.status(401).send('Sign in to Alishan');}
    res.locals.account={repository,actor:username,session:{scope:basicScope,release}};
    next();
+ });
+ app.get('/api/view-session',(req,res)=>{
+   if(req.get('X-Alishan-Route-Shell')!==assetTag)return res.sendStatus(409);
+   res.json(res.locals.account.session);
  });
  app.use('/api',(req,res,next)=>{
    if(auth&&req.get('X-Alishan-Scope')!==res.locals.account.session.scope)
@@ -123,7 +128,7 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
      if(result.primes.some(prime=>prime.target==='Reports'&&prime.method==='overview'))
        return {...row,result:{...result,primes:compactReportPrimes(result.primes)}};
      return {...row,result:result.paged||result.items?compactCardView(result):{
-       ...result,primes:result.primes.map(prime=>prime.target==='Views'&&['inventoryPage','homeLatest'].includes(prime.method)
+       ...result,primes:compactReportPrimes(result.primes).map(prime=>prime.target==='Views'&&['inventoryPage','homeLatest'].includes(prime.method)
          ?{...prime,result:compactCardView(prime.result)}:prime)
      }};
    }):value));
@@ -131,10 +136,17 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
    res.set('X-Alishan-Decoded-Bytes',String(Buffer.byteLength(body)));
    res.vary('Accept-Encoding');
    if(body.length<4096||req.acceptsEncodings('gzip','identity')!=='gzip')return res.type('json').send(body);
+   const key=hash(body).toString('hex');
+   let pending=compressedReads.get(key);
+   if(!pending){
+     if(compressedReads.size>=16)compressedReads.delete(compressedReads.keys().next().value);
+     pending=new Promise(resolve=>gzip(body,{level:1},(error,compressed)=>resolve(error?null:compressed)));
+     if(body.length<=1024*1024)compressedReads.set(key,pending);
+   }
    const compressionStart=performance.now();
-   gzip(body,{level:3},(error,compressed)=>{
+   pending.then(compressed=>{
      res.append('Server-Timing','compress;dur='+(performance.now()-compressionStart).toFixed(1));
-     if(error)return res.type('json').send(body);
+     if(!compressed){if(compressedReads.get(key)===pending)compressedReads.delete(key);return res.type('json').send(body);}
      res.set('Content-Encoding','gzip').type('json').send(compressed);
    });
  }
