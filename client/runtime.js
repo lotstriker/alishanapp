@@ -64,6 +64,7 @@
      if(batch[i].target==='Views'){
       if(['inventoryPage','homeLatest'].includes(batch[i].method))expandCardView(result);
       if(batch[i].method==='pageBundle')for(const prime of result?.primes||[]){
+       prime.args=prime.args.map(arg=>Number.isInteger(arg?.$alishanReportPrime)?result.primes[arg.$alishanReportPrime].result:arg);
        if(prime.target==='Views'&&['inventoryPage','homeLatest'].includes(prime.method))expandCardView(prime.result);
       }
      }

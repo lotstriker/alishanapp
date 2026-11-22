@@ -119,7 +119,9 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
    const body=JSON.stringify(encode(compact?value.map(row=>{
      const result=row.result;
      if(!Array.isArray(result?.primes))return row;
-     const {compactCardView}=require('./page-bundles');
+     const {compactCardView,compactReportPrimes}=require('./page-bundles');
+     if(result.primes.some(prime=>prime.target==='Reports'&&prime.method==='overview'))
+       return {...row,result:{...result,primes:compactReportPrimes(result.primes)}};
      return {...row,result:result.paged||result.items?compactCardView(result):{
        ...result,primes:result.primes.map(prime=>prime.target==='Views'&&['inventoryPage','homeLatest'].includes(prime.method)
          ?{...prime,result:compactCardView(prime.result)}:prime)

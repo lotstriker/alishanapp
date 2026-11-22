@@ -180,9 +180,12 @@
    const ordered=group.filter(v=>Number.isFinite(v.metrics.readyMs)).sort((a,b)=>a.metrics.readyMs-b.metrics.readyMs);
    const values=ordered.map(v=>v.metrics.readyMs), n=values.length, last=ordered.at(-1);
    const median=n?(values[Math.floor((n-1)/2)]+values[Math.floor(n/2)])/2:null;
+   const visible=group.map(v=>v.metrics.criticalPaintMs).filter(Number.isFinite).sort((a,b)=>a-b);
+   const m=visible.length;
+   const medianVisible=m?(visible[Math.floor((m-1)/2)]+visible[Math.floor(m/2)])/2:null;
    const largest=last&&phases.filter(([key])=>Number.isFinite(last.metrics[key])).sort(([a],[b])=>last.metrics[b]-last.metrics[a])[0];
    const slow=last ? measure(last.metrics.readyMs,'readyMs')+(largest?' · '+largest[1]+' '+measure(last.metrics[largest[0]],largest[0]):'') : '—';
-   row($('page-summary'),[names[group[0].page]||group[0].page,group[0].release,types[group[0].visitType],n+' / '+group.length,measure(median,'readyMs'),measure(n?values[Math.ceil(n*.9)-1]:null,'readyMs'),last?details(last,slow):slow]);
+   row($('page-summary'),[names[group[0].page]||group[0].page,group[0].release,types[group[0].visitType],m+' / '+group.length,measure(medianVisible,'criticalPaintMs'),n+' / '+group.length,measure(median,'readyMs'),measure(n?values[Math.ceil(n*.9)-1]:null,'readyMs'),last?details(last,slow):slow]);
   }
   $('rows').replaceChildren();
   for(const visit of selected){

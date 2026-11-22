@@ -50,3 +50,13 @@ module.exports=d=>{
 };
 
 module.exports.compactCardView = compactCardViewForTransport;
+
+
+module.exports.compactReportPrimes = function(primes){
+ const references=new Map();
+ return primes.map((prime,index)=>{
+  const args=prime.args.map(arg=>references.has(arg)?{$alishanReportPrime:references.get(arg)}:arg);
+  if(Array.isArray(prime.result))references.set(prime.result,index);
+  return {...prime,args};
+ });
+};

@@ -1962,7 +1962,18 @@
             }, { AlishanSearch: 'search.js', AlishanLoader: 'loader.js', ItemCard: 'item-card.js' }))) return;
             const visit = window.AlishanPerformance?.current();
             const storeStarted = performance.now();
-            const info = await AlishanStore.init();
+            const startup = Promise.resolve().then(() => AlishanStore.init());
+            startup.catch(() => {});
+            if (!location.hash && window.ReportViews) {
+                const cached = await window.AlishanRemote?.readStartupCache('Reports', 'overview', []);
+                if (cached && window.AlishanPerformance?.current() === visit) {
+                    await ReportViews.renderHome(cached);
+                    requestAnimationFrame(() => requestAnimationFrame(() => {
+                        if (window.AlishanPerformance?.current() === visit) window.AlishanPerformance?.criticalPaint();
+                    }));
+                }
+            }
+            const info = await startup;
             window.AlishanPerformance?.phase('storeWaitMs', storeStarted, visit);
             window.AlishanPerformance?.dataReady();
             if (info.referenceError) showNotification(info.referenceError, 'error');

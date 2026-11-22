@@ -55,10 +55,10 @@ const ReportViews = (() => {
   const notify = (m, t) => { if (typeof showNotification === 'function') showNotification(m, t || 'info'); };
 
   /* ------------------------------ Report home (the eight cards) ------------------------------ */
-  function renderHome() {
+  function renderHome(savedOverview) {
     const host = $('reportHome'); if (!host) return;
-    let o = null;
-    try { o = E.overview(); } catch (e) { console.error('Report overview failed:', e); }
+    let o = savedOverview;
+    try { if (!o) o = E.overview(); } catch (e) { console.error('Report overview failed:', e); }
     const line = {
       weekly: o && `${num(o.weekly.count)} completed this week · ${C.fmtMoney(o.weekly.amount)}`,
       payments: o && `${C.fmtMoney(o.payments.total)} · ${num(o.payments.count)} entries`,
@@ -483,7 +483,7 @@ const ReportViews = (() => {
     if (state.key) render(); else renderHome();
   }
 
-  return { init, onDataChanged, onSearchChanged, scopeItems, currentExisting, paymentInRange, openDetail, state: () => state };
+  return { init, renderHome, onDataChanged, onSearchChanged, scopeItems, currentExisting, paymentInRange, openDetail, state: () => state };
 })();
 
 if (typeof window !== 'undefined') window.ReportViews = ReportViews;
