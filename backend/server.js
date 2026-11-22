@@ -115,7 +115,16 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
  const {gzip}=require('node:zlib');
  function sendReadResponse(req,res,value){
    const serializeStart=performance.now();
-   const body=JSON.stringify(encode(value));
+   const compact=req.get('X-Alishan-Card-View')==='1'&&Array.isArray(value);
+   const body=JSON.stringify(encode(compact?value.map(row=>{
+     const result=row.result;
+     if(!Array.isArray(result?.primes))return row;
+     const {compactCardView}=require('./page-bundles');
+     return {...row,result:result.paged||result.items?compactCardView(result):{
+       ...result,primes:result.primes.map(prime=>prime.target==='Views'&&['inventoryPage','homeLatest'].includes(prime.method)
+         ?{...prime,result:compactCardView(prime.result)}:prime)
+     }};
+   }):value));
    res.append('Server-Timing','serialize;dur='+(performance.now()-serializeStart).toFixed(1));
    res.set('X-Alishan-Decoded-Bytes',String(Buffer.byteLength(body)));
    res.vary('Accept-Encoding');
