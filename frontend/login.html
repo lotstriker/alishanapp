@@ -18,6 +18,13 @@
     <p role="status" id="login-verified" hidden>Google account verify ho gaya. Alishan ka Google sign-in activate hone ke baad isi account se login karein.</p>
     <script>
       const params = new URLSearchParams(location.search);
+      if (params.get('next')==='manager') {
+        document.title='Sign in · Alishan Manager';
+        document.querySelector('h1').textContent='Alishan Manager';
+        document.querySelector('main > p').textContent='Manager access wale Google account se sign in karein.';
+        document.querySelector('.google').href='/auth/google?next=manager';
+        document.querySelector('.account-note').textContent='Manager access ke liye backend invite zaroori hai.';
+      }
       if (params.has('error')) document.getElementById('login-error').style.display='block';
       if (params.get('verified')==='google') document.getElementById('login-verified').hidden=false;
     </script>

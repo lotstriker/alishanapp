@@ -45,8 +45,8 @@ test('Google PKCE scopes reads, writes, exports and logout to the verified user'
   await new Promise(resolve=>server.once('listening',resolve));
   const base='http://127.0.0.1:'+server.address().port;
   const cookieFrom=(r,prefix)=>r.headers.getSetCookie().find(c=>c.startsWith(prefix+'=')).split(';')[0];
-  async function signIn(subject) {
-    const start=await fetch(base+'/auth/google',{redirect:'manual'});
+  async function signIn(subject, forManager = false) {
+    const start=await fetch(base+'/auth/google'+(forManager?'?next=manager':''),{redirect:'manual'});
     const oauth=new URL(start.headers.get('location'));
     assert.equal(oauth.searchParams.get('provider'),'google');
     assert.equal(oauth.searchParams.get('redirect_to'),origin+'/auth/callback');
@@ -55,7 +55,7 @@ test('Google PKCE scopes reads, writes, exports and logout to the verified user'
     const reply=await fetch(base+'/auth/callback?code='+subject,{headers:{Cookie:verifier},redirect:'manual'});
     assert.equal(reply.status,200);
     assert.equal(reply.headers.get('location'),null);
-    assert.match(await reply.text(),/location\.replace\('\/'\)/);
+    assert.ok((await reply.text()).includes(forManager ? "location.replace('/manager')" : "location.replace('/')"));
     assert.match(reply.headers.getSetCookie().find(value=>value.startsWith('__Host-alishan-session=')),/Max-Age=86400/);
     const cookie=cookieFrom(reply,'__Host-alishan-session');
     const existing=await fetch(base+'/login',{headers:{Cookie:cookie},redirect:'manual'});
@@ -79,7 +79,7 @@ test('Google PKCE scopes reads, writes, exports and logout to the verified user'
   const noAuth=await fetch(base+'/api/cache-status',{headers:{Authorization:'Basic '+Buffer.from('a:b').toString('base64')}});
   assert.equal(noAuth.status,401);
   assert.equal((await fetch(base+'/',{redirect:'manual'})).headers.get('location'),'/login');
-  const accountA=await signIn(owner),accountB=await signIn(other);
+  const accountA=await signIn(owner),accountB=await signIn(other,true);
   assert.notEqual(accountA.scope,accountB.scope);
   const rpc=(account,method,args,scope=account.scope)=>fetch(base+'/api/rpc',{method:'POST',headers:{Cookie:account.cookie,'X-Alishan-Scope':scope,'Content-Type':'application/json'},body:JSON.stringify({target:'Store',method,args})});
   assert.equal((await (await rpc(accountA,'getItem',[item.id])).json()).result.id,item.id);

@@ -64,7 +64,7 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
  const login=auth||googleSetup;
  if(login){
    app.get('/login',async(req,res)=>{
-     if(auth&&await auth.authenticate(req,res))return res.redirect(303,'/');
+     if(auth&&await auth.authenticate(req,res))return res.redirect(303,req.query.next==='manager'?'/manager':'/');
      res.sendFile(path.resolve(__dirname,'../dist/login.html'));
    });
    app.get('/login.css',(req,res)=>res.sendFile(path.resolve(__dirname,'../dist/login.css')));
@@ -79,7 +79,7 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
      const subject=await auth.authenticate(req,res,{documentNavigation});
      if(req.path==='/'||req.path==='/api/view-session'||req.path.endsWith('.html'))
        res.append('Server-Timing','documentauth;dur='+(performance.now()-started).toFixed(1));
-     if(!subject)return req.path.startsWith('/api/')?res.status(401).json({error:'Sign in to Alishan'}):res.redirect(303,'/login');
+     if(!subject)return req.path.startsWith('/api/')?res.status(401).json({error:'Sign in to Alishan'}):res.redirect(303,req.path==='/manager'?'/login?next=manager':'/login');
      const workspace=subject===legacyOwnerId?repository.workspace:'user:'+subject;
      const scoped=workspace===repository.workspace?repository:repositoryFor(workspace);
      res.locals.account={repository:scoped,actor:subject,session:{scope:hash(JSON.stringify([basicScope,workspace,subject])).toString('hex').slice(0,32),release,google:true}};

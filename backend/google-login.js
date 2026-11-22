@@ -46,13 +46,17 @@ function googleLogin({ supabaseUrl, publishableKey, origin, sessions, verifyOnly
         code_challenge_method: 's256',
         prompt: 'select_account'
       });
-      res.cookie(verifierName, verifier, { ...cookieOptions, maxAge: 10 * 60 * 1000 });
+      res.cookie(verifierName, req.query.next === 'manager' ? 'manager.' + verifier : verifier, { ...cookieOptions, maxAge: 10 * 60 * 1000 });
       res.redirect(303, url.href);
     },
     async callback(req, res) {
-      const verifier = cookie(req, verifierName);
+      const stored = cookie(req, verifierName) || '';
+      const forManager = stored.startsWith('manager.');
+      const verifier = forManager ? stored.slice('manager.'.length) : stored;
+      const destination = forManager ? '/manager' : '/';
+      const screen = forManager ? 'Manager' : 'Dashboard';
       res.clearCookie(verifierName, cookieOptions);
-      const fail = () => res.redirect(303, '/login?error=google');
+      const fail = () => res.redirect(303, '/login?error=google' + (forManager ? '&next=manager' : ''));
       if (!validSecret(verifier) || typeof req.query.code !== 'string' || req.query.code.length > 512) return fail();
       try {
         const reply = await request(new URL('token?grant_type=pkce', base), {
@@ -79,8 +83,8 @@ function googleLogin({ supabaseUrl, publishableKey, origin, sessions, verifyOnly
 body.dark{background:#000;color:#fff}main{width:min(100%,23rem);text-align:center;padding:2rem;border:1px solid #a37b8b80;border-radius:1.25rem}
 h1{font-size:1.35rem;margin:0 0 .5rem}p{margin:0}a{color:inherit;display:inline-block;margin-top:1rem;padding:.6rem}
 </style><body><script>try{if(!/^(light-default|light-warm|mint|rose-wine|gold)$/.test(localStorage.getItem('alishan-theme')||'light-default'))document.body.classList.add('dark');}catch{}</script>
-<main><h1>Opening Alishan</h1><p role="status">Your Dashboard is loading…</p><a href="/">Open Dashboard</a></main>
-<script>location.replace('/');</script></body></html>`);
+<main><h1>Opening Alishan</h1><p role="status">Your ${screen} is loading…</p><a href="${destination}">Open ${screen}</a></main>
+<script>location.replace('${destination}');</script></body></html>`);
       } catch {
         return fail();
       }

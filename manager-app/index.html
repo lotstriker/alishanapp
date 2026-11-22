@@ -3,30 +3,43 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Alishan Manager</title>
+<link rel="stylesheet" href="/themes.css">
+<link rel="stylesheet" href="/nav.css">
+<script src="/theme-boot.js"></script>
 <style>
-:root { color-scheme:light dark; --surface:#fff; --ink:#291b22; --muted:#735b65; --line:#dfcdd4; --accent:#782e4d; --canvas:#faf5f7; }
-@media (prefers-color-scheme:dark) { :root { --surface:#21171d; --ink:#f8e8ef; --muted:#d3b9c5; --line:#513741; --accent:#f6b9d2; --canvas:#120d10; } }
 * { box-sizing:border-box; }
-body { margin:0; font:1rem system-ui,sans-serif; background:var(--canvas); color:var(--ink); }
-header { background:var(--surface); border-bottom:1px solid var(--line); }
-nav, main { max-width:56rem; margin:auto; padding:1rem; }
-nav, .heading, article, .actions { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
-nav strong { letter-spacing:.04em; }
-a { color:var(--accent); }
+body { margin:0; min-height:100dvh; font:1rem var(--nav-font); background:var(--bg-body,#f5f7fb); color:var(--text-primary,#212529); }
+.manager-header { background:linear-gradient(135deg,var(--nav-bg-a),var(--nav-bg-b)); color:var(--nav-text); }
+.manager-header nav, main { max-width:70rem; margin:auto; padding:1rem; }
+.manager-header nav, .heading, article, .actions { display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap; }
+.manager-header strong { font-size:1.15rem; font-weight:800; }
+.manager-header a { color:inherit; }
 h1 { margin:.5rem 0; font-size:clamp(1.6rem,5vw,2.4rem); }
-h2 { font-size:1.15rem; margin:1.5rem 0 .6rem; }
+h2 { font-size:1.15rem; margin:1.25rem 0 .6rem; }
 h3 { margin:0 0 .3rem; overflow-wrap:anywhere; }
-p { color:var(--muted); margin:.25rem 0; }
-article { background:var(--surface); border:1px solid var(--line); border-radius:.75rem; padding:1rem; margin-bottom:.6rem; }
-button { font:inherit; padding:.55rem .85rem; min-height:44px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:.55rem; cursor:pointer; }
-button[data-decision="approved"] { border-color:var(--accent); color:var(--accent); }
+p { color:var(--text-secondary,#555e67); margin:.25rem 0; }
+article, .summary-card { background:var(--bg-card,#fff); border:1px solid var(--border-primary,#e9ecef); border-radius:12px; padding:15px; box-shadow:0 2px 6px var(--shadow-color,#0001); }
+article { margin-bottom:.6rem; }
+.filters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:12px 0; }
+.summary-card { display:flex; flex-direction:column; align-items:flex-start; gap:5px; text-align:left; }
+.summary-card strong { font-size:clamp(1.1rem,2vw,1.45rem); }
+button { font:inherit; padding:.55rem .85rem; min-height:44px; color:inherit; background:var(--bg-card,#fff); border:1px solid var(--border-secondary,#dee2e6); border-radius:10px; cursor:pointer; }
+button[aria-pressed="true"], button[data-decision="approved"] { border-color:var(--primary,#4361ee); }
+button:focus-visible, a:focus-visible { outline:2px solid var(--primary,#4361ee); outline-offset:2px; }
 button:disabled { opacity:.55; cursor:wait; }
-@media(max-width:520px) { .actions { width:100%; } .actions button { flex:1; } }
+@media(max-width:800px) { .filters { gap:9px; } .summary-card { padding:12px; } }
+@media(max-width:520px) { .actions { width:100%; } .actions button { flex:1; } .filters { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 </style>
-<header><nav><strong>Alishan Manager</strong><a href="/">Inventory app</a></nav></header>
+<body><script>document.body.className=document.documentElement.className;</script>
+<header class="manager-header"><nav><strong>Alishan Manager</strong><a href="/">Inventory app</a></nav></header>
 <main>
   <div class="heading"><h1>Approval requests</h1><button id="refresh" type="button">Refresh</button></div>
   <p id="status" role="status">Loading requests…</p>
+  <div class="filters" aria-label="Filter pending requests">
+    <button class="summary-card" data-filter="all" aria-pressed="true" type="button"><strong>—</strong>All pending</button>
+    <button class="summary-card" data-filter="archive" aria-pressed="false" type="button"><strong>—</strong>Archive</button>
+    <button class="summary-card" data-filter="restore" aria-pressed="false" type="button"><strong>—</strong>Restore</button>
+  </div>
   <section aria-labelledby="pending"><h2 id="pending">Pending</h2><div id="queue"></div></section>
   <section aria-labelledby="history"><h2 id="history">Recent decisions</h2><div id="decisions"></div></section>
 </main>
@@ -36,6 +49,24 @@ const queue = document.getElementById('queue');
 const history = document.getElementById('decisions');
 const status = document.getElementById('status');
 const refresh = document.getElementById('refresh');
+const filters = [...document.querySelectorAll('[data-filter]')];
+let rows = [], filter = 'all';
+function render() {
+  const pending = rows.filter(row => row.status === 'pending');
+  const matches = (row, action) => action === 'all' || row.action === action;
+  for (const control of filters) {
+    control.setAttribute('aria-pressed', String(control.dataset.filter === filter));
+    control.querySelector('strong').textContent = pending.filter(row => matches(row,control.dataset.filter)).length;
+  }
+  const visible = pending.filter(row => matches(row,filter));
+  const decided = rows.filter(row => row.status !== 'pending');
+  queue.replaceChildren(...(visible.length ? visible.map(card) : [element('p','No pending requests in this view.')]));
+  history.replaceChildren(...(decided.length ? decided.map(card) : [element('p','No decisions yet.')]));
+}
+for (const control of filters) control.addEventListener('click', () => {
+  filter = control.dataset.filter;
+  render();
+});
 function element(tag, text) {
   const node = document.createElement(tag);
   node.textContent = text;
@@ -87,11 +118,8 @@ async function load() {
   refresh.disabled = true;
   status.textContent = 'Loading requests…';
   try {
-    const { requests } = await api('/api/manager/requests');
-    for (const [host, pending] of [[queue,true],[history,false]]) {
-      const rows = requests.filter(row => (row.status === 'pending') === pending);
-      host.replaceChildren(...(rows.length ? rows.map(card) : [element('p',pending ? 'No pending requests.' : 'No decisions yet.')]));
-    }
+    ({ requests: rows } = await api('/api/manager/requests'));
+    render();
     status.textContent = '';
   } catch (error) { status.textContent = error.message; }
   finally { refresh.disabled = false; }
@@ -99,4 +127,5 @@ async function load() {
 refresh.addEventListener('click',load);
 void load();
 </script>
+</body>
 </html>
