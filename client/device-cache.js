@@ -37,8 +37,16 @@
    for(const key of keys){if(bytes<=MAX_BYTES)break;drop(key);}
   }
   function persist(){
-   if(!db||closed)return;
-   try{const tx=db.transaction('views','readwrite');tx.objectStore('views').put({revision,deltaSince,checkedAt:lastCheck,at:now(),entries:[...ram]},namespace);tx.onerror=()=>{};tx.onabort=()=>{};}catch{}
+   if(!db||closed)return Promise.resolve(false);
+   clearTimeout(timer);
+   return new Promise(resolve=>{
+    try{
+     const tx=db.transaction('views','readwrite');
+     tx.oncomplete=()=>resolve(true);
+     tx.onabort=()=>resolve(false);
+     tx.objectStore('views').put({revision,deltaSince,checkedAt:lastCheck,at:now(),entries:[...ram]},namespace);
+    }catch{resolve(false);}
+   });
   }
   function saveSoon(){if(!db)return;clearTimeout(timer);timer=setTimeout(persist,200);timer?.unref?.();}
   async function keyFor(target,method,args){
@@ -223,10 +231,20 @@
     let result;
     try { result=await network(target,method,args,conditional); }
     finally { if(visit)root.AlishanPerformance?.phase('startupFetchMs',started,visit); }
-    if(conditional?.unchanged){if(generation===epoch&&ram.get(key)===previous)put(key,result,previous.etag,target,method);return result;}
+    if(conditional?.unchanged){
+     if(generation===epoch&&ram.get(key)===previous){
+      put(key,result,previous.etag,target,method);
+      await persist();
+     }
+     return result;
+    }
     const etag=await digest(result);
     if(generation===epoch){if(target==='Views'&&['inventoryPage','homeLatest','pageBundle'].includes(method))await seed(result?.primes,generation);
-      if(generation===epoch)put(key,isBundle?{primes:[],ready:true}:target==='Views'&&['inventoryPage','homeLatest'].includes(method)?{...result,primes:[]}:result,etag,target,method);}
+      if(generation===epoch){
+       put(key,isBundle?{primes:[],ready:true}:target==='Views'&&['inventoryPage','homeLatest'].includes(method)?{...result,primes:[]}:result,etag,target,method);
+       if(key&&ram.has(key))await persist();
+      }
+    }
     return result;
    })();
    if(key)flights.set(key,task);
@@ -261,7 +279,7 @@
      try{return await network(target,method,args,delta);}
      finally{
       clearBusiness(true);
-      if(delta.primes)await seed(delta.primes);
+      if(delta.primes){await seed(delta.primes);await persist();}
       onChange();check(true);
      }
     }

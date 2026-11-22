@@ -3,7 +3,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),wire=requir
 const reader=(target,method)=>target==='Calc'||target==='Views'||target==='Store'&&['getItems','summary','init'].includes(method);
 const session={scope:'test-scope',release:'99.0.0'};
 function opts(network,rest={}){return {wire,network,session,isReader:reader,...rest};}
-function memoryDisk(){const records=new Map();const objectStore={get(key){const request={};queueMicrotask(()=>{request.result=structuredClone(records.get(key));request.onsuccess?.();});return request;},put(value,key){records.set(key,structuredClone(value));}};return {records,open(){const request={};queueMicrotask(()=>{request.result={objectStoreNames:{contains:()=>true},transaction:()=>({objectStore:()=>objectStore}),close(){}};request.onsuccess?.();});return request;}};}
+function memoryDisk(){const records=new Map();const objectStore={get(key){const request={};queueMicrotask(()=>{request.result=structuredClone(records.get(key));request.onsuccess?.();});return request;},put(value,key){records.set(key,structuredClone(value));}};return {records,open(){const request={};queueMicrotask(()=>{request.result={objectStoreNames:{contains:()=>true},transaction:()=>{const tx={objectStore:()=>objectStore};queueMicrotask(()=>tx.oncomplete?.());return tx;},close(){}};request.onsuccess?.();});return request;}};}
 test('warm RAM reads are isolated copies with zero repeat network calls; writes never cache or retry',async()=>{
  let calls=0;const cache=create(opts(async(target,method)=>{calls++;return method==='summary'?{count:1}:{ok:true};}));
  let result=await cache.call('Store','summary',[]);result.count=900;assert.equal((await cache.call('Store','summary',[])).count,1);assert.equal(calls,1);
@@ -11,8 +11,10 @@ test('warm RAM reads are isolated copies with zero repeat network calls; writes 
 });
 test('a device view survives page navigation and stays isolated from other users/releases',async()=>{
  const storage=memoryDisk();let calls=0;
- let cache=create(opts(async()=>{calls++;return {count:3};},{storage}));await cache.call('Store','summary',[]);cache.persist();cache.close();
- cache=create(opts(async()=>{calls++;throw new Error('network must not be needed');},{storage}));assert.equal((await cache.call('Store','summary',[])).count,3);assert.equal(calls,1);cache.close();
+ let cache=create(opts(async()=>{calls++;return {count:3};},{storage}));await cache.call('Store','summary',[]);
+ assert.equal(storage.records.get(cache.inspect().namespace)?.entries.length,1);
+ const first=cache;
+ cache=create(opts(async()=>{calls++;throw new Error('network must not be needed');},{storage}));assert.equal((await cache.call('Store','summary',[])).count,3);assert.equal(calls,1);cache.close();first.close();
  for(const altered of [{scope:'other-user',release:session.release},{scope:session.scope,release:'100.0.0'}]){
   cache=create(opts(async()=>{calls++;return {count:9};},{storage,session:altered}));assert.equal((await cache.call('Store','summary',[])).count,9);cache.close();
  }
