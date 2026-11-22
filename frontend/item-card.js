@@ -259,7 +259,7 @@ var ItemCard = (() => {
             </div>`;
     }
 
-    function create(item) {
+    function create(item, draftActions) {
         const card = document.createElement('div');
         card.className = 'inventory-card ic-card';
         if (!item) return card;
@@ -274,8 +274,8 @@ var ItemCard = (() => {
         const info = AlishanCalc.describeItem(item);
 
         // aging level (out-of-stock items have none, so no aging badge)
-        const level = AlishanCalc.agingLevel(item);
-        const days = AlishanCalc.daysInStock(item);
+        const level = draftActions ? null : AlishanCalc.agingLevel(item);
+        const days = draftActions ? 0 : AlishanCalc.daysInStock(item);
         let badges = `<span class="card-badge ic-badge-type">${escapeHtml(item.productType || 'N/A')}</span>`;
         if (item.cupSize && item.cupSize !== 'N/A') badges += `<span class="card-badge ic-badge-cup">${escapeHtml(item.cupSize)} CUP</span>`;
         if (item.importBatch) badges += `<span class="card-badge ic-badge-import" title="Added by Bulk Import (${escapeHtml(item.importBatch)})${item.source ? ' — ' + escapeHtml(item.source) : ''}">IMPORTED</span>`;
@@ -303,7 +303,7 @@ var ItemCard = (() => {
                 <h3 class="ic-name">${escapeHtml(item.quality || 'N/A')}<span class="ic-name-date">${AlishanCalc.fmtDateLong(item.dateTime)}</span></h3>
                 <div class="ic-chips">
                     <span class="ic-chip">Lot: ${escapeHtml(item.lotNumber || 'N/A')}</span>
-                    <span class="ic-chip ic-chip-code">Code: ${escapeHtml(item.code || 'N/A')}</span>
+                    <span class="ic-chip ic-chip-code">${draftActions ? 'Code assigned on submit' : 'Code: ' + escapeHtml(item.code || 'N/A')}</span>
                     <span class="ic-chip"><i class="fas fa-calendar-alt"></i> ${AlishanCalc.fmtDateLong(item.dateTime)}</span>
                 </div>
             </div>
@@ -315,7 +315,7 @@ var ItemCard = (() => {
             <div class="ic-numbers">
                 <div class="ic-stat"><span class="ic-stat-label">Total</span><strong>${AlishanCalc.fmtDozens(info.totalDozens)} dozens</strong></div>
                 <div class="ic-stat ic-stat-amount"><span class="ic-stat-label">Amount</span><strong>${AlishanCalc.fmtMoney(info.amount)}</strong></div>
-                <div class="ic-stat"><span class="ic-stat-label">Status</span><strong class="ic-status ${inStock ? 'ic-in' : 'ic-out'}">${inStock ? 'In stock' : 'Out of stock'}</strong></div>
+                <div class="ic-stat"><span class="ic-stat-label">Status</span><strong class="ic-status ${inStock ? 'ic-in' : 'ic-out'}">${draftActions ? 'Pending review' : inStock ? 'In stock' : 'Out of stock'}</strong></div>
             </div>
             <div class="ic-colors">${colorChips}</div>
             <div class="card-actions ic-actions">
@@ -355,6 +355,23 @@ var ItemCard = (() => {
             </div>
         </div>`;
 
+        if (draftActions) {
+            for (const actions of card.querySelectorAll('.card-actions')) {
+                const buttons = [...actions.querySelectorAll('button')];
+                for (const [index, name] of ['edit', 'delete', 'submit'].entries()) {
+                    const button = buttons[index];
+                    button.removeAttribute('onclick');
+                    button.removeAttribute('title');
+                    button.type = 'button';
+                    button.disabled = !draftActions[name];
+                    if (name === 'submit') {
+                        button.querySelector('span').textContent = draftActions.submitLabel;
+                    }
+                    button.onclick = () => draftActions[name]?.();
+                }
+            }
+        }
+
         // The inside of the card (sizes, calculation, details) is built only when the card is
         // first opened: 50 collapsed cards cost far less than 50 fully built ones.
         let built = false;
@@ -374,7 +391,7 @@ var ItemCard = (() => {
                     <div class="detail-item"><span class="detail-label">MATERIAL:</span><span class="detail-value">${item.material || 0} M</span></div>
                     <div class="detail-item"><span class="detail-label">CUP SIZE:</span><span class="detail-value">${escapeHtml(item.cupSize || 'N/A')}</span></div>
                     <div class="detail-item"><span class="detail-label">WEIGHT:</span><span class="detail-value">${item.weight || 0} KG</span></div>
-                    <div class="detail-item"><span class="detail-label">STATUS:</span><span class="detail-value">${inStock ? 'IN STOCK' : 'OUT OF STOCK'}</span></div>
+                    <div class="detail-item"><span class="detail-label">STATUS:</span><span class="detail-value">${draftActions ? 'PENDING REVIEW' : inStock ? 'IN STOCK' : 'OUT OF STOCK'}</span></div>
                 </div>
                 <div class="detail-box">
                     <h4><i class="fas fa-sticky-note"></i> ADDITIONAL INFO</h4>
