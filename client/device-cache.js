@@ -5,7 +5,8 @@
   const {wire,network,session,isReader,onChange=()=>{},onStatus=()=>{},broadcast=()=>{},fetchStatus}=options;
   const isPageBundle=(target,method)=>target==='Views'&&method==='pageBundle';
   const enabled=!!session?.scope,namespace=enabled?`${session.scope}:${session.release}`:'disabled';
-  const ram=new Map(),flights=new Map();const MAX_BYTES=8*1024*1024,MAX_ENTRIES=600,MAX_AGE=24*3600000;
+  const ram=new Map(),flights=new Map();const MAX_BYTES=8*1024*1024,MAX_ENTRIES=600,MAX_RECORDS=4000,MAX_AGE=24*3600000;
+  let previousRecord=0;
   let epoch=0,revision=null,bytes=0,db=null,timer=null,checking=null,closed=false,disabled=false,lastCheck=0;
   const CHECK_INTERVAL=options.checkIntervalMs??15000;
   const now=options.now||Date.now,storage=options.storage||root.indexedDB;
@@ -25,7 +26,15 @@
     }
    }catch{db=null;}
   })();
-  function trim(){while(bytes>MAX_BYTES||ram.size>MAX_ENTRIES){const key=ram.keys().next().value,entry=ram.get(key);bytes-=entry?.bytes||0;ram.delete(key);}}
+  function trim(){
+   const keys=[...ram.keys()];
+   const views=keys.filter(key=>!key.startsWith('@record:'));
+   const records=keys.filter(key=>key.startsWith('@record:'));
+   function drop(key){const entry=ram.get(key);if(!entry)return;bytes-=entry.bytes;ram.delete(key);}
+   for(const key of views.slice(0,Math.max(0,views.length-MAX_ENTRIES)))drop(key);
+   for(const key of records.slice(0,Math.max(0,records.length-MAX_RECORDS)))drop(key);
+   for(const key of keys){if(bytes<=MAX_BYTES)break;drop(key);}
+  }
   function persist(){
    if(!db||closed)return;
    try{const tx=db.transaction('views','readwrite');tx.objectStore('views').put({revision,checkedAt:lastCheck,at:now(),entries:[...ram]},namespace);tx.onerror=()=>{};tx.onabort=()=>{};}catch{}
@@ -39,12 +48,76 @@
    const data=new TextEncoder().encode(text);const hash=await root.crypto.subtle.digest('SHA-256',data);
    return 'sha256:'+Array.from(new Uint8Array(hash),n=>n.toString(16).padStart(2,'0')).join('');
   }
-  function put(key,result,etag=null){
-   if(!key||disabled)return;
-   const encoded=wire.encode(result),size=JSON.stringify(encoded).length*2+key.length*2;
-   if(size>2*1024*1024||result?.ok===false)return;
+  function saveValue(key,value,etag=null,refs=null){
+   const size=(JSON.stringify(value).length+key.length+(refs?JSON.stringify(refs).length:0))*2;
+   if(size>2*1024*1024)return;
    const old=ram.get(key);if(old)bytes-=old.bytes;
-   ram.delete(key);ram.set(key,{value:encoded,at:now(),bytes:size,etag});bytes+=size;trim();saveSoon();
+   ram.delete(key);ram.set(key,{value,at:now(),bytes:size,etag,refs});bytes+=size;
+  }
+  function entityKey(kind,id){return '@record:'+kind+':'+JSON.stringify(String(id));}
+  function put(key,result,etag=null,target,method){
+   if(!key||disabled||result?.ok===false)return;
+   const encoded=wire.encode(result);
+   const projection=target==='Views'&&['inventoryPage','homeLatest'].includes(method);
+   const list=projection?(encoded.paged?.items||encoded.items):encoded;
+   const kind=target==='Store'&&method==='getPayments'?'payment':'inventory';
+   const normalizeList=projection||target==='Store'&&['getItems','getPayments','query'].includes(method);
+   const normalizeItem=target==='Store'&&method==='getItem'&&encoded?.id!=null;
+   if(normalizeItem||normalizeList&&Array.isArray(list)&&list.every(row=>row&&row.id!=null)){
+    const rows=normalizeItem?[encoded]:list;
+    const keys=rows.map(row=>{
+     const recordKey=entityKey(kind,row.id);
+     const existing=ram.get(recordKey);
+     const value=JSON.stringify(row);
+     // A stale projection keeps its original row version after a refresh.
+     if(existing&&JSON.stringify(existing.value)!==value&&existing.bytes<=2*1024*1024){
+      let previousKey;
+      do{previousKey=recordKey+':previous:'+(++previousRecord);}while(ram.has(previousKey));
+      for(const entry of ram.values()){
+       if(!entry.refs?.keys.includes(recordKey))continue;
+       if(!ram.has(previousKey)){
+        ram.set(previousKey,{...existing,stale:true});bytes+=existing.bytes;
+       }
+       entry.refs.keys=entry.refs.keys.map(ref=>ref===recordKey?previousKey:ref);
+      }
+     }
+     saveValue(recordKey,row);
+     return recordKey;
+    });
+    const shape=normalizeItem?'item':!projection?'list':encoded.paged?'paged':'latest';
+    if(shape==='paged')encoded.paged.items=[];
+    if(shape==='latest')encoded.items=[];
+    saveValue(key,projection?encoded:null,etag,{shape,keys});
+   }else saveValue(key,encoded,etag);
+   trim();saveSoon();
+  }
+  function readValue(entry){
+   if(!entry.refs)return {value:clone(entry.value)};
+   const rows=entry.refs.keys.map(key=>ram.get(key));
+   if(rows.some(row=>!row||now()-row.at>=MAX_AGE))return null;
+   const values=rows.map(row=>clone(row.value));
+   switch(entry.refs.shape){
+    case 'item':return {value:values[0]};
+    case 'list':return {value:values};
+    case 'paged':{const value=clone(entry.value);value.paged.items=values;return {value};}
+    case 'latest':{const value=clone(entry.value);value.items=values;return {value};}
+   }
+   return null;
+  }
+  function findEntry(target,method,args,key,allowStale=false){
+   const entry=ram.get(key);
+   if(entry&&now()-entry.at<MAX_AGE&&(!entry.stale||allowStale)&&(!entry.refs||entry.refs.keys.every(ref=>{const row=ram.get(ref);return row&&now()-row.at<MAX_AGE;})))return entry;
+   if(target==='Store'&&method==='query'&&args.length===1&&args[0]&&Object.entries(args[0]).every(([field,value])=>
+     ['period','productType','quality','stock'].includes(field)?!value||value==='all':
+     ['search','code','lotNumber','dateFrom','dateTo'].includes(field)&&!value)){
+    const complete=ram.get('["Store","getItems",[]]');
+    if(complete&&!complete.stale&&now()-complete.at<MAX_AGE&&readValue(complete))return complete;
+   }
+   if(target==='Store'&&method==='getItem'&&args.length===1){
+    const record=ram.get(entityKey('inventory',args[0]));
+    if(record&&!record.stale&&now()-record.at<MAX_AGE)return record;
+   }
+   return null;
   }
   async function seed(primes,generation=epoch){
    if(!enabled||!Array.isArray(primes))return;
@@ -56,7 +129,7 @@
     const projection=p.target==='Views'&&['inventoryPage','homeLatest'].includes(p.method);
     if(projection)await seed(p.result?.primes,generation);
     if(generation!==epoch)return;
-    put(key,projection?{...p.result,primes:[]}:p.result,etag);
+    put(key,projection?{...p.result,primes:[]}:p.result,etag,p.target,p.method);
    }
   }
   function invalidate(announce=false){
@@ -72,6 +145,7 @@
      epoch++;flights.clear();
      for(const [key,entry] of ram){
       if(key.startsWith('["Calc",'))continue;
+      if(key.startsWith('@record:')){entry.stale=true;continue;}
       if(key==='["Store","summary",[]]'||key.startsWith('["Views","inventoryPage",')){
        entry.stale=true;
       }else{
@@ -102,17 +176,18 @@
    const existing=key&&flights.get(key);if(existing)return existing;
    const generation=epoch;
    const task=(async()=>{
-    const previous=key&&ram.get(key),conditional=previous?.etag?{etag:previous.etag,value:clone(previous.value),unchanged:false}:null;
+    const previous=key&&ram.get(key),saved=previous&&readValue(previous);
+    const conditional=previous?.etag&&saved?{etag:previous.etag,value:saved.value,unchanged:false}:null;
     const isBundle=isPageBundle(target,method);
     const visit=isBundle?root.AlishanPerformance?.current():undefined;
     const started=visit?root.performance.now():undefined;
     let result;
     try { result=await network(target,method,args,conditional); }
     finally { if(visit)root.AlishanPerformance?.phase('startupFetchMs',started,visit); }
-    if(conditional?.unchanged){if(generation===epoch&&ram.get(key)===previous){previous.at=now();previous.stale=false;saveSoon();}return result;}
+    if(conditional?.unchanged){if(generation===epoch&&ram.get(key)===previous)put(key,result,previous.etag,target,method);return result;}
     const etag=await digest(result);
     if(generation===epoch){if(target==='Views'&&['inventoryPage','homeLatest','pageBundle'].includes(method))await seed(result?.primes,generation);
-      if(generation===epoch)put(key,isBundle?{primes:[],ready:true}:target==='Views'&&['inventoryPage','homeLatest'].includes(method)?{...result,primes:[]}:result,etag);}
+      if(generation===epoch)put(key,isBundle?{primes:[],ready:true}:target==='Views'&&['inventoryPage','homeLatest'].includes(method)?{...result,primes:[]}:result,etag,target,method);}
     return result;
    })();
    if(key)flights.set(key,task);
@@ -130,8 +205,8 @@
   async function lookup(target,method,args,{allowStale=false}={}){
    await ready;
    if(!enabled||disabled)return {kind:'miss'};
-   const key=await keyFor(target,method,args),entry=key&&ram.get(key);
-   if(entry&&now()-entry.at<MAX_AGE&&(!entry.stale||allowStale))return {kind:entry.stale?'stale':'hit',value:clone(entry.value)};
+   const key=await keyFor(target,method,args),entry=findEntry(target,method,args,key,allowStale);
+   if(entry)return {kind:entry.stale?'stale':'hit',value:readValue(entry).value};
    return {kind:key&&flights.has(key)?'shared':'miss'};
   }
   async function call(target,method,args){
@@ -157,16 +232,17 @@
    // Backups, exports and validation previews must read fresh server state.
    const freshOnly=target==='DB'&&!['init','getTheme'].includes(method)||/backup|export|inspect|^new|^build|^validate|^merge|^purge|^leftover|checkImportDraft|parseBulk|batchDuplicateIds/i.test(method);
    if(target==='Groups'||disabled||freshOnly)return network(target,method,args);
-   const key=await keyFor(target,method,args),entry=key&&ram.get(key);
-   if(entry&&!entry.stale&&now()-entry.at<MAX_AGE){
-    ram.delete(key);ram.set(key,entry);
+   const key=await keyFor(target,method,args),entry=findEntry(target,method,args,key);
+   if(entry){
+    const value=readValue(entry).value;
+    if(ram.get(key)===entry){ram.delete(key);ram.set(key,entry);}
     // The account revision check refreshes prepared bundles as a unit.
-    if(now()-entry.at>60000&&(!fetchStatus||!isPageBundle(target,method))){
-     status('updating');const before=JSON.stringify(entry.value);
+    if(ram.get(key)===entry&&now()-entry.at>60000&&(!fetchStatus||!isPageBundle(target,method))){
+     status('updating');const before=JSON.stringify(wire.encode(value));
      load(target,method,args,key,true).then(result=>{if(JSON.stringify(wire.encode(result))!==before)onChange();status('current');}).catch(()=>status('offline'));
     }
     if(!lastCheck||now()-lastCheck>=CHECK_INTERVAL)void check();
-    const value=clone(entry.value);if(target==='Views'&&['inventoryPage','homeLatest','pageBundle'].includes(method))await seed(value?.primes,epoch);
+    if(target==='Views'&&['inventoryPage','homeLatest','pageBundle'].includes(method))await seed(value?.primes,epoch);
     return value;
    }
    return load(target,method,args,key);

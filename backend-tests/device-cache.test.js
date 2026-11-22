@@ -162,3 +162,31 @@ test('a second device retains its saved view until manual sync sees the first de
   assert.equal(reads,2);
  }finally{first.close();second.close();}
 });
+
+
+test('shared inventory records survive reopen and pages fetch only unavailable data',async()=>{
+ const storage=memoryDisk();
+ const inventory={id:1,quality:'DEMO'};
+ const requests=[];
+ const network=async(target,method,args)=>{
+  requests.push(method);
+  if(method==='inventoryPage')return {paged:{items:[inventory]},primes:[]};
+  if(method==='getItems')return [inventory];
+  if(method==='getItem')return {id:args[0],quality:'OTHER'};
+  throw Error('Unexpected request');
+ };
+ const open=()=>create(opts(network,{storage,isReader:()=>true}));
+ let cache=open();
+ await cache.call('Views','inventoryPage',[]);
+ assert.deepEqual(await cache.call('Store','getItem',[1]),inventory);
+ await cache.call('Store','getItems',[]);
+ assert.deepEqual(await cache.call('Store','query',[{period:'all',search:''}]),[inventory]);
+ cache.close();
+ const saved=[...storage.records.values()][0].entries;
+ assert.equal(saved.filter(([key])=>key.startsWith('@record:')).length,1);
+ cache=open();
+ assert.deepEqual(await cache.call('Store','getItem',['1']),inventory);
+ await Promise.all([cache.call('Store','getItem',[2]),cache.call('Store','getItem',[2])]);
+ assert.deepEqual(requests,['inventoryPage','getItems','getItem']);
+ cache.close();
+});

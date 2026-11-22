@@ -64,7 +64,9 @@
      if(batch[i].target==='Views'){
       if(['inventoryPage','homeLatest'].includes(batch[i].method))expandCardView(result);
       if(batch[i].method==='pageBundle')for(const prime of result?.primes||[]){
-       prime.args=prime.args.map(arg=>Number.isInteger(arg?.$alishanReportPrime)?result.primes[arg.$alishanReportPrime].result:arg);
+       const resolvePrime=value=>Number.isInteger(value?.$alishanReportPrime)?result.primes[value.$alishanReportPrime].result:value;
+       prime.args=prime.args.map(resolvePrime);
+       prime.result=resolvePrime(prime.result);
        if(prime.target==='Views'&&['inventoryPage','homeLatest'].includes(prime.method))expandCardView(prime.result);
       }
      }

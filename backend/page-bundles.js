@@ -42,7 +42,7 @@ module.exports=d=>{
    const rows=await add('Store','query',[{period:'all',productType:'all',quality:'all',search:''}]);
    const payments=await add('Store','getPayments');await add('Store','summary',[rows]);
    await add('Calc','weeklyAverage',[rows,payments]);await add('Store','lowStockItems');await add('Reports','overview');
-   await add('Store','getItems');
+   primes.push({target:'Store',method:'getItems',args:[],result:rows});
   }
   return {primes};
  }
@@ -56,7 +56,8 @@ module.exports.compactReportPrimes = function(primes){
  const references=new Map();
  return primes.map((prime,index)=>{
   const args=prime.args.map(arg=>references.has(arg)?{$alishanReportPrime:references.get(arg)}:arg);
-  if(Array.isArray(prime.result))references.set(prime.result,index);
-  return {...prime,args};
+  const previous=references.get(prime.result);
+  if(Array.isArray(prime.result)&&previous===undefined)references.set(prime.result,index);
+  return {...prime,args,result:previous===undefined?prime.result:{$alishanReportPrime:previous}};
  });
 };
