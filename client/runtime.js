@@ -52,6 +52,7 @@
    response=await fetch('/api/batch',{method:'POST',headers:{'Content-Type':'application/json','X-Alishan-Card-View':'1',...scopedHeaders()},credentials:'same-origin',body:pack(batch),signal:AbortSignal.timeout(batch.some(x=>['restoreComplete','importBackup','restoreBackup','importEntries'].includes(x.method))?180000:45000)});
    headersAt=clock.now();timing=response.headers?.get?.('Server-Timing');
    if(response.status===401)device?.revoke?.();
+   if(response.status===409)cacheStatus('reload');
    if(!response.ok)throw new Error(response.status===401?'Please sign in again.':'Server connection failed. Please try again.');
    device?.acceptRevision(response.headers?.get?.('X-Alishan-Revision'));
    const body=await response.text();decodeStarted=clock.now();

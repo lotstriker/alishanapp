@@ -275,6 +275,11 @@
    else if(routeOf(url)!==active.route)location.reload();
   });
  }
- window.AlishanRouter={register,block(){blocked=true;generation++;}};
+ window.AlishanRouter={register,navigate(path){
+  const url=new URL(path,location.href);
+  if(blocked||!active||url.origin!==location.origin||url.search||url.hash||!routes.has(routeOf(url)))return false;
+  if(routeOf(url)!==active.route)void go(url);
+  return true;
+ },block(){blocked=true;generation++;}};
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();

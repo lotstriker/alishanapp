@@ -3,7 +3,7 @@
 const { createHash, randomBytes } = require('node:crypto');
 const sessionName = '__Host-alishan-session';
 const verifierName = '__Host-alishan-pkce';
-const sessionLifetime = 7 * 24 * 60 * 60 * 1000;
+const sessionLifetime = 24 * 60 * 60 * 1000;
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const random = () => randomBytes(32).toString('base64url');
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -73,8 +73,14 @@ function googleLogin({ supabaseUrl, publishableKey, origin, sessions, verifyOnly
         // Make the dashboard navigation originate here, after the cross-site OAuth redirect chain ends.
         res.type('html').send(`<!doctype html><html lang="en"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Opening Alishan</title>
-<p>Sign-in complete. <a href="/">Open Alishan Dashboard</a></p>
-<script>location.replace('/');</script></html>`);
+<meta name="color-scheme" content="light dark">
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:1rem;background:#faf3f5;color:#351421;font:1rem system-ui,sans-serif}
+body.dark{background:#000;color:#fff}main{width:min(100%,23rem);text-align:center;padding:2rem;border:1px solid #a37b8b80;border-radius:1.25rem}
+h1{font-size:1.35rem;margin:0 0 .5rem}p{margin:0}a{color:inherit;display:inline-block;margin-top:1rem;padding:.6rem}
+</style><body><script>try{if(!/^(light-default|light-warm|mint|rose-wine|gold)$/.test(localStorage.getItem('alishan-theme')||'light-default'))document.body.classList.add('dark');}catch{}</script>
+<main><h1>Opening Alishan</h1><p role="status">Your Dashboard is loading…</p><a href="/">Open Dashboard</a></main>
+<script>location.replace('/');</script></body></html>`);
       } catch {
         return fail();
       }

@@ -63,7 +63,10 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
  });
  const login=auth||googleSetup;
  if(login){
-   app.get('/login',(req,res)=>res.sendFile(path.resolve(__dirname,'../dist/login.html')));
+   app.get('/login',async(req,res)=>{
+     if(auth&&await auth.authenticate(req))return res.redirect(303,'/');
+     res.sendFile(path.resolve(__dirname,'../dist/login.html'));
+   });
    app.get('/login.css',(req,res)=>res.sendFile(path.resolve(__dirname,'../dist/login.css')));
    app.get('/auth/google',login.start);
    app.get('/auth/callback',login.callback);
@@ -92,7 +95,7 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
  });
  app.use('/api',(req,res,next)=>{
    if(auth&&req.get('X-Alishan-Scope')!==res.locals.account.session.scope)
-     return res.status(401).json({error:'Reload to use the signed-in account'});
+     return res.status(409).json({error:'Reload to use the signed-in account'});
    const origin=req.get('origin');if(req.get('sec-fetch-site')==='cross-site'||(origin&&origin!==`${req.protocol}://${req.get('host')}`&&origin!==`https://${req.get('host')}`))return res.status(403).json({error:'Cross-site request rejected'});next();});
  if(telemetry){
    app.post('/api/performance',express.json({limit:'4kb',strict:true}),async(req,res)=>{

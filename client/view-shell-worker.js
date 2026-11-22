@@ -10,7 +10,7 @@ async function storePage(path){
  const html=cleanHTML(await response.text());if(!html.includes('/*ALISHAN_SESSION*/'))return;
  const cache=await caches.open(SHELL);await cache.put(new Request(new URL(path,self.location.origin)),new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8'}}));
  const files=[...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css)(?:\?[^"]*)?)"/g)].map(m=>new URL(m[1],new URL(path,self.location.origin)));
- await Promise.allSettled(files.filter(url=>url.origin===self.location.origin&&!url.pathname.startsWith('/api/')).map(async url=>{const key=new Request(url,{credentials:'same-origin'});if(await cache.match(key))return;const asset=await fetch(key);if(asset.ok)await cache.put(new Request(url),asset);}));
+ await Promise.allSettled(files.filter(url=>url.origin===self.location.origin&&!url.pathname.startsWith('/api/')).map(async url=>{const key=new Request(url,{credentials:'same-origin'});if(await cache.match(key))return;const asset=await fetch(key);if(asset.ok&&!asset.redirected)await cache.put(new Request(url),asset);}));
 }
 self.addEventListener('install',event=>{event.waitUntil((async()=>{await Promise.allSettled(INITIAL_PAGES.map(storePage));await self.skipWaiting();})());});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{try{for(const name of await caches.keys())if(name.startsWith('alishan-')&&name!==SHELL&&name!==BINDINGS)await caches.delete(name);}catch{}await self.clients.claim();})());});
@@ -113,6 +113,6 @@ self.addEventListener('fetch',event=>{
   })());return;
  }
  if(/\.(?:js|css|woff2?|png|svg|ico)$/.test(url.pathname)&&!url.pathname.endsWith('/view-shell-worker.js')){
-  event.respondWith((async()=>{let cache;try{cache=await caches.open(SHELL);const hit=await cache.match(new Request(request.url));if(hit)return hit;}catch{}const response=await fetch(request);if(response.ok&&cache)try{await cache.put(new Request(request.url),response.clone());}catch{}return response;})());
+  event.respondWith((async()=>{let cache;try{cache=await caches.open(SHELL);const hit=await cache.match(new Request(request.url));if(hit)return hit;}catch{}const response=await fetch(request);if(response.ok&&!response.redirected&&cache)try{await cache.put(new Request(request.url),response.clone());}catch{}return response;})());
  }
 });

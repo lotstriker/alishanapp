@@ -51,7 +51,7 @@ test('main routes share one document, preserve controls and support browser hist
   const stylesheet = name => [...document.head.querySelectorAll('link[rel="stylesheet"]')]
     .find(link => new URL(link.href).pathname === '/' + name);
   const homeStyle = [...document.head.querySelectorAll('link[rel="stylesheet"]')][0];
-  click('inventory');
+  w.checkStock();
   await waitFor(()=>w.location.pathname==='/inventory.html'&&document.querySelector('#inventoryCards .empty-state'));
   assert.equal(document.querySelector('#inventoryCards').hasAttribute('aria-busy'),false);
   const inventoryBody=document.body;

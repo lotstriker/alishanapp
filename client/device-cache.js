@@ -215,7 +215,7 @@
     }else acceptRevision(current.revision,true);
     lastCheck=now();saveSoon();status('current');
     return {ok:true,changed:previous!==null&&previous!==revision,checkedAt:lastCheck};
-   }catch(e){if(e.status===401){invalidate();disabled=true;status('signin');}else status('offline');return {ok:false};}
+   }catch(e){if(e.status===401){invalidate();disabled=true;status('signin');}else if(e.status===409){invalidate();disabled=true;status('reload');}else status('offline');return {ok:false};}
    finally{checking=null;}})();return checking;
   }
   async function digest(value){if(!root.crypto?.subtle)return null;const buffer=await root.crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(wire.encode(value))));return Array.from(new Uint8Array(buffer),n=>n.toString(16).padStart(2,'0')).join('');}

@@ -55,7 +55,10 @@ test('Google PKCE scopes reads, writes, exports and logout to the verified user'
     assert.equal(reply.status,200);
     assert.equal(reply.headers.get('location'),null);
     assert.match(await reply.text(),/location\.replace\('\/'\)/);
+    assert.match(reply.headers.getSetCookie().find(value=>value.startsWith('__Host-alishan-session=')),/Max-Age=86400/);
     const cookie=cookieFrom(reply,'__Host-alishan-session');
+    const existing=await fetch(base+'/login',{headers:{Cookie:cookie},redirect:'manual'});
+    assert.equal(existing.headers.get('location'),'/');
     const chained=await fetch(base+'/',{headers:{Cookie:cookie,'Sec-Fetch-Site':'cross-site'},redirect:'manual'});
     assert.equal(chained.headers.get('location'),'/login');
     const html=await fetch(base+'/',{headers:{Cookie:cookie,'Sec-Fetch-Site':'same-origin'}}).then(r=>r.text());
@@ -74,14 +77,14 @@ test('Google PKCE scopes reads, writes, exports and logout to the verified user'
   assert.equal((await (await rpc(accountB,'getItems',[])).json()).result.length,0);
   assert.equal((await (await rpc(accountB,'backupFile',['fixture'])).json()).result.inventory.length,0);
   assert.equal((await (await rpc(accountB,'updateItem',[item.id,{}])).json()).result.ok,false);
-  assert.equal((await rpc(accountB,'getItems',[],accountA.scope)).status,401);
+  assert.equal((await rpc(accountB,'getItems',[],accountA.scope)).status,409);
   const perf=(account,payload,scope=account.scope)=>fetch(base+'/api/performance?view=all',{
     method:payload?'POST':'GET',headers:{Cookie:account.cookie,'X-Alishan-Scope':scope,'Content-Type':'application/json'},
     body:payload?JSON.stringify(payload):undefined
   });
   const uid='33333333-3333-4333-8333-333333333333';
   const report={page:'inventory',visit:uid,device:uid,scope:accountA.scope,metrics:{loadMs:12,sensitive:'ignored'}};
-  assert.equal((await perf(accountB,report,accountA.scope)).status,401);
+  assert.equal((await perf(accountB,report,accountA.scope)).status,409);
   assert.equal((await perf(accountB,{...report,page:'unknown'})).status,400);
   assert.equal((await perf(accountA,report)).status,204);
   assert.equal((await perf(accountB,report)).status,204);

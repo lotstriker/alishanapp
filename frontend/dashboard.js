@@ -745,7 +745,7 @@ function scrollToForm() {
 }
 
 function checkStock() {
-    window.location.href = 'inventory.html';
+    if (!window.AlishanRouter?.navigate('inventory.html')) window.location.href = 'inventory.html';
 }
 
 function showNotification(message, type = 'info') {
