@@ -47,6 +47,38 @@ test('authenticated API rejects unauthenticated and cross-site requests; formula
  const r=await fetch(base+'/api/batch',{method:'POST',headers,body:JSON.stringify([{target:'Calc',method:'itemDozens',args:encode([{sizeOption:'same',colors:['BLACK'],size32:2,size32_pieces:6}])}])});assert.equal(r.status,200);assert.equal(decode(await r.json())[0].result,2.5);
  const formula=await fetch(base+'/calc.js',{headers:{Authorization:auth}}).then(r=>r.text());assert.doesNotMatch(formula,/function itemAmount|function buildNewItem/);
 });
+test('manager-only inventory and archive actions are blocked through the authenticated API', async t => {
+ const repository = new MemoryRepository();
+ const item = await seed(repository.state);
+ const second = await seed(repository.state);
+ const d = await domain(repository.state);
+ assert.equal((await d.Store.deleteItem(second.id)).ok, true);
+ const archived = repository.state.archive[0];
+ assert.ok(archived);
+ const snapshot = structuredClone(repository.state);
+ const password = 'test-only-password-123456789';
+ const server = createApp({repository, username: 'test', password}).listen(0, '127.0.0.1');
+ await new Promise(resolve => server.once('listening', resolve));
+ t.after(() => server.close());
+ const headers = {Authorization: 'Basic ' + Buffer.from('test:' + password).toString('base64'), 'Content-Type': 'application/json'};
+ const calls = [
+  {target: 'Store', method: 'deleteItem', args: [item.id]},
+  {target: 'Archive', method: 'restore', args: [archived.id]},
+  {target: 'Archive', method: 'deleteForever', args: [archived.id]}
+ ];
+ for (const [index, call] of calls.entries()) {
+  const batch = index !== 0;
+  const response = await fetch('http://127.0.0.1:' + server.address().port + '/api/' + (batch ? 'batch' : 'rpc'), {
+   method: 'POST', headers, body: JSON.stringify(batch ? [call] : call)
+  });
+  assert.equal(response.status, 200);
+  const reply = decode(await response.json());
+  const result = (batch ? reply[0] : reply).result;
+  assert.equal(result.ok, false);
+  assert.match(result.error, /Manager approval/);
+  assert.deepEqual(repository.state, snapshot);
+ }
+});
 test('PostgreSQL schema and repository round-trip records and rollback using the real PGlite engine',async()=>{
  const {PGlite}=require('@electric-sql/pglite');const pg=new PGlite();await pg.exec('CREATE ROLE anon; CREATE ROLE authenticated;');await pg.exec(fs.readFileSync(path.join(__dirname,'../deployment/schema.sql'),'utf8'));
  const client={query:(q,params)=>pg.query(q,params),release(){}};const repo=new PostgresRepository({connect:async()=>client,query:client.query},'test');await repo.ready();await repo.transaction(async state=>{await seed(state);});await repo.transaction(async state=>{assert.equal(state.inventory.length,1);state.inventory=[];return {ok:false};});await repo.transaction(async state=>assert.equal(state.inventory.length,1));
