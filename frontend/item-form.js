@@ -354,8 +354,8 @@ var ItemForm = (() => {
 
     // Draws the colour dropdowns + per-colour CSS (data was already loaded by the store)
     async function loadColors() {
-        populateColorDropdowns();
-        generateColorCSS();
+        await populateColorDropdowns();
+        await generateColorCSS();
     }
 
     function getColorData() {
@@ -377,14 +377,15 @@ var ItemForm = (() => {
         return '#' + channels.map(v => v.toString(16).padStart(2, '0')).join('');
     }
 
-    function generateColorCSS() {
-        if (!colorData.colors) return;
+    async function generateColorCSS() {
+        const colors = await AlishanStore.getColors();
+        if (!colors) return;
         let css = '';
-        colorData.colors.forEach(color => {
+        colors.forEach(color => {
             // Keep every colour's own palette from colors.json in every theme.
             // Do not replace all dark-theme text with white or merge distinct colour backgrounds.
             css += `
-                .color-${color.name.toLowerCase()} {
+                .color-${color.name.toLowerCase()}, .color-${String(color.displayName).toLowerCase().replace(/[^a-z0-9-]+/g, '-')} {
                     background-color: ${color.backgroundColor} !important;
                     color: ${color.textColor} !important;
                     border: 1px solid ${color.borderColor} !important;
@@ -453,7 +454,7 @@ var ItemForm = (() => {
             option.setAttribute('data-color', color.name);
             option.innerHTML = `
                 <div class="color-preview" style="background-color: ${color.backgroundColor}; border-color: ${color.borderColor}"></div>
-                <span class="color-name" style="color: ${color.textColor}">${color.displayName}</span>
+                <span class="color-name" style="color: var(--text-primary,var(--dark,#212529))">${color.displayName}</span>
                 <div class="color-checkbox"></div>
             `;
             option.addEventListener('click', () => toggleColorSelection(color.name, prefix));
