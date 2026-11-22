@@ -3,7 +3,7 @@ import path from 'node:path';
 import { parse } from '@babel/parser';
 
 const pages = ['index','inventory','reports','setting','add-entry',
- 'pending-amount','missing-lot','missing-completion','quality-history','performance'];
+ 'pending-amount','entry-review','missing-lot','missing-completion','quality-history','performance'];
 const shared = new Set(['bootstrap.js','server-client.js','theme-boot.js','icons.js','pwa.js',
  'db.js','store.js','calc.js','archive.js','report-engine.js']);
 const scripts = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
