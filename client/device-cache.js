@@ -32,7 +32,8 @@
   }
   function saveSoon(){if(!db)return;clearTimeout(timer);timer=setTimeout(persist,200);timer?.unref?.();}
   async function keyFor(target,method,args){
-   const text=JSON.stringify([target,method,wire.encode(args)]);
+   const referenceVersion=target==='Store'&&['getColors','getColorStyle','getColorStyleSafe','colorDisplayName'].includes(method)?root.ALISHAN_COLOR_PALETTE_VERSION:undefined;
+   const text=JSON.stringify(referenceVersion?[target,method,wire.encode(args),referenceVersion]:[target,method,wire.encode(args)]);
    if(text.length<16000)return text;
    if(!root.crypto?.subtle)return null;
    const data=new TextEncoder().encode(text);const hash=await root.crypto.subtle.digest('SHA-256',data);
