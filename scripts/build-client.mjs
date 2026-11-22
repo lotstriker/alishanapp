@@ -36,7 +36,7 @@ for(const name of fs.readdirSync(src)){
     code=code.replace(/if \(typeof module[^\n]+/g,'');
   }
   if(name==='item-modal.js')code=code.replace('    function inject() {', '    let injecting=null;\n    async function inject(){if(!injecting)injecting=buildModal();return injecting;}\n    async function buildModal() {');
-  if(name==='dashboard.js')code=code.replace('const result = await AlishanStore.addItem(input);',"const result = await AlishanRemote.submitEntry(input);");
+  if(name==='dashboard.js')code=code.replace('const result = await AlishanStore.addItem(input);',"const result = await AlishanRemote.submitEntry(input,Boolean(document.getElementById('useCurrentReviewPrice')?.checked));");
   if(name==='settings-data-backup.js'){
    const start=code.indexOf('    await AlishanDB.init();');
    const end=code.indexOf("    $('alishanAutoBackup').checked",start);
