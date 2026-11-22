@@ -610,6 +610,7 @@ function renderTotalInventory(summary) {
     set('homeAgingItems', summary.agingItems);
     set('homeAddedThisWeek', summary.addedThisWeek);
     set('homePendingAmount', AlishanCalc.fmtMoney(summary.pending));
+    document.querySelector('.home-summary-cards')?.removeAttribute('aria-busy');
     set('homeAgingLabel', `Aging Stock (> ${AlishanCalc.CONFIG.AGING_AFTER_DAYS} Days)`);
 }
 
@@ -671,6 +672,7 @@ function renderHomeLatestQualities() {
     const term = currentSearch();
     let items = AlishanStore.query({ search: term });
     items = items.slice().sort((a, b) => new Date(b.dateTime || b.createdAt || 0) - new Date(a.dateTime || a.createdAt || 0)).slice(0, 5);
+    root.removeAttribute('aria-busy');
     root.innerHTML = '';
     if (!items.length) {
         root.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-search"></i></div><h3>${term ? 'No matching qualities found' : 'No qualities added yet'}</h3><p>${term ? 'Try another search term.' : 'Your latest added qualities will appear here.'}</p></div>`;
@@ -807,7 +809,22 @@ async function initApp() {
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         window.AlishanPerformance?.criticalPaint();
     }
-    const info = await startup;
+    let info;
+    try {
+        info = await startup;
+    } catch {
+        const loading = document.getElementById('homeLatestQualities');
+        if (loading?.hasAttribute('aria-busy')) {
+            loading.removeAttribute('aria-busy');
+            loading.textContent = 'Could not load qualities. Reopen this page to try again.';
+        }
+        const totals = document.querySelector('.home-summary-cards[aria-busy]');
+        if (totals) {
+            for (const number of totals.querySelectorAll('strong.skeleton-line')) number.textContent = '—';
+            totals.removeAttribute('aria-busy');
+        }
+        return;
+    }
     window.AlishanPerformance?.dataReady();
     if (info.referenceError) showNotification(info.referenceError, 'error');
     if (info.damaged) showNotification(`${info.damaged} damaged item(s) were set aside and backed up.`, 'warning');

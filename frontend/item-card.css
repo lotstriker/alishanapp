@@ -1093,3 +1093,21 @@ body.ic-size-focus-active { overflow: hidden !important; }
     opacity: 0.55;
     cursor: not-allowed;
 }
+
+/* The placeholders occupy the existing card slots and share their breakpoints. */
+.ic-skeleton { pointer-events: none; opacity: 0; animation: skeletonAppear 1ms 180ms forwards; }
+.ic-skeleton .ic-expand-bar { display: flex; }
+[aria-busy="true"] .skeleton-line {
+    color: transparent !important;
+    background: color-mix(in srgb, currentColor 16%, transparent);
+    background: color-mix(in srgb, var(--gray, #808080) 28%, transparent);
+    border-radius: 0.35rem;
+}
+[aria-busy="true"] strong.skeleton-line {
+    inline-size: min(5rem, 100%);
+    min-block-size: 1lh;
+    opacity: 0;
+    animation: skeletonAppear 1ms 180ms forwards;
+}
+.ic-skeleton strong.skeleton-line { animation: none; opacity: 1; }
+@keyframes skeletonAppear { to { opacity: 1; } }

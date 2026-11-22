@@ -47,6 +47,7 @@ function updateDashboard() {
     set('totalValue', AlishanCalc.fmtMoney(summary.totalValue));
     set('inStockItems', summary.inStockItems);
     set('agingItems', summary.agingItems);
+    document.querySelector('.inventory-overview')?.removeAttribute('aria-busy');
     // aging = IN-STOCK items older than 7 days; the coloured line shows the levels
     set('agingLabel', `Aging Stock (>${AlishanCalc.CONFIG.AGING_AFTER_DAYS} Days, In Stock)`);
     const breakdown = document.getElementById('agingBreakdown');
@@ -77,6 +78,7 @@ async function renderInventoryCards(savedPage) {
     const paged = savedPage || AlishanStore.paginate(currentList(), currentPage, itemsPerPage);
     if (render !== inventoryRender) return;
 
+    inventoryCards.removeAttribute('aria-busy');
     if (paged.total === 0) {
         inventoryCards.innerHTML = `
             <div class="empty-state">
@@ -572,7 +574,22 @@ async function initPage() {
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         window.AlishanPerformance?.criticalPaint();
     }
-    const info = await startup;
+    let info;
+    try {
+        info = await startup;
+    } catch {
+        const loading = document.getElementById('inventoryCards');
+        if (loading?.hasAttribute('aria-busy')) {
+            loading.removeAttribute('aria-busy');
+            loading.textContent = 'Could not load qualities. Reopen this page to try again.';
+        }
+        const totals = document.querySelector('.inventory-overview[aria-busy]');
+        if (totals) {
+            for (const number of totals.querySelectorAll('strong.skeleton-line')) number.textContent = '—';
+            totals.removeAttribute('aria-busy');
+        }
+        return;
+    }
     window.AlishanPerformance?.dataReady();
     if (info.referenceError) showNotification(info.referenceError, 'error');
     if (info.damaged) showNotification(`${info.damaged} damaged item(s) were set aside and backed up.`, 'warning');

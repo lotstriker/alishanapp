@@ -50,13 +50,13 @@
 </header>
 <div class="main-content">
 <div class="container">
-<section aria-label="Inventory summary" class="home-summary-cards">
-<article class="home-summary-card"><span class="home-summary-icon"><i class="fas fa-boxes"></i></span><div><strong id="homeTotalItems">0</strong><span>Total Items</span></div></article>
-<article class="home-summary-card"><span class="home-summary-icon"><i class="fas fa-money-bill-wave"></i></span><div><strong id="homeTotalValue">₹0</strong><span>Total Inventory Value</span></div></article>
-<article class="home-summary-card" data-summary-kind="in-stock"><span class="home-summary-icon"><i class="fas fa-check-circle"></i></span><div><strong id="homeInStockItems">0</strong><span>In Stock Items</span></div></article>
-<article class="home-summary-card" data-summary-kind="aging"><span class="home-summary-icon"><i class="fas fa-clock"></i></span><div><strong id="homeAgingItems">0</strong><span id="homeAgingLabel">Aging Stock</span></div></article>
-<article class="home-summary-card" data-summary-kind="added-week"><span class="home-summary-icon"><i class="fas fa-calendar-week"></i></span><div><strong id="homeAddedThisWeek">0</strong><span>Added This Week</span></div></article>
-<article class="home-summary-card" data-summary-kind="pending"><span class="home-summary-icon"><i class="fas fa-exclamation-triangle"></i></span><div><strong id="homePendingAmount">₹0</strong><span>Pending Amount</span></div></article>
+<section aria-label="Inventory summary" class="home-summary-cards" aria-busy="true">
+<article class="home-summary-card"><span class="home-summary-icon"><i class="fas fa-boxes"></i></span><div><strong id="homeTotalItems" class="skeleton-line">0</strong><span>Total Items</span></div></article>
+<article class="home-summary-card"><span class="home-summary-icon"><i class="fas fa-money-bill-wave"></i></span><div><strong id="homeTotalValue" class="skeleton-line">₹0</strong><span>Total Inventory Value</span></div></article>
+<article class="home-summary-card" data-summary-kind="in-stock"><span class="home-summary-icon"><i class="fas fa-check-circle"></i></span><div><strong id="homeInStockItems" class="skeleton-line">0</strong><span>In Stock Items</span></div></article>
+<article class="home-summary-card" data-summary-kind="aging"><span class="home-summary-icon"><i class="fas fa-clock"></i></span><div><strong id="homeAgingItems" class="skeleton-line">0</strong><span id="homeAgingLabel">Aging Stock</span></div></article>
+<article class="home-summary-card" data-summary-kind="added-week"><span class="home-summary-icon"><i class="fas fa-calendar-week"></i></span><div><strong id="homeAddedThisWeek" class="skeleton-line">0</strong><span>Added This Week</span></div></article>
+<article class="home-summary-card" data-summary-kind="pending"><span class="home-summary-icon"><i class="fas fa-exclamation-triangle"></i></span><div><strong id="homePendingAmount" class="skeleton-line">₹0</strong><span>Pending Amount</span></div></article>
 </section>
 <section aria-label="Search inventory" class="home-search-section">
 <div id="alishan-search"></div>
@@ -120,8 +120,8 @@
 <h2><i class="fas fa-clock"></i> Latest Added Qualities</h2>
 <a href="inventory.html">View all <i class="fas fa-arrow-right"></i></a>
 </div>
-<div class="home-latest-cards inventory-cards" id="homeLatestQualities">
-<div class="empty-state"><p>Loading latest qualities…</p></div>
+<div class="home-latest-cards inventory-cards" id="homeLatestQualities" aria-busy="true">
+<!-- QUALITY_CARD_LOADING -->
 </div>
 </section>
 <div class="xc-backdrop" hidden id="exportCenterBackdrop">

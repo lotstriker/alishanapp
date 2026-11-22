@@ -55,22 +55,22 @@
         <h2><i class="fas fa-database"></i> Complete Inventory</h2>
 
         <!-- Additional overview is intentionally tablet/desktop only. The phone layout remains unchanged. -->
-        <section class="inventory-overview desktop-tablet-only" aria-label="Inventory overview">
+        <section class="inventory-overview desktop-tablet-only" aria-label="Inventory overview" aria-busy="true">
             <article class="inventory-overview-card">
                 <span class="inventory-overview-icon"><i class="fas fa-boxes"></i></span>
-                <div><strong id="totalItems">0</strong><span>Total Items</span></div>
+                <div><strong id="totalItems" class="skeleton-line">0</strong><span>Total Items</span></div>
             </article>
             <article class="inventory-overview-card">
                 <span class="inventory-overview-icon"><i class="fas fa-money-bill-wave"></i></span>
-                <div><strong id="totalValue">₹0</strong><span>Total Inventory Value</span></div>
+                <div><strong id="totalValue" class="skeleton-line">₹0</strong><span>Total Inventory Value</span></div>
             </article>
             <article class="inventory-overview-card">
                 <span class="inventory-overview-icon"><i class="fas fa-check-circle"></i></span>
-                <div><strong id="inStockItems">0</strong><span>In Stock Items</span></div>
+                <div><strong id="inStockItems" class="skeleton-line">0</strong><span>In Stock Items</span></div>
             </article>
             <article class="inventory-overview-card">
                 <span class="inventory-overview-icon"><i class="fas fa-clock"></i></span>
-                <div><strong id="agingItems">0</strong><span id="agingLabel">Aging Stock</span></div>
+                <div><strong id="agingItems" class="skeleton-line">0</strong><span id="agingLabel">Aging Stock</span></div>
             </article>
         </section>
         
@@ -95,8 +95,8 @@
                 </div>
             </div>
             
-            <div class="inventory-cards" id="inventoryCards">
-                <!-- Inventory cards will be added here dynamically -->
+            <div class="inventory-cards" id="inventoryCards" aria-busy="true">
+                <!-- QUALITY_CARD_LOADING -->
             </div>
 
             <div class="pagination-controls" id="paginationControls" style="display:none" aria-label="Inventory pagination"></div>

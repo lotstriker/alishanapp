@@ -16,6 +16,10 @@ test('main routes share one document, preserve controls and support browser hist
   const console=new VirtualConsole();
   console.on('jsdomError',error=>errors.push(error.message));
   console.on('error',error=>errors.push(String(error)));
+  for(const route of ['index','inventory']){
+    const shell=await request('/'+route+'.html').then(response=>response.text());
+    assert.match(shell,/class="inventory-card ic-card ic-skeleton" aria-hidden="true"/);
+  }
   const html=await request('/performance.html').then(response=>response.text());
   const dom=new JSDOM(html,{
     url:base+'/performance.html',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole:console,
@@ -49,6 +53,7 @@ test('main routes share one document, preserve controls and support browser hist
   const homeStyle = [...document.head.querySelectorAll('link[rel="stylesheet"]')][0];
   click('inventory');
   await waitFor(()=>w.location.pathname==='/inventory.html'&&document.querySelector('#inventoryCards .empty-state'));
+  assert.equal(document.querySelector('#inventoryCards').hasAttribute('aria-busy'),false);
   const inventoryBody=document.body;
   assert.ok(document.querySelector('.tabbar i svg.ic'), 'Inventory navigation icons render after switching');
   const inventoryStyle=stylesheet('inventory.css');
