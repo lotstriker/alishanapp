@@ -219,7 +219,7 @@
  function pendingEntry(){
   return JSON.parse(localStorage.getItem('alishan:pending:'+window.ALISHAN_SESSION?.scope+':addItem:entry')||'null');
  }
- function renderEntryReviews(){
+ async function renderEntryReviews(){
   if(location.pathname.endsWith('/add-entry.html')){
    const formButton=document.querySelector('#productForm button[type=submit]');
    if(formButton)formButton.textContent='Send to Review';
@@ -253,7 +253,7 @@
   const add=reviewNode('a','Add Entry','audit-back');
   add.href='add-entry.html';
   toolbar.append(add);
-  const grid=reviewNode('div','','missing-grid');
+  const grid=reviewNode('div','','inventory-cards');
   screen.replaceChildren(toolbar,grid);
   if(needsRecovery){
    const recovery=reviewNode('article','','missing-entry');
@@ -263,74 +263,45 @@
    recovery.append(body);
    grid.append(recovery);
   }
-  window.AlishanPerformance?.ready();
   if(!total)grid.replaceWith(reviewNode('div','No qualities waiting for review.','audit-empty'));
-  for(const entry of reviewEntries){
+  const cards=await Promise.all(reviewEntries.map(async entry=>{
    const {input,review}=entry;
-   const p=review.preview;
-   const card=reviewNode('article','','missing-entry');
-   const header=reviewNode('header','','missing-card-head');
-   const title=reviewNode('div','');
-   title.append(reviewNode('h3',p.quality),reviewNode('span',[p.productType,p.cupSize&&p.cupSize!=='N/A'?p.cupSize+' CUP':''].filter(Boolean).join(' · '),'missing-code'));
-   header.append(title,reviewNode('span','Pending review','missing-status incomplete'));
-   const facts=reviewNode('div','','missing-details');
-   const totals=reviewNode('div','','missing-detail pending-lot-dozen');
-   for(const [label,value,style] of [
-    ['Total Dozen',AlishanCalc.fmtDozens(p.dozens),'pending-lot-value'],
-    ['Total Amount',AlishanCalc.fmtMoney(p.amount),'pending-dozen-value']
-   ]){
-    const stat=reviewNode('div','',style);
-    stat.append(reviewNode('span',label),reviewNode('strong',value));
-    totals.append(stat);
-   }
-   const names=p.colors.map(color=>color.name||color).filter(Boolean);
-   const colors=reviewNode('div','','missing-detail pending-colors pc-'+(names.length<=1?'one':names.length===2?'two':names.length<=4?'few':'many'));
-   for(const name of names)colors.append(reviewNode('strong',name));
-   facts.append(totals,colors);
-   const sizes=values=>Object.entries(values||{}).map(([size,quantity])=>
-    size+': '+(typeof quantity==='object'?(quantity.dozens||0)+' dz '+(quantity.pieces||0)+' pcs':quantity)
-   ).join(' · ');
-   const sizeDetails=input.sizeOption==='different'
-    ?(input.colorSizes||[]).map(group=>group.name+' — '+sizes(group.sizes)).join(' / ')
-    :sizes(input.sizes);
-   for(const [label,value] of [
-    ['Sizes',sizeDetails],['Pieces',p.pieces],['Price',AlishanCalc.fmtMoney(p.price)],
-    ['Entry date',input.entry?.mode==='old'?input.entry.date+' '+input.entry.time:'Today'],
-    ['Material',input.material],['Weight',input.weight],['Notes',input.notes]
-   ]){
-    const fact=reviewNode('div','','missing-detail');
-    fact.append(reviewNode('span',label),reviewNode('strong',String(value??'')||'—'));
-    facts.append(fact);
-   }
-   const actions=reviewNode('div','','missing-actions missing-details');
    const matchesPending=pending&&JSON.stringify(pending.input)===JSON.stringify(input);
-   const submit=reviewButton(matchesPending?'Check submission':'Submit',()=>submitReviewed(entry),'audit-btn');
-   submit.disabled=reviewBusy||Boolean(pending&&!matchesPending);
-   actions.append(submit);
-   if(review.currentPrice!==p.price&&!pending){
-    const update=reviewButton('Use current price '+AlishanCalc.fmtMoney(review.currentPrice),async()=>{
-     if(reviewBusy)return;
-     reviewBusy=true;
-     renderEntryReviews();
-     try{
-      const fresh=await call('Store','reviewEntry',[input]);
-      if(!fresh.ok)throw new Error(fresh.error);
-      writeReviews(entries=>entries.map(item=>item.draftId===entry.draftId?{...item,review:fresh}:item));
-     }catch(error){reportError(error);}
-     finally{reviewBusy=false;renderEntryReviews();}
-    });
-    update.disabled=reviewBusy;
-    actions.append(update);
+   const draft=reviewCardItem(entry);
+   return window.ItemCard.create(draft,{
+    edit:!reviewBusy&&!matchesPending?()=>location.assign('add-entry.html?review='+encodeURIComponent(entry.draftId)):null,
+    delete:!reviewBusy&&!matchesPending?()=>{
+     try{writeReviews(entries=>entries.filter(item=>item.draftId!==entry.draftId));void renderEntryReviews();}
+     catch(error){reportError(error);}
+    }:null,
+    submit:!reviewBusy&&(!pending||matchesPending)?()=>submitReviewed(entry):null,
+    submitLabel:matchesPending?'Check submission':'Submit'
+   });
+  })).catch(error=>{reportError(error);return [];});
+  if(grid.isConnected)grid.append(...cards);
+  window.AlishanPerformance?.ready();
+ }
+ function reviewCardItem({draftId,input,review}){
+  const preview=review.preview;
+  const sizes={};
+  if(input.sizeOption!=='different'){
+   for(const [size,quantity] of Object.entries(input.sizes||{})){
+    sizes['size'+size]=Number(quantity?.dozens??quantity)||0;
+    sizes['size'+size+'_pieces']=Number(quantity?.pieces)||0;
    }
-   const remove=reviewButton('Delete',()=>{
-    try{writeReviews(entries=>entries.filter(item=>item.draftId!==entry.draftId));renderEntryReviews();}
-    catch(error){reportError(error);}
-   },'audit-btn audit-btn-danger');
-   remove.disabled=reviewBusy||Boolean(matchesPending);
-   actions.append(remove);
-   card.append(header,facts,actions);
-   grid.append(card);
   }
+  return {
+   ...sizes,id:draftId,quality:preview.quality||input.quality,
+   productType:preview.productType,cupSize:preview.cupSize,colors:preview.colors,
+   sizeOption:preview.sizeOption,price:preview.price,lotNumber:input.lotNumber,
+   dateTime:input.entry?.mode==='old'?input.entry.date+'T'+input.entry.time:new Date().toISOString(),
+   isManualEntry:preview.isManualEntry,material:Number(input.material)||0,
+   weight:Number(input.weight)||0,notes:input.notes
+  };
+ }
+ function editingReview(){
+  const id=new URLSearchParams(location.search).get('review');
+  return id?reviewEntries.find(entry=>entry.draftId===id):null;
  }
  async function submitReviewed(entry,recovery=false){
   if(reviewBusy)return;
@@ -351,12 +322,21 @@
   }catch(error){reportError(error);}
   finally{reviewBusy=false;renderEntryReviews();}
  }
- async function submitEntry(input){
+ async function submitEntry(input, useCurrentPrice=false){
   if(addingReview)return {ok:false,error:'Review is loading.'};
   addingReview=true;
   try{
-   const review=await call('Store','reviewEntry',[input]);
+   const editing=editingReview();
+   if(new URLSearchParams(location.search).has('review')&&!editing)return {ok:false,error:'This review draft is no longer available.'};
+   const review=await call('Store','reviewEntry',[input,useCurrentPrice?undefined:editing?.review.quote]);
    if(!review.ok)return review;
+   if(editing){
+    writeReviews(entries=>{
+     if(!entries.some(entry=>entry.draftId===editing.draftId))throw new Error('Draft no longer available.');
+     return entries.map(entry=>entry.draftId===editing.draftId?{...entry,input,review}:entry);
+    });
+    return {ok:true,reviewEdited:true,message:'Review draft updated.'};
+   }
    writeReviews(entries=>[...entries,{draftId:crypto.randomUUID(),input,review}]);
    return {ok:true,message:'Entry added to Review in Dashboard → Quick Actions.'};
   }catch{return {ok:false,error:'Review could not be saved. Your entry is still in the form.'};}
@@ -367,7 +347,7 @@
   if(event.key!==reviewKey)return;
   try{reviewEntries=JSON.parse(event.newValue||'[]');renderEntryReviews();}catch{}
  });
- document.addEventListener('DOMContentLoaded',renderEntryReviews);
+ document.addEventListener('DOMContentLoaded',()=>setTimeout(renderEntryReviews,0));
  document.addEventListener('alishan:route',renderEntryReviews);
  }
  const make=target=>{
@@ -390,7 +370,7 @@
  AlishanStore.subscribe=fn=>{listeners.add(fn);return()=>listeners.delete(fn);};AlishanDB.onChange=()=>{};
  window.AlishanHas=needed=>Object.keys(needed).every(k=>window[k]!==undefined);
  window.AlishanRequire=async needed=>AlishanHas(needed);
- window.AlishanRemote={call,submitEntry,preparePage,readStartupCache,cacheInfo:()=>device?.inspect(),clearDeviceCache(){device?.invalidate(true);changed();void device?.check(true);}};
+ window.AlishanRemote={call,submitEntry,editingReview,reviewCardItem,preparePage,readStartupCache,cacheInfo:()=>device?.inspect(),clearDeviceCache(){device?.invalidate(true);changed();void device?.check(true);}};
  if(device?.enabled){
   const addCacheControl=()=>{const host=document.getElementById('backup');if(!host||document.getElementById('refreshDeviceView'))return;const card=document.createElement('div');card.className='card';card.style.marginTop='18px';card.innerHTML='<div class="card-header"><h2 class="card-title">Saved Device View</h2></div><div class="card-body"><p class="settings-help">Loaded views are kept on this device for faster opening. Server records remain the source of truth.</p><button id="refreshDeviceView" type="button" class="btn btn-secondary">Sync Now</button></div>';host.appendChild(card);card.querySelector('button').onclick=async event=>{
    const button=event.currentTarget;button.disabled=true;
