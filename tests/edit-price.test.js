@@ -67,7 +67,7 @@ test('Card: colours that share one size table are own-colour cards; one-colour t
   const card = read('item-card.js');
   assert.match(card, /const many = g\.names\.length > 1;/);
   assert.match(card, /color-group-header/);
-  assert.match(card, /color-tag cg-card color-\$\{String\(n\)\.toLowerCase\(\)\}/);
-  assert.match(card, /<div class="color-header color-\$\{String\(g\.names\[0\]\)\.toLowerCase\(\)\}">/);
+  assert.match(card, /color-tag cg-card color-\$\{colorClass\(n\)\}/);
+  assert.match(card, /<div class="color-header color-\$\{colorClass\(g\.names\[0\]\)\}">/);
   assert.match(read('item-card.css'), /\.color-group-header/);
 });
