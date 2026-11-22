@@ -394,7 +394,15 @@
  AlishanStore.subscribe=fn=>{listeners.add(fn);return()=>listeners.delete(fn);};AlishanDB.onChange=()=>{};
  window.AlishanHas=needed=>Object.keys(needed).every(k=>window[k]!==undefined);
  window.AlishanRequire=async needed=>AlishanHas(needed);
- window.AlishanRemote={call,submitEntry,editingReview,reviewCardItem,preparePage,readStartupCache,cacheInfo:()=>device?.inspect(),clearDeviceCache(){device?.invalidate(true);changed();void device?.check(true);}};
+ async function requestApproval(action,id){
+  const response=await fetch('/api/approval-requests',{method:'POST',
+   headers:{'Content-Type':'application/json',...scopedHeaders()},
+   body:JSON.stringify({action,id:String(id)}),signal:AbortSignal.timeout(30000)});
+  const result=await response.json();
+  if(!response.ok)throw new Error(result.error||'Could not send approval request.');
+  return result;
+ }
+ window.AlishanRemote={requestApproval,call,submitEntry,editingReview,reviewCardItem,preparePage,readStartupCache,cacheInfo:()=>device?.inspect(),clearDeviceCache(){device?.invalidate(true);changed();void device?.check(true);}};
  if(device?.enabled){
   const addCacheControl=()=>{const host=document.getElementById('backup');if(!host||document.getElementById('refreshDeviceView'))return;const card=document.createElement('div');card.className='card';card.style.marginTop='18px';card.innerHTML='<div class="card-header"><h2 class="card-title">Saved Device View</h2></div><div class="card-body"><p class="settings-help">Loaded views are kept on this device for faster opening. Server records remain the source of truth.</p><button id="refreshDeviceView" type="button" class="btn btn-secondary">Sync Now</button></div>';host.appendChild(card);card.querySelector('button').onclick=async event=>{
    const button=event.currentTarget;button.disabled=true;

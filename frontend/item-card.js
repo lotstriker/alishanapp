@@ -384,6 +384,20 @@ var ItemCard = (() => {
                 note.className = 'ic-approval-note';
                 note.textContent = 'Manager approval';
                 button.appendChild(note);
+                if (window.ALISHAN_SESSION?.google) {
+                    button.disabled = false;
+                    button.title = 'Request Manager approval to archive this entry';
+                    button.onclick = async () => {
+                        button.disabled = true;
+                        try {
+                            await window.AlishanRemote.requestApproval('archive', id);
+                            note.textContent = 'Request pending';
+                        } catch (error) {
+                            window.showNotification?.(error.message, 'error');
+                            button.disabled = false;
+                        }
+                    };
+                }
             }
         }
 

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alishan Manager</title>
+<style>
+:root { color-scheme:light dark; --surface:#fff; --ink:#291b22; --muted:#735b65; --line:#dfcdd4; --accent:#782e4d; --canvas:#faf5f7; }
+@media (prefers-color-scheme:dark) { :root { --surface:#21171d; --ink:#f8e8ef; --muted:#d3b9c5; --line:#513741; --accent:#f6b9d2; --canvas:#120d10; } }
+* { box-sizing:border-box; }
+body { margin:0; font:1rem system-ui,sans-serif; background:var(--canvas); color:var(--ink); }
+header { background:var(--surface); border-bottom:1px solid var(--line); }
+nav, main { max-width:56rem; margin:auto; padding:1rem; }
+nav, .heading, article, .actions { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
+nav strong { letter-spacing:.04em; }
+a { color:var(--accent); }
+h1 { margin:.5rem 0; font-size:clamp(1.6rem,5vw,2.4rem); }
+h2 { font-size:1.15rem; margin:1.5rem 0 .6rem; }
+h3 { margin:0 0 .3rem; overflow-wrap:anywhere; }
+p { color:var(--muted); margin:.25rem 0; }
+article { background:var(--surface); border:1px solid var(--line); border-radius:.75rem; padding:1rem; margin-bottom:.6rem; }
+button { font:inherit; padding:.55rem .85rem; min-height:44px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:.55rem; cursor:pointer; }
+button[data-decision="approved"] { border-color:var(--accent); color:var(--accent); }
+button:disabled { opacity:.55; cursor:wait; }
+@media(max-width:520px) { .actions { width:100%; } .actions button { flex:1; } }
+</style>
+<header><nav><strong>Alishan Manager</strong><a href="/">Inventory app</a></nav></header>
+<main>
+  <div class="heading"><h1>Approval requests</h1><button id="refresh" type="button">Refresh</button></div>
+  <p id="status" role="status">Loading requests…</p>
+  <section aria-labelledby="pending"><h2 id="pending">Pending</h2><div id="queue"></div></section>
+  <section aria-labelledby="history"><h2 id="history">Recent decisions</h2><div id="decisions"></div></section>
+</main>
+<script>
+'use strict';
+const queue = document.getElementById('queue');
+const history = document.getElementById('decisions');
+const status = document.getElementById('status');
+const refresh = document.getElementById('refresh');
+function element(tag, text) {
+  const node = document.createElement(tag);
+  node.textContent = text;
+  return node;
+}
+async function api(path, body) {
+  const headers = {'X-Alishan-Scope':'__SESSION_SCOPE__'};
+  const options = { headers, cache:'no-store', signal:AbortSignal.timeout(30000) };
+  if (body) {
+    options.method = 'POST';
+    options.body = JSON.stringify(body);
+    headers['Content-Type'] = 'application/json';
+  }
+  const response = await fetch(path, options);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Could not complete the request.');
+  return data;
+}
+function card(row) {
+  const article = element('article','');
+  const title = element('div','');
+  const action = row.action === 'archive' ? 'Archive' : 'Restore';
+  title.append(element('h3',row.label || 'Entry'), element('p',action + ' · ' + row.status +
+    ' · ' + new Date(row.decided_at || row.requested_at).toLocaleString()));
+  article.append(title);
+  if (row.status === 'pending') {
+    const actions = element('div','');
+    actions.className = 'actions';
+    for (const [decision, label] of [['approved','Approve'],['rejected','Reject']]) {
+      const button = element('button',label);
+      button.dataset.decision = decision;
+      button.addEventListener('click',async () => {
+        for (const control of actions.children) control.disabled = true;
+        try {
+          await api('/api/manager/requests/' + encodeURIComponent(row.id), {decision});
+          await load();
+        } catch (error) {
+          status.textContent = error.message;
+          for (const control of actions.children) control.disabled = false;
+        }
+      });
+      actions.append(button);
+    }
+    article.append(actions);
+  }
+  return article;
+}
+async function load() {
+  refresh.disabled = true;
+  status.textContent = 'Loading requests…';
+  try {
+    const { requests } = await api('/api/manager/requests');
+    for (const [host, pending] of [[queue,true],[history,false]]) {
+      const rows = requests.filter(row => (row.status === 'pending') === pending);
+      host.replaceChildren(...(rows.length ? rows.map(card) : [element('p',pending ? 'No pending requests.' : 'No decisions yet.')]));
+    }
+    status.textContent = '';
+  } catch (error) { status.textContent = error.message; }
+  finally { refresh.disabled = false; }
+}
+refresh.addEventListener('click',load);
+void load();
+</script>
+</html>

@@ -209,7 +209,7 @@ class PostgresRepository {
         const {rows}=await performanceDb.query(client,"SELECT nextval('alishan_private.quality_codes')::text AS code");
         return rows[0].code;
       };
-      const result=await fn(state,Number(locked.rows[0].revision),issueQualityCode);
+      const result=await fn(state,Number(locked.rows[0].revision),issueQualityCode,client);
       if(result?.ok===false){await performanceDb.query(client,'ROLLBACK');return result;}
       let changed=false;
       const recordChanges=[];

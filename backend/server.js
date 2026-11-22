@@ -12,7 +12,7 @@ const {PostgresRepository,blank}=require('./database');
 const {isReader,selection}=require('./operations');
 const metrics=require('./performance');
 const hash=s=>createHash('sha256').update(s).digest();
-function createApp({repository,username,password,auth,googleSetup,repositoryFor,legacyOwnerId,telemetry}){
+function createApp({repository,username,password,auth,googleSetup,repositoryFor,legacyOwnerId,telemetry,manager}){
  if((!auth&&!username)||!password||password.length<20)throw new Error('APP_USERNAME and APP_PASSWORD (20+ characters) are required');
  let pureDomain;
  const compressedReads=new Map();
@@ -75,7 +75,7 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
  app.use(async(req,res,next)=>{
    if(auth){
      const started=performance.now();
-     const documentNavigation=req.method==='GET'&&(req.path==='/'||req.path.endsWith('.html'));
+     const documentNavigation=req.method==='GET'&&(req.path==='/'||req.path==='/manager'||req.path.endsWith('.html'));
      const subject=await auth.authenticate(req,res,{documentNavigation});
      if(req.path==='/'||req.path==='/api/view-session'||req.path.endsWith('.html'))
        res.append('Server-Timing','documentauth;dur='+(performance.now()-started).toFixed(1));
@@ -114,6 +114,23 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
    });
  }
  app.use(express.json({limit:'15mb',strict:true}));
+ if(auth&&manager){
+   const send=(res,result)=>res.status(result.status||200).json(result);
+   app.get('/manager',async(req,res)=>{
+     const {actor,session}=res.locals.account;
+     if(!await manager.invited(actor))return res.status(403).send('Manager invite required.');
+     const html=fs.readFileSync(path.join(__dirname,'../manager-app/index.html'),'utf8');
+     res.type('html').send(html.replace('__SESSION_SCOPE__',session.scope));
+   });
+   app.post('/api/approval-requests',async(req,res)=>{
+     send(res,await manager.request(res.locals.account,req.body?.action,req.body?.id));
+   });
+   app.get('/api/manager/requests',async(req,res)=>send(res,await manager.list(res.locals.account.actor)));
+   app.post('/api/manager/requests/:id',async(req,res)=>{
+     send(res,await manager.decide(res.locals.account.actor,req.params.id,req.body?.decision));
+   });
+ }
+
  async function timedRun(calls,res){
    const started=performance.now(),timings={db:0};
    const result=await metrics.context.run(timings,()=>run(calls,res.locals.account));
@@ -301,7 +318,8 @@ async function start(){
    return userRepositories.get(workspace);
  };
  const app=createApp({repository,username:process.env.APP_USERNAME,password:process.env.APP_PASSWORD,
-   auth,googleSetup,repositoryFor,legacyOwnerId:process.env.LEGACY_OWNER_USER_ID,telemetry:metrics.telemetryStore(pool)});
+   auth,googleSetup,repositoryFor,legacyOwnerId:process.env.LEGACY_OWNER_USER_ID,
+   manager:auth?require('./manager-approvals').managerApprovals(pool,repositoryFor):null,telemetry:metrics.telemetryStore(pool)});
  const server=app.listen(Number(process.env.PORT)||10000,'0.0.0.0',()=>console.log('Alishan server ready'));
  let backupRunning=false;
  const backupTimer=setInterval(async()=>{
