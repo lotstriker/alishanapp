@@ -1,4 +1,15 @@
 'use strict';
+function compactCardViewForTransport(view){
+  const items=view.paged?.items||view.items;
+  if(!Array.isArray(items)||!Array.isArray(view.primes))return view;
+  const indexes=new Map(items.map((item,index)=>[item,index]));
+  return {...view,primes:view.primes.map(prime=>{
+   const itemIndex=indexes.get(prime.args?.[0]);
+   if(itemIndex===undefined)return prime;
+   const {args,...fields}=prime;
+   return {...fields,itemIndex};
+  })};
+ }
 // Read models only. Every filter, amount and card value uses the original rules.
 module.exports=d=>{
  const {Store:S,Calc:C,Reports:R,Search}=d;
@@ -37,3 +48,5 @@ module.exports=d=>{
  }
  return {inventoryPage,homeLatest,pageBundle};
 };
+
+module.exports.compactCardView = compactCardViewForTransport;
