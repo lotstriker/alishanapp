@@ -28,6 +28,7 @@ var ItemCard = (() => {
     const openCards = new Set();      // ids of cards that are open
     const openDetails = new Set();    // ids whose "Details" group is open
 
+    const colorClass = name => String(name).toLowerCase().replace(/[^a-z0-9-]+/g, '-');
     const TYPE_ICONS = { BRA: 'fa-heart', PANTY: 'fa-gem', SET: 'fa-layer-group', BLOUSE: 'fa-tshirt' };
 
     // ---------- open / close (changes the page in place, no redraw) ----------
@@ -164,11 +165,11 @@ var ItemCard = (() => {
                         // A colour that has a table of its own keeps the one-colour header (its colour as the header colour).
                         const head = many ? `
                             <div class="color-header color-group-header">
-                                <div class="cg-chips">${g.names.map(n => `<span class="color-tag cg-card color-${String(n).toLowerCase()}">${escapeHtml(n)}</span>`).join('')}</div>
+                                <div class="cg-chips">${g.names.map(n => `<span class="color-tag cg-card color-${colorClass(n)}">${escapeHtml(n)}</span>`).join('')}</div>
                                 <span class="ic-color-header-label cg-summary">EACH ${AlishanCalc.fmtDozens(g.eachDozens)} · TOTAL ${AlishanCalc.fmtDozens(g.totalDozens)} DZ</span>
                                 <button type="button" class="ic-size-focus-trigger" data-ic-focus="color" data-color-index="${i}" aria-label="Open ${names} size view" title="Open in large view"><i class="fas fa-eye"></i><span>Large view</span></button>
                             </div>` : `
-                            <div class="color-header color-${String(g.names[0]).toLowerCase()}">
+                            <div class="color-header color-${colorClass(g.names[0])}">
                                 <i class="fas fa-circle" style="color: inherit;"></i>
                                 <span class="ic-color-header-label">${names} - TOTAL: ${AlishanCalc.fmtDozens(g.totalDozens)} DOZENS</span>
                                 <button type="button" class="ic-size-focus-trigger" data-ic-focus="color" data-color-index="${i}" aria-label="Open ${names} size view" title="Open in large view"><i class="fas fa-eye"></i><span>Large view</span></button>
@@ -208,7 +209,7 @@ var ItemCard = (() => {
             </div>`;
 
         const colorTags = info.colorNames.map(name =>
-            `<span class="color-tag color-${name.toLowerCase()}">${escapeHtml(name)}</span>`).join('');
+            `<span class="color-tag color-${colorClass(name)}">${escapeHtml(name)}</span>`).join('');
         const divider = (icon) => `
             <div class="divider"><div class="divider-line"></div><i class="fas ${icon} divider-icon"></i><div class="divider-line"></div></div>`;
 
@@ -288,7 +289,7 @@ var ItemCard = (() => {
 
         const inStock = item.inStock !== false;
         const colorChips = info.colorNames.map(name =>
-            `<span class="color-tag color-${name.toLowerCase()}">${escapeHtml(name)}</span>`).join('');
+            `<span class="color-tag color-${colorClass(name)}">${escapeHtml(name)}</span>`).join('');
 
         const modified = item.lastModified ? `
             <div class="detail-item">
