@@ -66,9 +66,9 @@ function googleLogin({ supabaseUrl, publishableKey, origin, sessions, verifyOnly
         if (!uuid.test(user?.id || '') || !user.app_metadata?.providers?.includes('google')) return fail();
         if(verifyOnly)return res.redirect(303, '/login?verified=google');
         const previous = cookie(req, sessionName);
-        if (validSecret(previous)) await sessions.remove(previous);
         const token = random();
         if (await sessions.save(token, user.id, new Date(Date.now() + sessionLifetime)) === false) return fail();
+        if (validSecret(previous)) await sessions.remove(previous);
         res.cookie(sessionName, token, { ...cookieOptions, maxAge: sessionLifetime });
         // Make the dashboard navigation originate here, after the cross-site OAuth redirect chain ends.
         res.type('html').send(`<!doctype html><html lang="en"><meta charset="utf-8">
@@ -85,12 +85,23 @@ h1{font-size:1.35rem;margin:0 0 .5rem}p{margin:0}a{color:inherit;display:inline-
         return fail();
       }
     },
-    async authenticate(req) {
-      if (req.get('sec-fetch-site') === 'cross-site') return null;
+    async authenticate(req, res, { documentNavigation = false } = {}) {
+      const reject = reason => {
+        if (documentNavigation || req.path === '/api/view-session') {
+          res.set('X-Alishan-Session-Status', reason);
+          console.info('Alishan session unavailable:', reason);
+        }
+        return null;
+      };
+      // A top-level link can open the app with an existing SameSite=Lax cookie.
+      // Cross-site fetches and API calls still cannot use that session.
+      if (req.get('sec-fetch-site') === 'cross-site' &&
+          !(documentNavigation && req.get('sec-fetch-mode') === 'navigate' && req.get('sec-fetch-dest') === 'document'))
+        return reject('cross-site-request');
       const token = cookie(req, sessionName);
-      if (!validSecret(token)) return null;
+      if (!validSecret(token)) return reject(token ? 'invalid-cookie' : 'cookie-missing');
       const subject = await sessions.get(token);
-      return uuid.test(subject || '') ? subject : null;
+      return uuid.test(subject || '') ? subject : reject('session-unavailable');
     },
     async logout(req, res) {
       if (req.get('origin') !== origin) return res.sendStatus(403);

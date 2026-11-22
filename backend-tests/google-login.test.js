@@ -1,6 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const http = require('node:http');
 const { createApp } = require('../backend/server');
 const { googleLogin } = require('../backend/google-login');
 const { domain } = require('../backend/domain');
@@ -61,6 +62,15 @@ test('Google PKCE scopes reads, writes, exports and logout to the verified user'
     assert.equal(existing.headers.get('location'),'/');
     const chained=await fetch(base+'/',{headers:{Cookie:cookie,'Sec-Fetch-Site':'cross-site'},redirect:'manual'});
     assert.equal(chained.headers.get('location'),'/login');
+    const reopenStatus=await new Promise((resolve,reject)=>{
+      http.get(base+'/',{headers:{
+        Cookie:cookie,'Sec-Fetch-Site':'cross-site','Sec-Fetch-Mode':'navigate','Sec-Fetch-Dest':'document'
+      }},response=>{response.resume();resolve(response.statusCode);}).on('error',reject);
+    });
+    assert.equal(reopenStatus,200);
+    const missing=await fetch(base+'/api/view-session',{redirect:'manual'});
+    assert.equal(missing.status,401);
+    assert.equal(missing.headers.get('X-Alishan-Session-Status'),'cookie-missing');
     const html=await fetch(base+'/',{headers:{Cookie:cookie,'Sec-Fetch-Site':'same-origin'}}).then(r=>r.text());
     return {cookie,scope:JSON.parse(html.match(/ALISHAN_SESSION=(\{.*?\});/)[1]).scope};
   }

@@ -64,7 +64,7 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
  const login=auth||googleSetup;
  if(login){
    app.get('/login',async(req,res)=>{
-     if(auth&&await auth.authenticate(req))return res.redirect(303,'/');
+     if(auth&&await auth.authenticate(req,res))return res.redirect(303,'/');
      res.sendFile(path.resolve(__dirname,'../dist/login.html'));
    });
    app.get('/login.css',(req,res)=>res.sendFile(path.resolve(__dirname,'../dist/login.css')));
@@ -75,7 +75,8 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
  app.use(async(req,res,next)=>{
    if(auth){
      const started=performance.now();
-     const subject=await auth.authenticate(req);
+     const documentNavigation=req.method==='GET'&&(req.path==='/'||req.path.endsWith('.html'));
+     const subject=await auth.authenticate(req,res,{documentNavigation});
      if(req.path==='/'||req.path==='/api/view-session'||req.path.endsWith('.html'))
        res.append('Server-Timing','documentauth;dur='+(performance.now()-started).toFixed(1));
      if(!subject)return req.path.startsWith('/api/')?res.status(401).json({error:'Sign in to Alishan'}):res.redirect(303,'/login');
