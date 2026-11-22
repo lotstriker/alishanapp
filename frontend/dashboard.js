@@ -160,6 +160,7 @@ async function addInventoryItem(e) {
     SizeGroups.reset('');
     resetQualitySelector();
 
+    if (result.reviewEdited) { location.assign('entry-review.html'); return; }
     showNotification(result.message, 'success');
 }
 
@@ -836,6 +837,37 @@ async function initApp() {
 
     initManualDateTime();
     SizeGroups.init('');                                // the size groups follow the one colour picker
+    const draft = productForm && window.AlishanRemote?.editingReview?.();
+    if (draft) {
+        const { input } = draft;
+        for (const key of ['productType', 'cupSize', 'material', 'weight', 'notes']) {
+            const field = document.getElementById(key);
+            if (field) field.value = input[key] ?? '';
+        }
+        await ItemForm.renderQualitySelector('', null, productType.value);
+        await ItemForm.setQualitySilently(input.quality, '');
+        const item = window.AlishanRemote.reviewCardItem(draft);
+        await ItemForm.populateColorsForEdit(item.colors.map(color=>color.name||color), '');
+        await SizeGroups.load('', item);
+        const old = input.entry?.mode === 'old';
+        document.getElementById('useManualDateTime').checked = old;
+        if (old) {
+            document.getElementById('entryDate').value = input.entry.date;
+            document.getElementById('entryTime').value = input.entry.time;
+        }
+        await toggleManualDateTime();
+        const save = productForm.querySelector('button[type=submit]');
+        save.textContent = 'Save Review Changes';
+        if (draft.review.preview.price !== draft.review.currentPrice) {
+            const label = document.createElement('label');
+            const choice = document.createElement('input');
+            choice.type = 'checkbox';
+            choice.id = 'useCurrentReviewPrice';
+            label.append(choice, ' Use current master price (' + AlishanCalc.fmtMoney(draft.review.currentPrice) + ')');
+            save.before(label);
+        }
+    }
+
     if (productForm) productForm.addEventListener('reset', () => setTimeout(() => { ItemForm.resetColorSelector(''); SizeGroups.reset(''); }, 0));
 
 }
