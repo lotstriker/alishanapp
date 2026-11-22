@@ -2,7 +2,7 @@
  'use strict';
  const tag='__ASSET_TAG__';
  const routes=new Set(['index','inventory','reports','setting','add-entry',
-  'pending-amount','missing-lot','missing-completion','quality-history','performance']);
+  'pending-amount','entry-review','missing-lot','missing-completion','quality-history','performance']);
  const factories=new Map(), pages=new Map(), loads=new Map();
  const realWindow=window, realDocument=document;
  const routeOf=url=>url.pathname==='/'?'index':url.pathname.slice(1).replace(/\.html$/,'');
