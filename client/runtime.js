@@ -219,39 +219,40 @@
   document.querySelector(open?'#entry-review-title':'#entry-review-link')?.focus();
  }
  function renderEntryReviews(){
-  const form=document.getElementById('productForm');
-  const main=form?.closest('main');
-  if(!main||!location.pathname.endsWith('/add-entry.html'))return;
+  if(location.pathname.endsWith('/add-entry.html')){
+   const formButton=document.querySelector('#productForm button[type=submit]');
+   if(formButton)formButton.textContent='Send to Review';
+   return;
+  }
+  const actions=document.querySelector('.quick-actions');
+  const main=actions?.closest('.container');
+  if(!main||!['/','/index.html'].includes(location.pathname))return;
   const open=location.hash===reviewHash;
-  const outer=main.querySelector('#entry-review-summary')||reviewNode('section','','card');
-  outer.id='entry-review-summary';
-  if(!outer.parentNode)main.prepend(outer);
-  outer.hidden=open;
-  outer.style.display=open?'none':'';
-  const formButton=form.querySelector('button[type=submit]');
-  if(formButton)formButton.textContent='Send to Review';
-  const inside=reviewNode('div','','card-body');
   const count=reviewEntries.length;
-  inside.append(reviewNode('h2',count+' '+(count===1?'quality':'qualities')+' pending review','card-title'));
-  const link=reviewButton('Open Review',()=>setReviewPage(true));
-  link.id='entry-review-link';
-  inside.append(link);
-  outer.style.marginBottom='16px';
-  outer.replaceChildren(inside);
+  const summary=actions.querySelector('#entry-review-link')||reviewButton('',()=>setReviewPage(true),'quick-action-btn');
+  summary.id='entry-review-link';
+  summary.textContent='Entry Review · '+count+' pending';
+  if(!summary.parentNode)actions.prepend(summary);
   const screen=main.querySelector('#entry-review-page')||reviewNode('section','');
   screen.id='entry-review-page';
   if(!screen.parentNode)main.append(screen);
   for(const child of main.children){
-   if(child===screen||child===outer)continue;
-   if(open&&!child.hidden){child.hidden=true;child.dataset.hiddenForReview='true';}
-   if(!open&&child.dataset.hiddenForReview){child.hidden=false;delete child.dataset.hiddenForReview;}
+   if(child===screen)continue;
+   if(open&&!child.hasAttribute('data-hidden-for-review')){
+    child.dataset.hiddenForReview=child.style.display;
+    child.style.display='none';
+   }
+   if(!open&&child.hasAttribute('data-hidden-for-review')){
+    child.style.display=child.dataset.hiddenForReview;
+    delete child.dataset.hiddenForReview;
+   }
   }
   screen.hidden=!open;
   if(!open){screen.style.display='none';return;}
   const heading=reviewNode('h1','Entry Review');
   heading.id='entry-review-title';
   heading.tabIndex=-1;
-  const back=reviewButton('Back to Add Entry',()=>setReviewPage(false));
+  const back=reviewButton('Back to Dashboard',()=>setReviewPage(false));
   screen.replaceChildren(heading,back);
   screen.style.cssText='display:grid;gap:16px';
   let pending=null;
@@ -268,10 +269,25 @@
   for(const entry of reviewEntries){
    const {input,review}=entry;
    const p=review.preview;
-   const card=reviewNode('article','','card');
-   const header=reviewNode('header','','card-header');
-   header.append(reviewNode('h2',p.quality,'card-title'));
-   const body=reviewNode('div','','card-body');
+   const card=reviewNode('article','','inventory-card ic-card');
+   const type=String(p.productType||'').toLowerCase();
+   if(/^[a-z]+$/.test(type))card.classList.add('ic-type-'+type);
+   const header=reviewNode('header','','ic-head');
+   const title=reviewNode('div','','ic-title');
+   title.append(reviewNode('h3',p.quality,'ic-name'));
+   const badges=reviewNode('div','','ic-badges');
+   badges.append(reviewNode('span',p.productType,'card-badge ic-badge-type'));
+   if(p.cupSize&&p.cupSize!=='N/A')badges.append(reviewNode('span',p.cupSize+' CUP','card-badge ic-badge-cup'));
+   header.append(title,badges);
+   const body=reviewNode('div','','ic-summary');
+   const totals=reviewNode('div','','ic-numbers');
+   for(const [label,value] of [['Total',AlishanCalc.fmtDozens(p.dozens)+' dozens'],['Amount',AlishanCalc.fmtMoney(p.amount)],['Status','Pending review']]){
+    const stat=reviewNode('div','','ic-stat');
+    stat.append(reviewNode('span',label,'ic-stat-label'),reviewNode('strong',value));
+    totals.append(stat);
+   }
+   const colors=reviewNode('div','','ic-colors');
+   for(const color of p.colors)colors.append(reviewNode('span',color.name||color,'color-tag'));
    const facts=reviewNode('dl','');
    facts.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:0 0 16px';
    const sizes=values=>Object.entries(values||{}).map(([size,quantity])=>
@@ -291,10 +307,9 @@
     fact.append(reviewNode('dt',label),reviewNode('dd',String(value??'')||'—'));
     facts.append(fact);
    }
-   const actions=reviewNode('div','');
-   actions.style.cssText='display:flex;flex-wrap:wrap;gap:8px';
+   const actions=reviewNode('div','','card-actions ic-actions');
    const matchesPending=pending&&JSON.stringify(pending.input)===JSON.stringify(input);
-   const submit=reviewButton(matchesPending?'Check submission':'Submit',()=>submitReviewed(entry),'btn');
+   const submit=reviewButton(matchesPending?'Check submission':'Submit',()=>submitReviewed(entry),'action-btn btn-stock');
    submit.disabled=reviewBusy||Boolean(pending&&!matchesPending);
    actions.append(submit);
    if(review.currentPrice!==p.price&&!pending){
@@ -312,13 +327,15 @@
     update.disabled=reviewBusy;
     actions.append(update);
    }
-   const remove=reviewButton('Remove draft',()=>{
+   const remove=reviewButton('Delete',()=>{
     try{writeReviews(reviewEntries.filter(item=>item!==entry));renderEntryReviews();}
     catch(error){reportError(error);}
-   });
+   },'action-btn btn-delete');
    remove.disabled=reviewBusy||Boolean(matchesPending);
    actions.append(remove);
-   body.append(facts,actions);
+   const details=reviewNode('details','');
+   details.append(reviewNode('summary','Show details'),facts);
+   body.append(totals,colors,details,actions);
    card.append(header,body);
    screen.append(card);
   }
@@ -349,8 +366,7 @@
    const review=await call('Store','reviewEntry',[input]);
    if(!review.ok)return review;
    writeReviews([...reviewEntries,{input,review}]);
-   setReviewPage(true);
-   return {ok:true,message:'Entry added to Review.'};
+   return {ok:true,message:'Entry added to Review in Dashboard → Quick Actions.'};
   }catch{return {ok:false,error:'Review could not be saved. Your entry is still in the form.'};}
   finally{addingReview=false;}
  }
