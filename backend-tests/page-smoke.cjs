@@ -18,7 +18,20 @@ const {createApp}=require('../backend/server');const {MemoryRepository}=require(
    }
    if(name==='inventory.html'){
     assert.equal(dom.window.document.querySelectorAll('.inventory-card').length,1);
+    assert.ok(dom.window.document.querySelector('.inventory-card .btn-delete:disabled'));
+    assert.ok(dom.window.document.querySelector('.inventory-card .btn-edit:not(:disabled)'));
+    assert.match(dom.window.document.querySelector('.ic-approval-note').textContent,/Manager approval/);
     await dom.window.ItemModal.open(repository.state.inventory[0].id);
+   }
+   if(name==='setting.html'){
+    const w=dom.window;
+    const entry={...repository.state.inventory[0],id:9999,code:'DEMO-ARCHIVE'};
+    repository.state.archive.push(C.makeArchiveRecord(entry,[]));
+    w.document.querySelector('[data-section="archives"]').click();
+    for(let i=0;i<40&&!w.document.querySelector('[data-archive-restore]');i++)await new Promise(r=>setTimeout(r,50));
+    assert.ok(w.document.querySelector('[data-archive-restore]:disabled'));
+    assert.ok(w.document.querySelector('[data-archive-forever]:disabled'));
+    assert.match(w.document.getElementById('archiveApprovalHelp').textContent,/Manager approval/);
    }
    if(name==='reports.html'){
     for(const key of ['weekly','payments','pending','quality','valuation','aging','history','analysis']){dom.window.location.hash=key;await new Promise(r=>setTimeout(r,180));}
@@ -34,7 +47,7 @@ const {createApp}=require('../backend/server');const {MemoryRepository}=require(
     w.document.querySelector('.site-nav-links a[href="index.html"]').click();
     const waitFor=async selector=>{for(let attempt=0;attempt<60;attempt++){const el=w.document.querySelector(selector);if(el)return el;await new Promise(r=>setTimeout(r,50));}assert.fail('Missing '+selector);};
     const reviewLink=await waitFor('.quick-actions #entry-review-link');assert.match(reviewLink.textContent,/1 pending/);assert.equal(reviewLink.tagName,'BUTTON');assert.ok(reviewLink.querySelector('i'));assert.match(reviewLink.getAttribute('onclick'),/entry-review\.html/);const draftKey='alishan:reviews:'+w.ALISHAN_SESSION.scope;assert.equal(JSON.parse(w.localStorage.getItem(draftKey)).length,1);reviewLink.click();await waitFor('#entry-review-page .inventory-card');assert.equal(w.location.pathname,'/entry-review.html');
-    assert.match(w.document.querySelector('#entry-review-page .ic-name').textContent,/SUZEN-MOLD/);assert.ok(w.document.querySelector('#entry-review-page .btn-edit'));assert.ok(w.document.querySelector('#entry-review-page .btn-delete'));const [draft]=JSON.parse(w.localStorage.getItem(draftKey));w.history.replaceState(w.history.state,'','/add-entry.html?review='+draft.draftId);const updated=await w.AlishanRemote.submitEntry({...draft.input,notes:'Edited in Review'});assert.equal(updated.reviewEdited,true);assert.equal(repository.state.inventory.length,before);w.history.replaceState(w.history.state,'','/entry-review.html');w.document.dispatchEvent(new w.Event('alishan:route'));await waitFor('#entry-review-page .inventory-card');const submit=[...w.document.querySelectorAll('#entry-review-page button')].find(button=>button.textContent.trim()==='Submit');assert.ok(submit,'Review card must have a Submit button');await submit.onclick();assert.equal(repository.state.inventory.length,before+1,'Review Submit must save through backend');assert.equal(repository.state.inventory.at(-1).totalDozens,3);assert.equal(repository.state.inventory.at(-1).notes,'Edited in Review');assert.match(repository.state.inventory.at(-1).code,/^\d+$/);assert.equal(w.document.querySelectorAll('#entry-review-page .inventory-card').length,0);assert.equal(JSON.parse(w.localStorage.getItem(draftKey)).length,0);await new Promise(r=>setTimeout(r,300));
+    assert.match(w.document.querySelector('#entry-review-page .ic-name').textContent,/SUZEN-MOLD/);assert.ok(w.document.querySelector('#entry-review-page .btn-edit'));assert.ok(w.document.querySelector('#entry-review-page .btn-delete:not(:disabled)'));const [draft]=JSON.parse(w.localStorage.getItem(draftKey));w.history.replaceState(w.history.state,'','/add-entry.html?review='+draft.draftId);const updated=await w.AlishanRemote.submitEntry({...draft.input,notes:'Edited in Review'});assert.equal(updated.reviewEdited,true);assert.equal(repository.state.inventory.length,before);w.history.replaceState(w.history.state,'','/entry-review.html');w.document.dispatchEvent(new w.Event('alishan:route'));await waitFor('#entry-review-page .inventory-card');const submit=[...w.document.querySelectorAll('#entry-review-page button')].find(button=>button.textContent.trim()==='Submit');assert.ok(submit,'Review card must have a Submit button');await submit.onclick();assert.equal(repository.state.inventory.length,before+1,'Review Submit must save through backend');assert.equal(repository.state.inventory.at(-1).totalDozens,3);assert.equal(repository.state.inventory.at(-1).notes,'Edited in Review');assert.match(repository.state.inventory.at(-1).code,/^\d+$/);assert.equal(w.document.querySelectorAll('#entry-review-page .inventory-card').length,0);assert.equal(JSON.parse(w.localStorage.getItem(draftKey)).length,0);await new Promise(r=>setTimeout(r,300));
     const preview=await w.AlishanStore.checkImportDraft({id:'draft-smoke',index:0,date:C.localDate(when),type:'BRA',quality:'SUZEN-MOLD',...values});assert.ok(preview);
    }
    const text=dom.window.document.body.textContent;if(text.includes('[object Promise]'))errors.push('Promise leaked into page');console.log(name,JSON.stringify(errors), 'cards='+dom.window.document.querySelectorAll('.inventory-card,.missing-entry').length);assert.deepEqual(errors,[],name+' page errors');dom.window.close();
