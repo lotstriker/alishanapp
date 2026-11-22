@@ -1720,3 +1720,8 @@ input:checked + .toggle-slider:before {
 @media (max-width: 760px) { .archive-card-actions { width: 100%; } .archive-card-actions .btn { flex: 1 1 0; } }
 
 .archive-actions .btn[hidden], .archive-card [hidden] { display: none !important; }
+
+.archive-approval-required .archive-card-actions button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
