@@ -49,7 +49,14 @@
    if(!enabled||!Array.isArray(primes))return;
    const rows=await Promise.all(primes.map(async p=>({p,key:await keyFor(p.target,p.method,p.args),etag:await digest(p.result)})));
    if(generation!==epoch)return;
-   for(const {p,key,etag} of rows)if(isReader(p.target,p.method)&&p.target!=='Groups'){put(key,p.result,etag);if(p.target==='Views'&&['inventoryPage','homeLatest'].includes(p.method))await seed(p.result?.primes,generation);}
+   for(const {p,key,etag} of rows){
+    if(generation!==epoch)return;
+    if(!isReader(p.target,p.method)||p.target==='Groups')continue;
+    const projection=p.target==='Views'&&['inventoryPage','homeLatest'].includes(p.method);
+    if(projection)await seed(p.result?.primes,generation);
+    if(generation!==epoch)return;
+    put(key,projection?{...p.result,primes:[]}:p.result,etag);
+   }
   }
   function invalidate(announce=false){
    epoch++;ram.clear();bytes=0;flights.clear();revision=null;lastCheck=0;persist();
@@ -59,7 +66,22 @@
    if(value===null||value===undefined||value==='')return;
    value=String(value);
    if(revision!==null&&/^\d+$/.test(value)&&/^\d+$/.test(revision)&&BigInt(value)<BigInt(revision)&&!authoritative)return;
-   if(revision!==null&&revision!==value){invalidate();revision=value;onChange();}
+   if(revision!==null&&revision!==value){
+    if(/^\d+$/.test(value)&&/^\d+$/.test(revision)&&BigInt(value)>BigInt(revision)){
+     epoch++;flights.clear();
+     for(const [key,entry] of ram){
+      if(key.startsWith('["Calc",'))continue;
+      if(key==='["Store","summary",[]]'||key.startsWith('["Views","inventoryPage",')){
+       entry.stale=true;
+      }else{
+       bytes-=entry.bytes;
+       ram.delete(key);
+      }
+     }
+     revision=value;persist();
+    }else{invalidate();revision=value;}
+    onChange();
+   }
    else revision=value;
    saveSoon();
   }
@@ -86,10 +108,10 @@
     let result;
     try { result=await network(target,method,args,conditional); }
     finally { if(visit)root.AlishanPerformance?.phase('startupFetchMs',started,visit); }
-    if(conditional?.unchanged){if(generation===epoch&&ram.get(key)===previous){previous.at=now();saveSoon();}return result;}
+    if(conditional?.unchanged){if(generation===epoch&&ram.get(key)===previous){previous.at=now();previous.stale=false;saveSoon();}return result;}
     const etag=await digest(result);
     if(generation===epoch){if(target==='Views'&&['inventoryPage','homeLatest','pageBundle'].includes(method))await seed(result?.primes,generation);
-      if(generation===epoch)put(key,isBundle?{primes:[],ready:true}:result,etag);}
+      if(generation===epoch)put(key,isBundle?{primes:[],ready:true}:target==='Views'&&['inventoryPage','homeLatest'].includes(method)?{...result,primes:[]}:result,etag);}
     return result;
    })();
    if(key)flights.set(key,task);
@@ -104,11 +126,11 @@
    persist();
    if(announce)broadcast();
   }
-  async function lookup(target,method,args){
+  async function lookup(target,method,args,{allowStale=false}={}){
    await ready;
    if(!enabled||disabled)return {kind:'miss'};
    const key=await keyFor(target,method,args),entry=key&&ram.get(key);
-   if(entry&&now()-entry.at<MAX_AGE)return {kind:'hit',value:clone(entry.value)};
+   if(entry&&now()-entry.at<MAX_AGE&&(!entry.stale||allowStale))return {kind:entry.stale?'stale':'hit',value:clone(entry.value)};
    return {kind:key&&flights.has(key)?'shared':'miss'};
   }
   async function call(target,method,args){
@@ -135,7 +157,7 @@
    const freshOnly=target==='DB'&&!['init','getTheme'].includes(method)||/backup|export|inspect|^new|^build|^validate|^merge|^purge|^leftover|checkImportDraft|parseBulk|batchDuplicateIds/i.test(method);
    if(target==='Groups'||disabled||freshOnly)return network(target,method,args);
    const key=await keyFor(target,method,args),entry=key&&ram.get(key);
-   if(entry&&now()-entry.at<MAX_AGE){
+   if(entry&&!entry.stale&&now()-entry.at<MAX_AGE){
     ram.delete(key);ram.set(key,entry);
     // The account revision check refreshes prepared bundles as a unit.
     if(now()-entry.at>60000&&(!fetchStatus||!isPageBundle(target,method))){
