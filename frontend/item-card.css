@@ -1082,12 +1082,12 @@ body.ic-size-focus-active { overflow: hidden !important; }
 .inventory-card .color-group-header .ic-size-focus-trigger { margin-left: auto; padding: 1px 6px !important; min-height: 0 !important; }
 .inventory-card .color-group-header .ic-size-focus-trigger span { display: none; }
 
+.inventory-card .btn-delete:has(.ic-approval-note) { flex-wrap: wrap; }
 .inventory-card .ic-approval-note {
-    margin: 0;
-    padding: 0.25rem 1rem 0.75rem;
-    color: var(--text-secondary, var(--gray));
-    font-size: 0.82rem;
-    overflow-wrap: anywhere;
+    flex-basis: 100%;
+    text-align: center;
+    font-size: 0.7rem;
+    line-height: 1.2;
 }
 .inventory-card .btn-delete:disabled {
     opacity: 0.55;

@@ -1725,3 +1725,6 @@ input:checked + .toggle-slider:before {
     opacity: 0.55;
     cursor: not-allowed;
 }
+
+.archive-delete-note { display: block; width: 100%; font-size: 0.7rem; }
+.archive-card-actions button:has(.archive-delete-note) { flex-wrap: wrap; }

@@ -7,7 +7,6 @@
     const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const toast = (m, t) => { if (typeof showNotification === 'function') showNotification(m, t || 'success'); };
     const requiresApproval = Boolean(window.AlishanRemote);
-    const approvalNote = 'Available when Manager approval is enabled.';
     let rows = [];
     let pending = null;      // the entry waiting in the "delete for good" window
 
@@ -27,8 +26,8 @@
                 <p class="archive-meta">Deleted ${esc(when(s.deletedAt))} · Code ${esc(s.code)} · ${esc(AlishanCalc.fmtDozens ? AlishanCalc.fmtDozens(s.dozens) : s.dozens)} dozen · ₹${esc(Math.round(s.amount).toLocaleString('en-IN'))}${s.payments ? ` · ${s.payments} payment${s.payments > 1 ? 's' : ''}` : ''}</p>
             </div>
             <div class="archive-card-actions">
-                <button class="btn btn-primary" type="button" ${requiresApproval ? 'disabled aria-describedby="archiveApprovalHelp"' : ''} data-archive-restore="${esc(record.id)}"><i class="fas fa-undo"></i> Restore</button>
-                <button class="btn btn-danger" type="button" ${requiresApproval ? 'disabled aria-describedby="archiveApprovalHelp"' : ''} data-archive-forever="${esc(record.id)}"><i class="fas fa-trash"></i> Delete for good</button>
+                <button class="btn btn-primary" type="button" ${requiresApproval ? 'disabled' : ''} data-archive-restore="${esc(record.id)}"><i class="fas fa-undo"></i> Restore</button>
+                <button class="btn btn-danger" type="button" ${requiresApproval ? 'disabled title="Permanent deletion requires Manager approval."' : ''} data-archive-forever="${esc(record.id)}"><i class="fas fa-trash"></i> Delete for good${requiresApproval ? '<small class="archive-delete-note">Manager approval</small>' : ''}</button>
             </div>
         </article>`;
     }
@@ -126,7 +125,7 @@
         if (!$('archives') || typeof AlishanArchive === 'undefined') return;
         if (requiresApproval) {
             const help = $('archiveApprovalHelp');
-            help.textContent = 'Restore and permanent deletion are disabled. ' + approvalNote;
+            help.hidden = true;
             help.closest('.card').classList.add('archive-approval-required');
         }
         wire();

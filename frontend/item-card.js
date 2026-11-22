@@ -374,19 +374,17 @@ var ItemCard = (() => {
         }
 
         if (!draftActions && window.AlishanRemote) {
-            const reason = document.createElement('p');
-            reason.className = 'ic-approval-note';
-            reason.id = 'archive-approval-' + id;
-            reason.textContent = 'Archive is available when Manager approval is enabled.';
             for (const button of card.querySelectorAll('.btn-delete')) {
                 button.removeAttribute('onclick');
                 button.disabled = true;
                 button.type = 'button';
-                button.title = reason.textContent;
-                button.setAttribute('aria-describedby', reason.id);
+                button.title = 'Archive requires Manager approval.';
                 button.querySelector('span').textContent = 'Archive';
+                const note = document.createElement('small');
+                note.className = 'ic-approval-note';
+                note.textContent = 'Manager approval';
+                button.appendChild(note);
             }
-            card.appendChild(reason);
         }
 
         // The inside of the card (sizes, calculation, details) is built only when the card is

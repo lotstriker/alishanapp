@@ -20,7 +20,7 @@ const {createApp}=require('../backend/server');const {MemoryRepository}=require(
     assert.equal(dom.window.document.querySelectorAll('.inventory-card').length,1);
     assert.ok(dom.window.document.querySelector('.inventory-card .btn-delete:disabled'));
     assert.ok(dom.window.document.querySelector('.inventory-card .btn-edit:not(:disabled)'));
-    assert.match(dom.window.document.querySelector('.ic-approval-note').textContent,/Manager approval/);
+    assert.match(dom.window.document.querySelector('.btn-delete:disabled .ic-approval-note').textContent,/Manager approval/);
     await dom.window.ItemModal.open(repository.state.inventory[0].id);
    }
    if(name==='setting.html'){
@@ -31,7 +31,8 @@ const {createApp}=require('../backend/server');const {MemoryRepository}=require(
     for(let i=0;i<40&&!w.document.querySelector('[data-archive-restore]');i++)await new Promise(r=>setTimeout(r,50));
     assert.ok(w.document.querySelector('[data-archive-restore]:disabled'));
     assert.ok(w.document.querySelector('[data-archive-forever]:disabled'));
-    assert.match(w.document.getElementById('archiveApprovalHelp').textContent,/Manager approval/);
+    assert.ok(w.document.getElementById('archiveApprovalHelp').hidden);
+    assert.match(w.document.querySelector('[data-archive-forever] .archive-delete-note').textContent,/Manager approval/);
    }
    if(name==='reports.html'){
     for(const key of ['weekly','payments','pending','quality','valuation','aging','history','analysis']){dom.window.location.hash=key;await new Promise(r=>setTimeout(r,180));}
