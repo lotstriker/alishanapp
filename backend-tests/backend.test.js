@@ -80,7 +80,7 @@ test('manager-only inventory and archive actions are blocked through the authent
  }
 });
 test('PostgreSQL schema and repository round-trip records and rollback using the real PGlite engine',async()=>{
- const {PGlite}=require('@electric-sql/pglite');const pg=new PGlite();await pg.exec('CREATE ROLE anon; CREATE ROLE authenticated;');await pg.exec(fs.readFileSync(path.join(__dirname,'../deployment/schema.sql'),'utf8'));
+ const {PGlite}=require('@electric-sql/pglite');const pg=new PGlite();await pg.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE alishan_backend;');await pg.exec(fs.readFileSync(path.join(__dirname,'../deployment/schema.sql'),'utf8'));await pg.exec(fs.readFileSync(path.join(__dirname,'../deployment/shared-record-sync.sql'),'utf8'));
  const client={query:(q,params)=>pg.query(q,params),release(){}};const repo=new PostgresRepository({connect:async()=>client,query:client.query},'test');await repo.ready();await repo.transaction(async state=>{await seed(state);});await repo.transaction(async state=>{assert.equal(state.inventory.length,1);state.inventory=[];return {ok:false};});await repo.transaction(async state=>assert.equal(state.inventory.length,1));
  const submit=require('../backend/entry-review').entryReview('fixture-only');
  const form=input(), requestId=require('node:crypto').randomUUID();

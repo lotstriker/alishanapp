@@ -190,3 +190,29 @@ test('shared inventory records survive reopen and pages fetch only unavailable d
  assert.deepEqual(requests,['inventoryPage','getItems','getItem']);
  cache.close();
 });
+
+
+test('revision sync replaces only changed cached records and keeps tombstones out of fresh reads',async()=>{
+ let revision='1', requests=0, deltaRequests=0;
+ const cache=create(opts(async(target,method,args)=>{
+  requests++;
+  if(method==='inventoryPage')return {paged:{items:[{id:1,quality:'OLD'},{id:2,quality:'STAYS'},{id:3,quality:'REMOVED'}]},primes:[]};
+  assert.equal(args[0],3);
+  return null;
+ },{isReader:()=>true,fetchStatus:async()=>({...session,revision}),fetchChanges:async since=>{
+  deltaRequests++;assert.equal(since,'1');
+  return {revision,changes:[{store:'inventory',key:'1',payload:{id:1,quality:'NEW'}},{store:'inventory',key:'3',payload:null}]};
+ }}));
+ cache.acceptRevision('1');
+ await cache.call('Views','inventoryPage',[]);
+ revision='2';
+ assert.equal((await cache.check(true)).changed,true);
+ assert.equal((await cache.call('Store','getItem',[1])).quality,'NEW');
+ assert.equal((await cache.call('Store','getItem',[2])).quality,'STAYS');
+ assert.equal((await cache.lookup('Views','inventoryPage',[],{allowStale:true})).value.paged.items[0].quality,'OLD');
+ assert.equal(await cache.call('Store','getItem',[3]),null);
+ await cache.check(true);
+ assert.equal(deltaRequests,1);
+ assert.equal(requests,2);
+ cache.close();
+});

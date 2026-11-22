@@ -214,6 +214,14 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
    res.json({ok:true});
  }catch(error){next(error);}});
  app.get('/api/cache-status',async(req,res,next)=>{try{const {repository,session}=res.locals.account;res.json({...session,revision:repository.revision?await repository.revision():'0'});}catch(e){next(e);}});
+ app.get('/api/cache-changes',async(req,res,next)=>{try{
+   const since=req.query.since;
+   if(typeof since!=='string'||!/^\d{1,19}$/.test(since)||BigInt(since)>9223372036854775807n)
+     return res.status(400).json({error:'Invalid cache revision'});
+   const {repository}=res.locals.account;
+   res.set('Cache-Control','no-store');
+   res.json(repository.changesSince?await repository.changesSince(since):{reset:true});
+ }catch(error){next(error);}});
  app.get('/api/bootstrap.js',async(req,res,next)=>{try{
    const d=await domain(blank(),{readOnly:true});
    const meta={Calc:{},Store:{},Reports:{},Archive:{},Groups:{},DB:{}};

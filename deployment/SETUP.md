@@ -93,3 +93,13 @@ Before replacing the old app, use a real browser at 390, 360 and 320 px and a de
 - Same-browser tab changes use BroadcastChannel. Other devices get fresh data when an action, filter, report or page reload reads the server; push-based live updates are not introduced.
 - Shutdown drains HTTP work and closes the PostgreSQL pool.
 - App access uses one server account matching the existing single-shop scope. There is no new user/role model.
+
+
+## Shared record sync
+
+After applying the base schema and creating the restricted `alishan_backend`
+role, apply `deployment/shared-record-sync.sql` before starting a build with
+record sync enabled. The app stores the latest change marker per Inventory or
+Payments record. Markers and business records commit together. The authenticated
+cache endpoint returns changes within the signed-in workspace. More than 100
+changes or a revision reset triggers a cache reset and normal on-demand reads.

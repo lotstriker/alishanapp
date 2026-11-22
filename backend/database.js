@@ -55,6 +55,20 @@ function createDatabase(state, actor) {
 class PostgresRepository {
   constructor(pool,workspace='alishan'){this.pool=pool;this.workspace=workspace;this.readCache=new Map();}
   async revision(){const r=await performanceDb.query(this.pool,'SELECT revision FROM alishan_private.workspaces WHERE id=$1',[this.workspace]);return String(r.rows[0]?.revision||0);}
+  async changesSince(since){
+    const {rows:[row]}=await performanceDb.query(this.pool,`SELECT w.revision::text AS revision,
+      COALESCE((SELECT jsonb_agg(to_jsonb(changes)) FROM (
+        SELECT c.store, c.record_key AS key, r.payload
+        FROM alishan_private.record_changes c
+        LEFT JOIN alishan_private.records r USING (workspace_id,store,record_key)
+        WHERE c.workspace_id=w.id AND c.revision>$2::bigint AND c.revision<=w.revision
+        ORDER BY c.revision,c.store,c.record_key LIMIT 101
+      ) changes), '[]'::jsonb) AS changes
+      FROM alishan_private.workspaces w WHERE w.id=$1`,[this.workspace,since]);
+    if(!row)return {revision:'0',reset:since!=='0'};
+    if(BigInt(since)>BigInt(row.revision)||row.changes.length>100)return {revision:row.revision,reset:true};
+    return row;
+  }
   async ready(){await performanceDb.query(this.pool,'SELECT 1 FROM alishan_private.workspaces LIMIT 1');}
   // One MVCC statement: readers never take the workspace write lock. Revision and
   // projected records come from the same committed snapshot, even during a restore.
@@ -190,10 +204,15 @@ class PostgresRepository {
       const result=await fn(state,Number(locked.rows[0].revision),issueQualityCode);
       if(result?.ok===false){await performanceDb.query(client,'ROLLBACK');return result;}
       let changed=false;
+      const recordChanges=[];
       for(const s of stores){
         const old=new Map(before[s].map(r=>[keyText(keyOf(s,r)),JSON.stringify(r)]));
         const updates=[];
         for(const row of state[s]){const key=keyText(keyOf(s,row)),json=JSON.stringify(row);if(old.get(key)!==json)updates.push({record_key:key,payload:row});old.delete(key);}
+        if(s==='inventory'||s==='payments'){
+          for(const row of updates)recordChanges.push({store:s,record_key:row.record_key});
+          for(const key of old.keys())recordChanges.push({store:s,record_key:key});
+        }
         // Bounded multi-row writes replace hundreds of network round trips.
         for(let offset=0;offset<updates.length;offset+=100){
           await performanceDb.query(client,`INSERT INTO alishan_private.records(workspace_id,store,record_key,payload)
@@ -203,6 +222,13 @@ class PostgresRepository {
         if(old.size){await performanceDb.query(client,'DELETE FROM alishan_private.records WHERE workspace_id=$1 AND store=$2 AND record_key=ANY($3::text[])',[this.workspace,s,[...old.keys()]]);changed=true;}
       }
       if(changed)await performanceDb.query(client,'UPDATE alishan_private.workspaces SET revision=revision+1 WHERE id=$1',[this.workspace]);
+      for(let offset=0;offset<recordChanges.length;offset+=250){
+        await performanceDb.query(client,`INSERT INTO alishan_private.record_changes(workspace_id,store,record_key,revision)
+          SELECT w.id,x.store,x.record_key,w.revision FROM alishan_private.workspaces w
+          CROSS JOIN jsonb_to_recordset($2::jsonb) AS x(store text,record_key text)
+          WHERE w.id=$1 ON CONFLICT(workspace_id,store,record_key) DO UPDATE SET revision=EXCLUDED.revision`,
+          [this.workspace,JSON.stringify(recordChanges.slice(offset,offset+250))]);
+      }
       await performanceDb.query(client,'COMMIT');if(changed)this.readCache.clear();return result;
     }catch(e){await performanceDb.query(client,'ROLLBACK').catch(()=>{});throw e;}finally{client.release();}
   }

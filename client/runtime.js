@@ -120,7 +120,11 @@
  }
  const autoCheckInterval=12*3600000;
  async function syncNow(){await device?.ready;return device?.check(true);}
- device=window.AlishanCreateDeviceCache?.({checkIntervalMs:autoCheckInterval,wire:ALISHAN_WIRE,network:networkCall,session:window.ALISHAN_SESSION,isReader,onChange:changed,onStatus:cacheStatus,broadcast:()=>channel?.postMessage('changed'),fetchStatus:async()=>{
+ device=window.AlishanCreateDeviceCache?.({checkIntervalMs:autoCheckInterval,wire:ALISHAN_WIRE,network:networkCall,session:window.ALISHAN_SESSION,isReader,onChange:changed,onStatus:cacheStatus,broadcast:()=>channel?.postMessage('changed'),fetchChanges:async revision=>{
+  const response=await fetch('/api/cache-changes?since='+encodeURIComponent(revision),{headers:scopedHeaders(),credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(10000)});
+  if(!response.ok)throw Object.assign(new Error('Record sync unavailable'),{status:response.status});
+  return response.json();
+ },fetchStatus:async()=>{
   const response=await fetch('/api/cache-status',{headers:scopedHeaders(),credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(10000)});
   if(!response.ok)throw Object.assign(new Error('Status unavailable'),{status:response.status});return response.json();
  }});

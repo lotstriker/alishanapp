@@ -2,11 +2,11 @@
 (function(root){
  'use strict';
  function create(options){
-  const {wire,network,session,isReader,onChange=()=>{},onStatus=()=>{},broadcast=()=>{},fetchStatus}=options;
+  const {wire,network,session,isReader,onChange=()=>{},onStatus=()=>{},broadcast=()=>{},fetchStatus,fetchChanges}=options;
   const isPageBundle=(target,method)=>target==='Views'&&method==='pageBundle';
-  const enabled=!!session?.scope,namespace=enabled?`${session.scope}:${session.release}`:'disabled';
+  const enabled=!!session?.scope,namespace=enabled?`${session.scope}:${session.release}${fetchChanges?':records-v2':''}`:'disabled';
   const ram=new Map(),flights=new Map();const MAX_BYTES=8*1024*1024,MAX_ENTRIES=600,MAX_RECORDS=4000,MAX_AGE=24*3600000;
-  let previousRecord=0;
+  let previousRecord=0,deltaSince=null;
   let epoch=0,revision=null,bytes=0,db=null,timer=null,checking=null,closed=false,disabled=false,lastCheck=0;
   const CHECK_INTERVAL=options.checkIntervalMs??15000;
   const now=options.now||Date.now,storage=options.storage||root.indexedDB;
@@ -20,6 +20,7 @@
     const saved=await new Promise((resolve,reject)=>{const req=db.transaction('views').objectStore('views').get(namespace);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});
     if(epoch===initialEpoch&&saved&&saved.at>now()-MAX_AGE&&Array.isArray(saved.entries)){
      revision=saved.revision??null;
+     deltaSince=saved.deltaSince??revision;
      lastCheck=Number.isFinite(saved.checkedAt)&&saved.checkedAt<=now()?saved.checkedAt:0;
      for(const [key,entry] of saved.entries){if(typeof key==='string'&&entry&&entry.at>now()-MAX_AGE){ram.set(key,entry);bytes+=entry.bytes||0;}}
      trim();if(ram.size)status('saved');
@@ -37,7 +38,7 @@
   }
   function persist(){
    if(!db||closed)return;
-   try{const tx=db.transaction('views','readwrite');tx.objectStore('views').put({revision,checkedAt:lastCheck,at:now(),entries:[...ram]},namespace);tx.onerror=()=>{};tx.onabort=()=>{};}catch{}
+   try{const tx=db.transaction('views','readwrite');tx.objectStore('views').put({revision,deltaSince,checkedAt:lastCheck,at:now(),entries:[...ram]},namespace);tx.onerror=()=>{};tx.onabort=()=>{};}catch{}
   }
   function saveSoon(){if(!db)return;clearTimeout(timer);timer=setTimeout(persist,200);timer?.unref?.();}
   async function keyFor(target,method,args){
@@ -55,12 +56,12 @@
    ram.delete(key);ram.set(key,{value,at:now(),bytes:size,etag,refs});bytes+=size;
   }
   function entityKey(kind,id){return '@record:'+kind+':'+JSON.stringify(String(id));}
-  function put(key,result,etag=null,target,method){
+  function put(key,result,etag=null,target,method,recordKind){
    if(!key||disabled||result?.ok===false)return;
    const encoded=wire.encode(result);
    const projection=target==='Views'&&['inventoryPage','homeLatest'].includes(method);
    const list=projection?(encoded.paged?.items||encoded.items):encoded;
-   const kind=target==='Store'&&method==='getPayments'?'payment':'inventory';
+   const kind=recordKind||(target==='Store'&&method==='getPayments'?'payment':'inventory');
    const normalizeList=projection||target==='Store'&&['getItems','getPayments','query'].includes(method);
    const normalizeItem=target==='Store'&&method==='getItem'&&encoded?.id!=null;
    if(normalizeItem||normalizeList&&Array.isArray(list)&&list.every(row=>row&&row.id!=null)){
@@ -133,7 +134,7 @@
    }
   }
   function invalidate(announce=false){
-   epoch++;ram.clear();bytes=0;flights.clear();revision=null;lastCheck=0;persist();
+   epoch++;ram.clear();bytes=0;flights.clear();revision=null;deltaSince=null;lastCheck=0;persist();
    if(announce)broadcast();
   }
   function acceptRevision(value,authoritative=false){
@@ -158,7 +159,31 @@
     onChange();
    }
    else revision=value;
+   if(deltaSince===null)deltaSince=value;
    saveSoon();
+  }
+  function applyRecordChanges(changes){
+   const removed=new Set();
+   for(const {store,key,payload} of changes){
+    const id=JSON.parse(key);
+    const kind=store==='payments'?'payment':'inventory';
+    const recordKey=entityKey(kind,id);
+    const existing=ram.get(recordKey);
+    if(!existing)continue;
+    const lookupKey='@sync:'+recordKey;
+    if(payload){
+     put(lookupKey,payload,null,'Store','getItem',kind);
+     const temporary=ram.get(lookupKey);
+     if(temporary){bytes-=temporary.bytes;ram.delete(lookupKey);}
+    }else{
+     removed.add(recordKey);
+    }
+   }
+   for(const [key,record] of ram){
+    if(!key.startsWith('@record:')||key.includes(':previous:'))continue;
+    if(removed.has(key))record.deleted=true;
+    record.stale=Boolean(record.deleted);
+   }
   }
   async function check(force=false){
    if(!enabled||closed||!fetchStatus||disabled)return;
@@ -166,7 +191,21 @@
    checking=(async()=>{try{
     status(ram.size?'updating':'loading');const current=await fetchStatus();
     if(current.scope!==session.scope||current.release!==session.release){invalidate();disabled=true;status('reload');return;}
-    const previous=revision;acceptRevision(current.revision,true);lastCheck=now();saveSoon();status('current');
+    const previous=revision;
+    if(fetchChanges&&deltaSince!==null&&String(current.revision)!==deltaSince){
+     const from=deltaSince;
+     const requestedEpoch=epoch;
+     const delta=await fetchChanges(from);
+     if(disabled||closed||requestedEpoch!==epoch)return {ok:false};
+     if(delta.reset){invalidate();acceptRevision(delta.revision??current.revision,true);onChange();}
+     else if(Array.isArray(delta.changes)&&BigInt(delta.revision)>=BigInt(current.revision)){
+      acceptRevision(delta.revision,true);
+      applyRecordChanges(delta.changes);
+      deltaSince=String(delta.revision);
+      if(previous===revision&&delta.changes.length)onChange();
+     }else return {ok:false};
+    }else acceptRevision(current.revision,true);
+    lastCheck=now();saveSoon();status('current');
     return {ok:true,changed:previous!==null&&previous!==revision,checkedAt:lastCheck};
    }catch(e){if(e.status===401){invalidate();disabled=true;status('signin');}else status('offline');return {ok:false};}
    finally{checking=null;}})();return checking;
@@ -194,7 +233,7 @@
    try{return await task;}finally{if(key&&flights.get(key)===task)flights.delete(key);}
   }
   function clearBusiness(announce=false){
-   epoch++;flights.clear();revision=null;
+   epoch++;flights.clear();revision=null;deltaSince=null;
    for(const [key,entry] of ram){
     if(key.startsWith('["Calc",'))continue;
     bytes-=entry.bytes;ram.delete(key);

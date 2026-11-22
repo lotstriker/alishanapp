@@ -1,11 +1,13 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {PostgresRepository,blank}=require('../backend/database');const {isReader,selection}=require('../backend/operations');const {createApp}=require('../backend/server');
-async function setup(t){const {PGlite}=require('@electric-sql/pglite');const pg=new PGlite();await pg.exec('CREATE ROLE anon; CREATE ROLE authenticated;');await pg.exec(fs.readFileSync(path.join(__dirname,'../deployment/schema.sql'),'utf8'));let queries=[];const client={async query(q,p){queries.push(q);return pg.query(q,p);},release(){}};const repo=new PostgresRepository({query:client.query,connect:async()=>client},'test');t.after(()=>pg.close());return {repo,pg,queries};}
+async function setup(t){const {PGlite}=require('@electric-sql/pglite');const pg=new PGlite();await pg.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE alishan_backend;');await pg.exec(fs.readFileSync(path.join(__dirname,'../deployment/schema.sql'),'utf8'));await pg.exec(fs.readFileSync(path.join(__dirname,'../deployment/shared-record-sync.sql'),'utf8'));let queries=[];const client={async query(q,p){queries.push(q);return pg.query(q,p);},release(){}};const repo=new PostgresRepository({query:client.query,connect:async()=>client},'test');t.after(()=>pg.close());return {repo,pg,queries};}
 test('390-row restore uses four bulk inserts; deletion is batched; failed batches roll back',async t=>{
  const {repo,pg,queries}=await setup(t);
  await repo.transaction(async s=>{s.inventory=Array.from({length:390},(_,id)=>({id,price:10}));s.settings=[{key:'autoBackups',value:['x'.repeat(100000)]}];});
- assert.equal(queries.filter(q=>q.includes('jsonb_to_recordset')).length,5);
+ assert.equal(queries.filter(q=>q.includes('INSERT INTO alishan_private.records')&&q.includes('jsonb_to_recordset')).length,5);
+ assert.equal(queries.filter(q=>q.includes('INSERT INTO alishan_private.record_changes')).length,2);
+ assert.equal((await repo.changesSince('0')).reset,true);
  assert.equal((await pg.query("SELECT count(*)::int AS n FROM alishan_private.records WHERE store='inventory'")).rows[0].n,390);
  const query=repo.pool.connect;repo.pool.connect=async()=>{const c=await query();return {...c,query:async(q,p)=>{if(q.includes('jsonb_to_recordset')&&p[1]==='payments')throw new Error('forced failure');return c.query(q,p);}};};
  await assert.rejects(repo.transaction(async s=>{s.inventory[0].price=99;s.payments=[{id:'p',amount:1}];}),/forced failure/);repo.pool.connect=query;
@@ -135,4 +137,23 @@ test('startup traces retain bounded timing and size fields without operation pay
  const result=normalize({page:'inventory',device:randomUUID(),visit:randomUUID(),metrics});
  assert.equal(result.metrics.routeJsDecodedBytes,203418);
  assert.deepEqual(result.metrics.waterfall,[{kind:'inventory-bundle',startMs:12,endMs:100,poolMs:3,snapshotMs:35,wireBytes:700000,encoding:'gzip'}]);
+});
+
+
+test('record deltas are workspace scoped, include tombstones and follow committed revisions',async t=>{
+ const {repo}=await setup(t);
+ const other=new PostgresRepository(repo.pool,'other');
+ await repo.transaction(async s=>{s.inventory.push({id:1,price:10},{id:2,price:20});});
+ await other.transaction(async s=>{s.inventory.push({id:1,price:999});});
+ const before=await repo.revision();
+ await repo.transaction(async s=>{
+  s.inventory=[{id:1,price:15}];
+  s.payments.push({id:'p1',inventoryId:1,amount:5});
+ });
+ assert.deepEqual(await repo.changesSince(before),{revision:'2',changes:[
+  {store:'inventory',key:'1',payload:{id:1,price:15}},
+  {store:'inventory',key:'2',payload:null},
+  {store:'payments',key:'"p1"',payload:{id:'p1',inventoryId:1,amount:5}}
+ ]});
+ assert.deepEqual(await other.changesSince('1'),{revision:'1',changes:[]});
 });
