@@ -1,7 +1,7 @@
 /* Cache app files, never API replies, credentials or business calculations. */
 const RELEASE='__RELEASE__',BUILD='__ASSET_TAG__',SHELL='alishan-shell-'+BUILD,BINDINGS='alishan-shell-sessions-'+BUILD;
-const INITIAL_PAGES=['/index.html','/inventory.html','/reports.html','/setting.html'];
-const PAGES=[...INITIAL_PAGES,'/add-entry.html','/pending-amount.html','/missing-lot.html','/missing-completion.html','/quality-history.html'];
+const INITIAL_PAGES=['/index.html','/inventory.html','/reports.html','/setting.html','/add-entry.html'];
+const PAGES=[...INITIAL_PAGES,'/pending-amount.html','/missing-lot.html','/missing-completion.html','/quality-history.html'];
 const memory=new Map();
 const sessionKey=id=>new Request(self.location.origin+'/__view_session__/'+encodeURIComponent(id));
 function cleanHTML(text){return text.replace(/window\.ALISHAN_SESSION=\{[^<]*?\};/,'/*ALISHAN_SESSION*/');}
@@ -82,18 +82,25 @@ self.addEventListener('fetch',event=>{
       const html=await response.text();
       const bound=await navigationSession(event);
       let session=bound&&!bound.google?bound:null;
+      let sessionMs=0,authTiming='';
       if(!session&&html.includes('?v='+BUILD)){
+       const started=Date.now();
        const verified=await fetch(new Request(self.location.origin+'/api/view-session',{
         credentials:'same-origin',cache:'no-store',headers:{'X-Alishan-Route-Shell':BUILD}
        }));
+       sessionMs=Date.now()-started;
        if(verified.status===401&&!verified.headers.has('WWW-Authenticate'))return Response.redirect(self.location.origin+'/login',303);
-       if(verified.ok)session=await verified.json();
+       if(verified.ok){
+        authTiming=verified.headers.get('Server-Timing')?.match(/\bdocumentauth;dur=\d+(?:\.\d+)?/)?.[0]||'';
+        session=await verified.json();
+       }
       }
       if(session?.release===RELEASE&&/^[a-f0-9]{32}$/.test(session.scope)&&html.includes('/*ALISHAN_SESSION*/')){
        if(event.resultingClientId)await bind(event.resultingClientId,session);
        return new Response(html.replace('/*ALISHAN_SESSION*/',`window.ALISHAN_SESSION=${JSON.stringify(session)};`),{headers:{
         'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Frame-Options':'DENY',
-        'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Alishan-Shell-Cache':'hit'
+        'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Alishan-Shell-Cache':'hit',
+        'Server-Timing':'shellcache;dur=1, viewsession;dur='+sessionMs+(authTiming?', '+authTiming:'')
        }});
       }
      }

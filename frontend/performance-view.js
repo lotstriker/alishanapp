@@ -3,6 +3,7 @@
  const $ = id => document.getElementById(id);
  const names = {'index':'Dashboard','inventory':'Inventory','reports':'Reports','setting':'Settings','add-entry':'Add Entry','pending-amount':'Pending Amount','missing-lot':'Missing Lot','missing-completion':'Missing Completion','quality-history':'Quality History'};
  const assetMeasures=[
+  ['routeCssMs','Route CSS ready'],
   ['routeHtmlMs','Route HTML fetch (may be preloaded)'],['routeHtmlCached','Route HTML served from shell cache'],
   ['routeFactoryMs','Route JS factory ready (may be preloaded)'],['routeDomMs','Route HTML parse and adoption'],
   ['routeJsDecodedBytes','Route JS decoded size'], ['routeJsEncodedBytes','Route JS encoded body'],
@@ -26,6 +27,7 @@
  ];
  const measures = [
   ['switchMs','Tap to content'], ['readyMs','Page ready'], ['startupDataReadyMs','Startup data ready'], ['criticalPaintMs','Key content visible'], ['dataToCriticalMs','Data to key content'], ['routePrepareMs','Route preparation'], ['loadMs','Load event'],
+  ['documentShellCached','Document served from shell cache'], ['documentSessionMs','Cached document session check'], ['documentAuthMs','Document server authentication'],
   ['domMs','DOM ready'], ['documentWaitMs','Document wait'], ['documentDownloadMs','HTML download'],
   ['dataMs','API window'], ['apiWaitMs','Slowest API wait'], ['apiServerMs','API server'],
   ['apiDbMs','DB round trips'], ['apiNetworkMs','API outside server'], ['apiDecodeMs','API download / decode'],
@@ -36,7 +38,7 @@
   'Page and rendering':['switchMs','readyMs','startupDataReadyMs','criticalPaintMs','dataToCriticalMs','routePrepareMs','afterApiMs'],
   'Reports':['storeWaitMs','reportSetupMs','reportScopeMs','reportRenderMs'],
   'Device cache and startup':['deviceCacheReadMs','startupRefreshMs','startupFetchMs','startupCacheHitMs','startupCacheMissMs','startupSharedWaitMs'],
-  'Document':['fcpMs','lcpObservedMs','loadMs','domMs','documentWaitMs','documentDownloadMs'],
+  'Document':['documentShellCached','documentSessionMs','documentAuthMs','fcpMs','lcpObservedMs','loadMs','domMs','documentWaitMs','documentDownloadMs'],
   'Route assets':assetMeasures.map(([key])=>key),
   'API and database':['dataMs','apiWaitMs','apiServerMs','apiDbMs','apiNetworkMs','apiDecodeMs','apiCount','apiErrors']
  };
@@ -52,7 +54,7 @@
  }
  const measure = (value,key) => {
   if(!Number.isFinite(value))return '—';
-  if(key==='routeJsCached'||key==='routeHtmlCached')return value?'Yes':'No';
+  if(['routeJsCached','routeHtmlCached','documentShellCached'].includes(key))return value?'Yes':'No';
   if(key.endsWith('Bytes'))return value+' bytes';
   return value+(key==='apiCount'||key==='apiErrors'?'':' ms');
  };

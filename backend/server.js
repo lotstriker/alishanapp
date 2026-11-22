@@ -71,7 +71,10 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
  }
  app.use(async(req,res,next)=>{
    if(auth){
+     const started=performance.now();
      const subject=await auth.authenticate(req);
+     if(req.path==='/'||req.path==='/api/view-session'||req.path.endsWith('.html'))
+       res.append('Server-Timing','documentauth;dur='+(performance.now()-started).toFixed(1));
      if(!subject)return req.path.startsWith('/api/')?res.status(401).json({error:'Sign in to Alishan'}):res.redirect(303,'/login');
      const workspace=subject===legacyOwnerId?repository.workspace:'user:'+subject;
      const scoped=workspace===repository.workspace?repository:repositoryFor(workspace);

@@ -128,6 +128,9 @@
    const page={route,body:document.adoptNode(source.body),styles:routeStyles(source.head),title:source.title,listeners:[]};
    timing.routeDomMs=performance.now()-parseStarted;
    page.timing=timing;
+   const cssStarted=performance.now();
+   await prepareStyles(page);
+   timing.routeCssMs=performance.now()-cssStarted;
    pages.set(route,page);
    return page;
   })();
@@ -136,6 +139,33 @@
   return task;
  }
  const media=new WeakMap();
+ function prepareStyles(page){
+  return Promise.all(page.styles.map(node=>{
+   media.set(node,node.getAttribute('media'));
+   node.setAttribute('media','not all');
+   if(!node.matches('link[rel="stylesheet"]')){
+    document.head.appendChild(node);
+    return;
+   }
+   return new Promise((resolve,reject)=>{
+    function finish(error){
+     clearTimeout(timer);
+     node.removeEventListener('load',loaded);
+     node.removeEventListener('error',failed);
+     if(error){node.remove();reject(error);}else resolve();
+    }
+    const loaded=()=>finish();
+    const failed=()=>finish(Error('Route stylesheet unavailable'));
+    const timer=setTimeout(failed,8000);
+    node.addEventListener('load',loaded);
+    node.addEventListener('error',failed);
+    document.head.appendChild(node);
+   });
+  })).catch(error=>{
+   for(const node of page.styles)node.remove();
+   throw error;
+  });
+ }
  function setStyles(page,enabled){
   for(const node of page.styles){
    if(!media.has(node))media.set(node,node.getAttribute('media'));

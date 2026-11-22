@@ -54,7 +54,7 @@ test('main routes share one document, preserve controls and support browser hist
   const inventoryStyle=stylesheet('inventory.css');
   assert.ok(inventoryStyle, 'Inventory CSS must be attached to the active document');
   assert.notEqual(inventoryStyle.media,'not all');
-  await waitFor(()=>inventoryStyle.sheet);
+  assert.ok(inventoryStyle.sheet, "Inventory CSS is loaded before the route is shown");
   click('reports');
   await waitFor(()=>w.location.pathname==='/reports.html'&&w.ReportViews);
   click('setting');

@@ -67,6 +67,12 @@
   if (criticalPaint!==undefined) metrics.criticalPaintMs=criticalPaint-(spaStart??0);
   if (dataReady!==undefined&&criticalPaint!==undefined) metrics.dataToCriticalMs=Math.max(0,criticalPaint-dataReady);
   if (nav) {
+   for(const {name,duration} of nav.serverTiming||[]){
+    if(name==='shellcache')metrics.documentShellCached=1;
+    if(name==='viewsession')metrics.documentSessionMs=duration;
+    if(name==='documentauth')metrics.documentAuthMs=duration;
+   }
+   if(metrics.documentAuthMs!==undefined&&metrics.documentShellCached===undefined)metrics.documentShellCached=0;
    const fcp=performance.getEntriesByName?.('first-contentful-paint','paint')?.[0]?.startTime;
    const lastPaint=paintObserver?.takeRecords().at(-1)?.startTime??lcp;
    if(Number.isFinite(fcp))metrics.fcpMs=fcp;
