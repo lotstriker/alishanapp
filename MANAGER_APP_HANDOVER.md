@@ -88,3 +88,5 @@ The design is being integrated into the existing Manager route rather than treat
 
 - **Async rejection race guard:** each reject-dialog opening/closing has a session token. A late API response from a cancelled/older dialog cannot close or overwrite a newly opened rejection dialog; only the matching session can close or display its error.
 - **CI setup:** added `.github/workflows/manager-pr-verification.yml` to run `npm ci`, `npm test`, and `npm run build` on Node 24 for PRs into `main` and pushes to this branch. Workflow execution is not yet confirmed.
+
+- **CI workflow correction:** the first workflow attempt exposed that existing backend tests expect generated `dist/` files. The workflow now runs `npm run build` before `npm test`; the failed first attempt was a test-order setup failure, not a Manager feature assertion. The corrected run is pending.
