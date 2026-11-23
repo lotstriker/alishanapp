@@ -75,7 +75,7 @@ test('Manager page inline scripts parse and redesigned sections exist', () => {
   assert.match(html,/id="approval-filter-status"/);
   assert.match(html,/id="approval-status" role="status"/);
   assert.equal([...html.matchAll(/id="approval-status"/g)].length,1,'status paragraph ID must not collide with the filter');
-  assert.match(html,/dialog.addEventListener\('keydown'/);
+  assert.match(html,/\$\('reject-dialog'\)\.addEventListener\('keydown'/);
   assert.match(html,/target\.focus\(\)/);
   assert.match(html,/\$\('approval-status'\)\.focus\(\)/);
 });
