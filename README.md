@@ -34,7 +34,9 @@ Run `npm test` to run the frontend and backend test suites.
 
 See the [Version log](PROJECT_SOURCE_OF_TRUTH.md#version-log) for the complete change history.
 
-## Project documentation\n\n- **MANAGER_APP_HANDOVER.md** — Manager Control Center redesign, rationale, connected features and verification status.
+## Project documentation
+
+- **MANAGER_APP_HANDOVER.md** — Manager Control Center redesign, rationale, connected features and verification status.
 
 - **PROJECT_SOURCE_OF_TRUTH.md** — complete layout, calculation flow, feature flows and the permanent, append-only change history. Read it before changing code and update it with every change.
 - `frontend/ARCHITECTURE.md` — how the code files are organised.
