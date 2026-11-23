@@ -25,7 +25,7 @@ Replace the deployed single-purpose Approval Requests page with the previously d
 - Activity view shows available decision history.
 - Backend exposes requester ID and decision reason to invited Managers only through the existing authenticated Manager API.
 - Backend rejects a rejected decision without a non-empty reason, or a reason longer than 500 characters.
-- SQL migration adds `decision_reason` to both fresh and already-created tables idempotently.
+- SQL migration adds `decision_reason` to fresh tables; a standalone repeatable `deployment/manager-approval-reason-migration.sql` is provided for existing deployments.
 - Regression test covers missing-reason rejection, saved reason and requester field.
 
 ## Data truth / limitations
@@ -59,7 +59,7 @@ The horizontal strip represents **request participants from real approval rows**
 - `manager-app/index.html` — Control Center UI and responsive navigation.
 - `backend/manager-approvals.js` — requester/reason fields, required rejection reason validation.
 - `backend/server.js` — pass reason through decision API.
-- `deployment/manager-approvals.sql` — idempotent schema upgrade.
+- `deployment/manager-approvals.sql` — schema for fresh Manager approval setup.\n- `deployment/manager-approval-reason-migration.sql` — standalone idempotent upgrade for an existing Manager table.
 - `backend-tests/manager-approvals.test.js` — requester/reason regression coverage.
 - `PROJECT_SOURCE_OF_TRUTH.md` — append-only change record.
 - `README.md` — link to this handover.
