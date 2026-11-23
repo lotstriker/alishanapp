@@ -64,10 +64,13 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
    let data;try{data=JSON.parse(req.body.toString());}catch{return res.sendStatus(400);}
    const validDay=value=>typeof value==='string'&&/^\\d{4}-\\d{2}-\\d{2}$/.test(value)&&
      Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
-   if(!Number.isSafeInteger(data?.time)||Math.abs(Date.now()-data.time)>30000||
-      !/^[a-f0-9-]{36}$/i.test(data?.actor||'')||!/^[a-f0-9-]{36}$/i.test(data?.userId||'')||
-      !validDay(data?.from)||!validDay(data?.to)||data.from>data.to||
-      (Date.parse(data.to)-Date.parse(data.from))/86400000>366)return res.sendStatus(400);
+   const invalid=[];
+   if(!Number.isSafeInteger(data?.time)||Math.abs(Date.now()-data.time)>30000)invalid.push('time');
+   if(!/^[a-f0-9-]{36}$/i.test(data?.actor||''))invalid.push('actor');
+   if(!/^[a-f0-9-]{36}$/i.test(data?.userId||''))invalid.push('userId');
+   if(!validDay(data?.from)||!validDay(data?.to))invalid.push('date');
+   else if(data.from>data.to||(Date.parse(data.to)-Date.parse(data.from))/86400000>366)invalid.push('range');
+   if(invalid.length)return res.status(400).json({error:'Invalid Manager financial request.',fields:invalid});
    if(!await manager.invited(data.actor))return res.sendStatus(403);
    try{
      const workspace=data.userId===legacyOwnerId?repository.workspace:'user:'+data.userId;
