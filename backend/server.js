@@ -142,7 +142,7 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
    });
    app.get('/api/manager/requests',async(req,res)=>send(res,await manager.list(res.locals.account.actor)));
    app.post('/api/manager/requests/:id',async(req,res)=>{
-     send(res,await manager.decide(res.locals.account.actor,req.params.id,req.body?.decision));
+     send(res,await manager.decide(res.locals.account.actor,req.params.id,req.body?.decision,req.body?.reason));
    });
  }
 
