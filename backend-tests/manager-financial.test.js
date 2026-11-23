@@ -35,7 +35,7 @@ test('signed Manager financial bridge returns canonical completion and payment m
    headers:{'Content-Type':'application/json','X-Manager-Signature':sig},body:payload});
  assert.equal((await post('0'.repeat(64))).status,403);
  const response=await post(signature);const responseBody=await response.text();assert.equal(response.status,200,responseBody);
- const result=await response.json();assert.equal(result.ok,true);assert.equal(result.userId,ownerId);
+ const result=JSON.parse(responseBody);assert.equal(result.ok,true);assert.equal(result.userId,ownerId);
  assert.equal(result.report.summary.qualities,1);
  assert.equal(result.report.summary.workAmount,item.totalAmount);
  assert.equal(result.report.summary.received,100);
