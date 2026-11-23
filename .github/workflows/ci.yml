@@ -29,7 +29,7 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Run backend and application tests
-        run: npm test
       - name: Build production client
         run: npm run build
+      - name: Run backend and application tests
+        run: npm test
