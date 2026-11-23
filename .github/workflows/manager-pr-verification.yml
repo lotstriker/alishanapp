@@ -28,7 +28,7 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
-      - name: Run automated tests
-        run: npm test
       - name: Build production client
         run: npm run build
+      - name: Run automated tests
+        run: npm test
