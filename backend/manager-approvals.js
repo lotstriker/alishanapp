@@ -40,7 +40,7 @@ function managerApprovals(pool, repositoryFor) {
     return { ok: true, requests: rows };
   }
 
-  async function decide(actor, id, decision) {
+  async function decide(actor, id, decision, reason = null) {
     if (!uuid.test(id) || !['approved','rejected'].includes(decision))
       return problem(400, 'Invalid decision.');
     if (!await invited(actor)) return problem(403, 'Manager invite required.');
@@ -64,7 +64,7 @@ function managerApprovals(pool, repositoryFor) {
         if (!outcome.ok) return problem(409, outcome.error);
       }
       await client.query(`UPDATE alishan_private.manager_requests
-        SET status=$2, decided_by=$3, decided_at=now() WHERE id=$1`, [id,decision,actor]);
+        SET status=$2, decided_by=$3, decided_at=now(), decision_reason=$4 WHERE id=$1`, [id,decision,actor,reason]);
       return { ok: true };
     }, { omitBackupSnapshots: true });
   }
