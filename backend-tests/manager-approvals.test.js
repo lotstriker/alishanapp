@@ -78,4 +78,6 @@ test('Manager page inline scripts parse and redesigned sections exist', () => {
   assert.match(html,/\$\('reject-dialog'\)\.addEventListener\('keydown'/);
   assert.match(html,/target\.focus\(\)/);
   assert.match(html,/\$\('approval-status'\)\.focus\(\)/);
+  assert.match(html,/let rejectTrigger=null,rejectSession=0/);
+  assert.match(html,/session===rejectSession&&rejectId===id/);
 });
