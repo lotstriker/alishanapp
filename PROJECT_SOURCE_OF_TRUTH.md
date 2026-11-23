@@ -1238,3 +1238,12 @@ Dashboard totals and the Inventory list render ahead of other sections during st
 - **Files:** `manager-app/index.html`, `MANAGER_APP_HANDOVER.md`, this source-of-truth entry, and regression checks in `backend-tests/manager-approvals.test.js`.
 
 - **Additional verified defect:** CodeRabbit identified a duplicate DOM ID on the approval status dropdown and status paragraph. The dropdown was renamed to `approval-filter-status`; the message paragraph retains `approval-status`, and all references were updated to their correct element. Regression checks assert both IDs and uniqueness.
+
+
+### ALISHAN-CHG-2026-11-23-003 — Async reject-dialog race guard and CI verification workflow
+
+- **Status:** IMPLEMENTED; GitHub Actions execution pending.
+- **Review finding:** a late completion from a rejected request could close a subsequently opened reject dialog.
+- **Fix:** reject dialog sessions now use an incrementing token. Completion/error handlers update the dialog only if the session and request ID still match. The server operation can finish after a user closes the modal, but stale UI completions cannot disturb a newer modal.
+- **CI:** added a Node 24 GitHub Actions workflow to install the lockfile, run the full test suite, and build the production client on PRs to `main` and pushes to `manager-control-center-redesign`.
+- **Local limitation:** available runtime is Node 22, while `package.json` requires Node >=24; repository dependencies are not installed and network DNS prevents cloning/installing. Therefore local `npm test` and `npm run build` were not run. Awaiting GitHub Actions results.
