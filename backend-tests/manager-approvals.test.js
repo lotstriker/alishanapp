@@ -13,7 +13,7 @@ test('only invited managers can decide requests; archive and restore apply once'
   const pg = new PGlite();
   t.after(() => pg.close());
   await pg.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE alishan_backend;');
-  for (const file of ['schema.sql','shared-record-sync.sql','manager-approvals.sql'])
+  for (const file of ['schema.sql','shared-record-sync.sql','manager-approvals.sql','manager-approval-reason-migration.sql'])
     await pg.exec(fs.readFileSync(path.join(__dirname,'../deployment',file),'utf8'));
   const client = { query: pg.query.bind(pg), release() {} };
   const pool = { query: client.query, connect: async () => client };
