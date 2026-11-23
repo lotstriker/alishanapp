@@ -81,6 +81,7 @@ The design is being integrated into the existing Manager route rather than treat
 
 ## CodeRabbit follow-up fixes (2026-11-23)
 
+- **Approval filter/status ID collision:** the status dropdown and status message now use distinct IDs (`approval-filter-status` and `approval-status`), so the refresh message no longer overwrites the dropdown options.
 - **Recent decisions ordering:** the dashboard now sorts completed requests by descending `decided_at` before taking the latest five. Pending queue order is unchanged.
 - **Reject dialog focus:** focus moves into the reason field when opened; Tab/Shift+Tab are contained inside the modal; Escape and Cancel close it and restore focus to the invoking Reject button (or a stable status control if that button no longer exists). Validation/API errors keep focus in the dialog. After a successful rejection and reload, focus moves to the Approval Center status control.
 - **Validation performed here:** both inline JavaScript scripts were parsed successfully with `new Function` after the change. Full automated suite/build and browser accessibility checks remain pending.
