@@ -6,7 +6,7 @@ const fingerprint = record => createHash('sha256').update(JSON.stringify(record)
 const storeFor = action => action === 'archive' ? 'inventory' : 'archive';
 const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const problem = (status, error) => ({ ok: false, status, error });
-const publicFields = 'id,action,label,status,requested_at,decided_at';
+const publicFields = 'id,action,label,status,requested_by,requested_at,decided_at,decision_reason';
 
 function managerApprovals(pool, repositoryFor) {
   async function invited(actor, client = pool) {
@@ -43,6 +43,11 @@ function managerApprovals(pool, repositoryFor) {
   async function decide(actor, id, decision, reason = null) {
     if (!uuid.test(id) || !['approved','rejected'].includes(decision))
       return problem(400, 'Invalid decision.');
+    if (decision === 'rejected' && (typeof reason !== 'string' || !reason.trim() || reason.trim().length > 500))
+      return problem(400, 'A rejection reason of 1–500 characters is required.');
+    if (reason != null && (typeof reason !== 'string' || reason.length > 500))
+      return problem(400, 'Decision reason must be 500 characters or fewer.');
+    reason = typeof reason === 'string' ? reason.trim() || null : null;
     if (!await invited(actor)) return problem(403, 'Manager invite required.');
     const { rows: [target] } = await pool.query(
       'SELECT workspace_id FROM alishan_private.manager_requests WHERE id=$1', [id]);
