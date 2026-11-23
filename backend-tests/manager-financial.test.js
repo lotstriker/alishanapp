@@ -25,7 +25,7 @@ test('signed Manager financial bridge returns canonical completion and payment m
  const saved=await (await domain(repository.state)).Store.addPayment({inventoryId:item.id,amount:100,date:'2026-11-20'});
  assert.equal(saved.ok,true,saved.error);
  const app=createApp({repository,username:'fixture',password:'fixture-only-long-password',
-   auth:{},legacyOwnerId:ownerId,repositoryFor:()=>repository,
+   auth:{start:(req,res)=>res.sendStatus(204),callback:(req,res)=>res.sendStatus(204),authenticate:async()=>null,logout:(req,res)=>res.sendStatus(204)},legacyOwnerId:ownerId,repositoryFor:()=>repository,
    manager:{invited:async actor=>actor===managerId}});
  const server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));t.after(()=>server.close());
  const base='http://127.0.0.1:'+server.address().port;
