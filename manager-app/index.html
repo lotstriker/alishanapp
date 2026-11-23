@@ -1,131 +1,113 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Alishan Manager</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Alishan Manager · Control Center</title>
 <link rel="stylesheet" href="/themes.css">
 <link rel="stylesheet" href="/nav.css">
 <script src="/theme-boot.js"></script>
 <style>
-* { box-sizing:border-box; }
-body { margin:0; min-height:100dvh; font:1rem var(--nav-font); background:var(--bg-body,#f5f7fb); color:var(--text-primary,#212529); }
-.manager-header { background:linear-gradient(135deg,var(--nav-bg-a),var(--nav-bg-b)); color:var(--nav-text); }
-.manager-header nav, main { max-width:70rem; margin:auto; padding:1rem; }
-.manager-header nav, .heading, article, .actions { display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap; }
-.manager-header strong { font-size:1.15rem; font-weight:800; }
-.manager-header a { color:inherit; }
-h1 { margin:.5rem 0; font-size:clamp(1.6rem,5vw,2.4rem); }
-h2 { font-size:1.15rem; margin:1.25rem 0 .6rem; }
-h3 { margin:0 0 .3rem; overflow-wrap:anywhere; }
-p { color:var(--text-secondary,#555e67); margin:.25rem 0; }
-article, .summary-card { background:var(--bg-card,#fff); border:1px solid var(--border-primary,#e9ecef); border-radius:12px; padding:15px; box-shadow:0 2px 6px var(--shadow-color,#0001); }
-article { margin-bottom:.6rem; }
-.filters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:12px 0; }
-.summary-card { display:flex; flex-direction:column; align-items:flex-start; gap:5px; text-align:left; }
-.summary-card strong { font-size:clamp(1.1rem,2vw,1.45rem); }
-button { font:inherit; padding:.55rem .85rem; min-height:44px; color:inherit; background:var(--bg-card,#fff); border:1px solid var(--border-secondary,#dee2e6); border-radius:10px; cursor:pointer; }
-button[aria-pressed="true"], button[data-decision="approved"] { border-color:var(--primary,#4361ee); }
-button:focus-visible, a:focus-visible { outline:2px solid var(--primary,#4361ee); outline-offset:2px; }
-button:disabled { opacity:.55; cursor:wait; }
-@media(max-width:800px) { .filters { gap:9px; } .summary-card { padding:12px; } }
-@media(max-width:520px) { .actions { width:100%; } .actions button { flex:1; } .filters { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+:root{--mgr-accent:var(--primary,#4567e8);--mgr-card:var(--bg-card,#fff);--mgr-border:var(--border-primary,#e7eaf0);--mgr-muted:var(--text-secondary,#68717c);--mgr-shadow:0 4px 18px var(--shadow-color,#0000000a)}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:var(--bg-body,#f4f6fa);color:var(--text-primary,#20242b);font:1rem var(--nav-font,Inter,system-ui,sans-serif)}
+button,input,textarea{font:inherit}button{color:inherit;cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--mgr-accent);outline-offset:2px}
+.manager-header{background:linear-gradient(120deg,var(--nav-bg-a,#202a44),var(--nav-bg-b,#34476b));color:var(--nav-text,#fff);position:sticky;top:0;z-index:30;box-shadow:0 3px 14px #0002}
+.header-inner{max-width:1200px;margin:auto;padding:.7rem 1rem;display:flex;align-items:center;gap:1rem;min-height:64px}
+.brand{display:flex;align-items:center;gap:.65rem;color:inherit;text-decoration:none;white-space:nowrap}.brand img{width:34px;height:34px;object-fit:contain}.brand-name{font-weight:850;letter-spacing:.03em;line-height:1.05}.brand-name small{display:block;font-size:.68rem;letter-spacing:.13em;opacity:.76;margin-top:3px}
+.header-actions{margin-left:auto;display:flex;gap:.45rem;align-items:center}.header-actions button,.nav-link{background:transparent;border:1px solid transparent;color:inherit;border-radius:10px;padding:.55rem .7rem;min-height:42px}.header-actions button:hover,.nav-link:hover{background:#ffffff15}.user-chip{border:1px solid #ffffff35;border-radius:99px;padding:.4rem .65rem;font-size:.82rem}
+.desktop-nav{max-width:1200px;margin:auto;padding:0 1rem .55rem;display:flex;gap:.25rem;overflow:auto;scrollbar-width:thin}.nav-link{white-space:nowrap;font-size:.88rem}.nav-link[aria-current=page]{background:#ffffff20;border-color:#ffffff35;font-weight:700}
+main{max-width:1200px;margin:auto;padding:1.1rem 1rem 5rem}.view{display:none}.view.active{display:block}.page-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin:.2rem 0 1rem}.page-heading h1{margin:0;font-size:clamp(1.45rem,3.2vw,2.15rem);letter-spacing:-.025em}.eyebrow{color:var(--mgr-muted);font-size:.78rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;margin:0 0 .3rem}.muted{color:var(--mgr-muted)}.small{font-size:.83rem}.panel,.metric,.request-card,.notice{background:var(--mgr-card);border:1px solid var(--mgr-border);border-radius:16px;box-shadow:var(--mgr-shadow)}.panel{padding:1rem;margin:0 0 1rem}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.75rem}.panel-head h2{font-size:1.05rem;margin:0}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem;margin:0 0 1rem}.metric{padding:1rem;min-width:0}.metric .label{font-size:.83rem;color:var(--mgr-muted)}.metric strong{display:block;font-size:clamp(1.35rem,2.7vw,2rem);margin:.25rem 0;font-weight:850;line-height:1.15}.metric .foot{font-size:.78rem;color:var(--mgr-muted)}
+.notice{padding:.85rem 1rem;border-left:4px solid var(--mgr-accent);margin-bottom:1rem}.notice.warning{border-left-color:#d69b24}.notice.success{border-left-color:#2c9b67}
+.people-strip{display:flex;gap:.85rem;overflow-x:auto;padding:.15rem .1rem .65rem;scroll-snap-type:x proximity;scrollbar-width:thin}.person{min-width:92px;max-width:104px;text-align:center;scroll-snap-align:start}.avatar{width:56px;height:56px;margin:0 auto .4rem;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--mgr-accent) 14%,var(--mgr-card));border:2px solid color-mix(in srgb,var(--mgr-accent) 38%,var(--mgr-border));font-weight:800;color:var(--mgr-accent)}.person strong{display:block;font-size:.76rem;overflow-wrap:anywhere}.person span{display:block;color:var(--mgr-muted);font-size:.7rem}
+.two-col{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.9fr);gap:1rem}.list-row{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.75rem 0;border-top:1px solid var(--mgr-border)}.list-row:first-child{border-top:0}.list-row .main{min-width:0}.list-row strong{display:block;overflow-wrap:anywhere}.pill{display:inline-flex;align-items:center;gap:.35rem;border-radius:999px;padding:.28rem .55rem;font-size:.72rem;font-weight:700;background:color-mix(in srgb,var(--mgr-accent) 10%,var(--mgr-card));color:var(--mgr-accent);white-space:nowrap}.pill.pending{color:#9a6900;background:#f6d98245}.pill.approved{color:#198353;background:#45b88125}.pill.rejected{color:#b44242;background:#dc6b6b20}.pill.neutral{color:var(--mgr-muted);background:var(--bg-body,#f4f6fa)}
+.toolbar{display:flex;gap:.55rem;align-items:center;flex-wrap:wrap;margin:.5rem 0 1rem}.field{min-width:0;border:1px solid var(--mgr-border);background:var(--mgr-card);color:inherit;border-radius:11px;padding:.7rem .8rem;min-height:44px}.toolbar input{flex:1;min-width:min(220px,100%)}.btn{border:1px solid var(--mgr-border);background:var(--mgr-card);border-radius:11px;padding:.65rem .85rem;min-height:44px;font-weight:650}.btn.primary{background:var(--mgr-accent);border-color:var(--mgr-accent);color:#fff}.btn.danger{border-color:#d75d5d;color:#bd4040}.btn:disabled{opacity:.55;cursor:wait}
+.filters{display:flex;gap:.4rem;flex-wrap:wrap;margin:.4rem 0 1rem}.filter{border:1px solid var(--mgr-border);border-radius:999px;padding:.48rem .75rem;background:var(--mgr-card);font-size:.82rem}.filter[aria-pressed=true]{background:var(--mgr-accent);border-color:var(--mgr-accent);color:white}
+.request-list{display:grid;gap:.7rem}.request-card{padding:1rem}.request-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.7rem}.request-card h3{margin:.1rem 0 .35rem;font-size:1.03rem;overflow-wrap:anywhere}.request-meta{color:var(--mgr-muted);font-size:.8rem;line-height:1.5}.request-actions{display:flex;gap:.5rem;margin-top:.85rem;flex-wrap:wrap}.request-actions .btn{min-width:100px}.empty{padding:1.3rem;text-align:center;color:var(--mgr-muted);border:1px dashed var(--mgr-border);border-radius:14px}
+.state-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}.state-item{padding:.85rem;border:1px solid var(--mgr-border);border-radius:12px}.state-item strong{display:block;margin-bottom:.25rem}
+.bottom-nav{display:none}.more-sheet{display:none;position:fixed;inset:0;z-index:80;background:#0006;align-items:flex-end}.more-sheet.open{display:flex}.sheet{width:100%;border-radius:20px 20px 0 0;padding:1rem 1rem calc(1rem + env(safe-area-inset-bottom));background:var(--mgr-card);color:inherit}.sheet-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}.sheet-links button{min-height:48px;text-align:left}
+.dialog-backdrop{position:fixed;inset:0;background:#0007;display:none;z-index:100;align-items:center;justify-content:center;padding:1rem}.dialog-backdrop.open{display:flex}.dialog{width:min(460px,100%);background:var(--mgr-card);border:1px solid var(--mgr-border);border-radius:18px;padding:1rem;box-shadow:0 20px 60px #0004}.dialog h2{margin:.1rem 0 .5rem}.dialog textarea{width:100%;min-height:110px;resize:vertical;margin:.6rem 0}.dialog-actions{display:flex;justify-content:flex-end;gap:.5rem}
+@media(max-width:850px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.two-col{grid-template-columns:1fr}.desktop-nav{display:none}.header-inner{min-height:58px}.header-actions .search-trigger{display:none}main{padding:.9rem .8rem calc(6rem + env(safe-area-inset-bottom))}.bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:40;background:var(--mgr-card);border-top:1px solid var(--mgr-border);padding:.35rem .35rem calc(.35rem + env(safe-area-inset-bottom));justify-content:space-around;box-shadow:0 -5px 18px #0000000a}.bottom-nav button{border:0;background:transparent;min-width:0;flex:1;padding:.4rem .2rem;display:flex;flex-direction:column;align-items:center;gap:.18rem;color:var(--mgr-muted);font-size:.68rem}.bottom-nav button[aria-current=page]{color:var(--mgr-accent);font-weight:800}.bottom-nav .nav-icon{font-size:1.1rem}.person{min-width:82px}.avatar{width:50px;height:50px}}
+@media(max-width:420px){.metrics{gap:.5rem}.metric{padding:.75rem}.panel{padding:.8rem}.page-heading{align-items:center}.header-inner{padding:.6rem .75rem}.request-top{flex-direction:column}.request-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.request-actions button{width:100%}}
 </style>
 <body><script>document.body.className=document.documentElement.className;</script>
-<header class="manager-header"><nav><strong>Alishan Manager</strong><a href="/">Inventory app</a></nav></header>
-<main>
-  <div class="heading"><h1>Approval requests</h1><button id="refresh" type="button">Refresh</button></div>
-  <p id="status" role="status">Loading requests…</p>
-  <div class="filters" aria-label="Filter pending requests">
-    <button class="summary-card" data-filter="all" aria-pressed="true" type="button"><strong>—</strong>All pending</button>
-    <button class="summary-card" data-filter="archive" aria-pressed="false" type="button"><strong>—</strong>Archive</button>
-    <button class="summary-card" data-filter="restore" aria-pressed="false" type="button"><strong>—</strong>Restore</button>
+<header class="manager-header">
+  <div class="header-inner">
+    <a class="brand" href="#" data-go="overview" aria-label="Alishan Manager home"><img src="/icons/logo-mark.png" alt=""><span class="brand-name">ALISHAN<small>MANAGER</small></span></a>
+    <div class="header-actions"><button class="search-trigger" type="button" data-go="search" title="Search">⌕ Search</button><button type="button" data-go="approvals" title="Pending approvals">♢ <span id="header-pending">0</span></button><span class="user-chip">Manager</span></div>
   </div>
-  <section aria-labelledby="pending"><h2 id="pending">Pending</h2><div id="queue"></div></section>
-  <section aria-labelledby="history"><h2 id="history">Recent decisions</h2><div id="decisions"></div></section>
+  <nav class="desktop-nav" aria-label="Manager navigation">
+    <button class="nav-link" data-go="overview" aria-current="page">Overview</button><button class="nav-link" data-go="users">Users</button><button class="nav-link" data-go="inventory">Inventory</button><button class="nav-link" data-go="reports">Reports</button><button class="nav-link" data-go="search">Search</button><button class="nav-link" data-go="approvals">Approvals</button><button class="nav-link" data-go="activity">Activity</button><button class="nav-link" data-go="backup">Backup</button><button class="nav-link" data-go="health">System Health</button><button class="nav-link" data-go="settings">Settings</button>
+  </nav>
+</header>
+<main>
+<section class="view active" id="view-overview">
+  <div class="page-heading"><div><p class="eyebrow">Management Control Center</p><h1>Overview</h1><p class="muted">Approval workflow and service status at a glance.</p></div><button class="btn" id="refresh-overview">↻ Refresh</button></div>
+  <div class="notice warning" id="integration-note"><strong>Feature status:</strong> This deployment currently exposes approval requests only. User directory, inventory, reports, backup controls and notifications are shown as integration-pending—not simulated.</div>
+  <div class="metrics">
+    <div class="metric"><span class="label">Pending approvals</span><strong id="metric-pending">—</strong><span class="foot">Requires Manager decision</span></div>
+    <div class="metric"><span class="label">Approved</span><strong id="metric-approved">—</strong><span class="foot">Loaded decision history</span></div>
+    <div class="metric"><span class="label">Rejected</span><strong id="metric-rejected">—</strong><span class="foot">Loaded decision history</span></div>
+    <div class="metric"><span class="label">Service</span><strong id="metric-health">Checking…</strong><span class="foot" id="health-detail">Health endpoint</span></div>
+  </div>
+  <div class="panel"><div class="panel-head"><h2>Request participants</h2><span class="pill neutral">From approval records</span></div><div class="people-strip" id="people-strip"><div class="muted small">Loading request participants…</div></div><p class="small muted">This is not the full user directory; profiles are not available in the current Manager API.</p></div>
+  <div class="two-col">
+    <div class="panel"><div class="panel-head"><h2>Needs attention</h2><button class="btn" data-go="approvals">Open queue</button></div><div id="attention-list"></div></div>
+    <div class="panel"><div class="panel-head"><h2>Workspace health</h2><button class="btn" data-go="health">Details</button></div><div id="health-panel"></div></div>
+  </div>
+  <div class="panel"><div class="panel-head"><h2>Recent decisions</h2><button class="btn" data-go="activity">View history</button></div><div id="recent-decisions"></div></div>
+</section>
+<section class="view" id="view-approvals">
+  <div class="page-heading"><div><p class="eyebrow">Manager workflow</p><h1>Approval Center</h1><p class="muted">Review archive and restore requests. Decision actions are connected to the backend.</p></div><button class="btn" id="refresh-approvals">↻ Refresh</button></div>
+  <div class="toolbar"><input class="field" id="approval-search" placeholder="Search quality / requester ID…" aria-label="Search approvals"><select class="field" id="approval-status" aria-label="Status"><option value="pending">Pending</option><option value="all">All statuses</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select><select class="field" id="approval-action" aria-label="Request type"><option value="all">All actions</option><option value="archive">Archive</option><option value="restore">Restore</option></select></div>
+  <div class="filters"><button class="filter" data-quick-filter="all" aria-pressed="true">All <span id="count-all">0</span></button><button class="filter" data-quick-filter="archive" aria-pressed="false">Archive <span id="count-archive">0</span></button><button class="filter" data-quick-filter="restore" aria-pressed="false">Restore <span id="count-restore">0</span></button></div>
+  <p class="muted small" id="approval-status" role="status">Loading…</p><div class="request-list" id="approval-list"></div>
+</section>
+<section class="view" id="view-users"><div class="page-heading"><div><p class="eyebrow">Team management</p><h1>Users</h1></div></div><div class="notice warning">Full user directory and individual profile data are not yet exposed by the Manager backend. The Overview strip shows request participants only.</div><div class="empty">User Directory integration is pending.</div></section>
+<section class="view" id="view-inventory"><div class="page-heading"><div><p class="eyebrow">Read-only access</p><h1>Inventory</h1></div></div><div class="notice warning">Inventory listing and quality detail are not yet connected to Manager APIs. Manager access will remain read-only.</div><div class="empty">Inventory integration is pending.</div></section>
+<section class="view" id="view-reports"><div class="page-heading"><div><p class="eyebrow">Analytics</p><h1>Reports</h1></div></div><div class="notice warning">Reports need a dedicated permission-scoped read API. No sample analytics are presented as real data.</div><div class="empty">Reports & analytics integration is pending.</div></section>
+<section class="view" id="view-search"><div class="page-heading"><div><p class="eyebrow">Find records</p><h1>Global Search</h1></div></div><div class="notice warning">Search will be connected after permission-scoped user and inventory read endpoints are available.</div><input class="field" disabled placeholder="Search users, quality codes, lot numbers…"><div class="empty">Global Search integration is pending.</div></section>
+<section class="view" id="view-activity"><div class="page-heading"><div><p class="eyebrow">Audit trail</p><h1>Activity History</h1></div></div><p class="muted">Approval decisions currently available from the request API are listed below. A full audit log is pending.</p><div class="panel" id="activity-list"></div></section>
+<section class="view" id="view-backup"><div class="page-heading"><div><p class="eyebrow">Data protection</p><h1>Backup & Restore</h1></div></div><div class="notice warning">Backup payloads and restore controls are intentionally not available through the Manager API yet. Restore can replace data and must be implemented with explicit owner permissions, validation and safety backup.</div><div class="state-grid"><div class="state-item"><strong>Manual backup</strong><span class="muted small">Integration pending</span></div><div class="state-item"><strong>Automatic schedule</strong><span class="muted small">Integration pending</span></div><div class="state-item"><strong>Backup history</strong><span class="muted small">Integration pending</span></div><div class="state-item"><strong>Restore validation</strong><span class="muted small">Integration pending</span></div></div></section>
+<section class="view" id="view-health"><div class="page-heading"><div><p class="eyebrow">Monitoring</p><h1>System Health</h1></div><button class="btn" id="refresh-health">↻ Refresh</button></div><div class="panel" id="health-detail-panel"></div><div class="notice">The current health check confirms server/database readiness only. It does not expose storage, backup verification, API error trends or detailed diagnostics.</div></section>
+<section class="view" id="view-settings"><div class="page-heading"><div><p class="eyebrow">Manager workspace</p><h1>Settings</h1></div></div><div class="panel"><h2>Appearance</h2><p class="muted">Theme settings are inherited from Alishan's shared theme styles.</p><button class="btn" id="theme-toggle">Toggle theme</button></div><div class="panel"><h2>Access & permissions</h2><p class="muted">Manager access is checked server-side against the invitation list. Approval actions use the backend permission gate.</p></div><div class="panel"><h2>Product status</h2><p class="muted">This interface is being incrementally connected. Only Approval Center and the health endpoint currently use live data.</p></div></section>
 </main>
+<nav class="bottom-nav" aria-label="Mobile navigation"><button data-go="overview" aria-current="page"><span class="nav-icon">⌂</span>Home</button><button data-go="users"><span class="nav-icon">♙</span>Users</button><button data-go="inventory"><span class="nav-icon">▤</span>Inventory</button><button data-go="approvals"><span class="nav-icon">✓</span>Approvals</button><button id="more-open"><span class="nav-icon">•••</span>More</button></nav>
+<div class="more-sheet" id="more-sheet"><div class="sheet"><div class="panel-head"><h2>More sections</h2><button class="btn" id="more-close">Close</button></div><div class="sheet-links"><button class="btn" data-go="reports">Reports</button><button class="btn" data-go="search">Global Search</button><button class="btn" data-go="activity">Activity</button><button class="btn" data-go="backup">Backup & Restore</button><button class="btn" data-go="health">System Health</button><button class="btn" data-go="settings">Settings</button></div></div></div>
+<div class="dialog-backdrop" id="reject-dialog" role="dialog" aria-modal="true" aria-labelledby="reject-title"><div class="dialog"><h2 id="reject-title">Reject request</h2><p class="muted">A reason is required and saved to the decision record.</p><label for="reject-reason">Reason</label><textarea class="field" id="reject-reason" maxlength="500" placeholder="Explain why this request is rejected…"></textarea><p class="small muted" id="reject-error"></p><div class="dialog-actions"><button class="btn" id="reject-cancel">Cancel</button><button class="btn danger" id="reject-confirm">Reject request</button></div></div></div>
 <script>
 'use strict';
-const queue = document.getElementById('queue');
-const history = document.getElementById('decisions');
-const status = document.getElementById('status');
-const refresh = document.getElementById('refresh');
-const filters = [...document.querySelectorAll('[data-filter]')];
-let rows = [], filter = 'all';
-function render() {
-  const pending = rows.filter(row => row.status === 'pending');
-  const matches = (row, action) => action === 'all' || row.action === action;
-  for (const control of filters) {
-    control.setAttribute('aria-pressed', String(control.dataset.filter === filter));
-    control.querySelector('strong').textContent = pending.filter(row => matches(row,control.dataset.filter)).length;
-  }
-  const visible = pending.filter(row => matches(row,filter));
-  const decided = rows.filter(row => row.status !== 'pending');
-  queue.replaceChildren(...(visible.length ? visible.map(card) : [element('p','No pending requests in this view.')]));
-  history.replaceChildren(...(decided.length ? decided.map(card) : [element('p','No decisions yet.')]));
-}
-for (const control of filters) control.addEventListener('click', () => {
-  filter = control.dataset.filter;
-  render();
-});
-function element(tag, text) {
-  const node = document.createElement(tag);
-  node.textContent = text;
-  return node;
-}
-async function api(path, body) {
-  const headers = {'X-Alishan-Scope':'__SESSION_SCOPE__'};
-  const options = { headers, cache:'no-store', signal:AbortSignal.timeout(30000) };
-  if (body) {
-    options.method = 'POST';
-    options.body = JSON.stringify(body);
-    headers['Content-Type'] = 'application/json';
-  }
-  const response = await fetch(path, options);
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || 'Could not complete the request.');
-  return data;
-}
-function card(row) {
-  const article = element('article','');
-  const title = element('div','');
-  const action = row.action === 'archive' ? 'Archive' : 'Restore';
-  title.append(element('h3',row.label || 'Entry'), element('p',action + ' · ' + row.status +
-    ' · ' + new Date(row.decided_at || row.requested_at).toLocaleString()));
-  article.append(title);
-  if (row.status === 'pending') {
-    const actions = element('div','');
-    actions.className = 'actions';
-    for (const [decision, label] of [['approved','Approve'],['rejected','Reject']]) {
-      const button = element('button',label);
-      button.dataset.decision = decision;
-      button.addEventListener('click',async () => {
-        for (const control of actions.children) control.disabled = true;
-        try {
-          await api('/api/manager/requests/' + encodeURIComponent(row.id), {decision});
-          await load();
-        } catch (error) {
-          status.textContent = error.message;
-          for (const control of actions.children) control.disabled = false;
-        }
-      });
-      actions.append(button);
-    }
-    article.append(actions);
-  }
-  return article;
-}
-async function load() {
-  refresh.disabled = true;
-  status.textContent = 'Loading requests…';
-  try {
-    ({ requests: rows } = await api('/api/manager/requests'));
-    render();
-    status.textContent = '';
-  } catch (error) { status.textContent = error.message; }
-  finally { refresh.disabled = false; }
-}
-refresh.addEventListener('click',load);
-void load();
+const SCOPE='__SESSION_SCOPE__';
+const views=['overview','users','inventory','reports','search','approvals','activity','backup','health','settings'];
+let requests=[],quick='all',rejectId=null;
+const $=id=>document.getElementById(id);
+const safe=(s)=>String(s??'');
+function node(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
+async function api(path,body){const headers={'X-Alishan-Scope':SCOPE};const opt={headers,cache:'no-store',signal:AbortSignal.timeout(30000)};if(body){opt.method='POST';headers['Content-Type']='application/json';opt.body=JSON.stringify(body);}const res=await fetch(path,opt);let data={};try{data=await res.json()}catch{}if(!res.ok)throw new Error(data.error||'Request failed');return data;}
+function go(view){if(!views.includes(view))return;views.forEach(v=>$('view-'+v).classList.toggle('active',v===view));document.querySelectorAll('[data-go]').forEach(b=>{if(b.tagName==='BUTTON'&&b.classList.contains('nav-link'))b.setAttribute('aria-current',String(b.dataset.go===view?'page':'false'));});document.querySelectorAll('.bottom-nav [data-go]').forEach(b=>b.setAttribute('aria-current',String(b.dataset.go===view?'page':'false')));$('more-sheet').classList.remove('open');if(view==='approvals')renderApprovals();if(view==='activity')renderActivity();window.scrollTo({top:0,behavior:'smooth'});}
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+$('more-open').addEventListener('click',()=>$('more-sheet').classList.add('open'));$('more-close').addEventListener('click',()=>$('more-sheet').classList.remove('open'));$('more-sheet').addEventListener('click',e=>{if(e.target===$('more-sheet'))$('more-sheet').classList.remove('open');});
+function renderMetrics(){const p=requests.filter(x=>x.status==='pending').length,a=requests.filter(x=>x.status==='approved').length,r=requests.filter(x=>x.status==='rejected').length;$('metric-pending').textContent=p;$('metric-approved').textContent=a;$('metric-rejected').textContent=r;$('header-pending').textContent=p;}
+function renderPeople(){const ids=[...new Set(requests.map(x=>x.requested_by).filter(Boolean))].slice(0,16);const strip=$('people-strip');strip.replaceChildren();if(!ids.length){strip.append(node('p','No request participants yet.','muted small'));return;}ids.forEach(id=>{const card=node('div',undefined,'person'),avatar=node('div',id.slice(0,2).toUpperCase(),'avatar'),name=node('strong','User '+id.slice(0,8)),meta=node('span',requests.filter(r=>r.requested_by===id).length+' request(s)');card.append(avatar,name,meta);strip.append(card);});}
+function requestCard(row,showActions){const card=node('article',undefined,'request-card'),top=node('div',undefined,'request-top'),title=node('div'),action=row.action==='archive'?'Archive':'Restore',status=node('span',row.status,'pill '+row.status);title.append(node('h3',row.label||'Inventory record'),node('div',safe(action)+' request · '+new Date(row.requested_at).toLocaleString(),'request-meta'),node('div','Requester: '+(row.requested_by||'Not supplied'),'request-meta'));top.append(title,status);card.append(top);if(row.status!=='pending'&&row.decision_reason)card.append(node('p','Decision reason: '+row.decision_reason,'small muted'));if(showActions&&row.status==='pending'){const actions=node('div',undefined,'request-actions'),approve=node('button','Approve','btn primary'),reject=node('button','Reject','btn danger');approve.addEventListener('click',()=>approveRequest(row.id));reject.addEventListener('click',()=>openReject(row.id));actions.append(approve,reject);card.append(actions);}return card;}
+function filtered(){const status=$('approval-status').value,action=$('approval-action').value,search=$('approval-search').value.trim().toLowerCase();return requests.filter(r=>(status==='all'||r.status===status)&&(action==='all'||r.action===action)&&(quick==='all'||r.action===quick)&&(!search||safe(r.label).toLowerCase().includes(search)||safe(r.requested_by).toLowerCase().includes(search)));}
+function renderApprovals(){const list=$('approval-list'),items=filtered();list.replaceChildren();if(!items.length){list.append(node('div',statusEmpty(),'empty'));return;}items.forEach(r=>list.append(requestCard(r,r.status==='pending'));}
+function statusEmpty(){return $('approval-status').value==='pending'?'No pending approvals match.':'No requests match this filter.';}
+function renderCounts(){const p=requests.filter(r=>r.status==='pending');$('count-all').textContent=p.length;$('count-archive').textContent=p.filter(r=>r.action==='archive').length;$('count-restore').textContent=p.filter(r=>r.action==='restore').length;}
+document.querySelectorAll('[data-quick-filter]').forEach(b=>b.addEventListener('click',()=>{quick=b.dataset.quickFilter;document.querySelectorAll('[data-quick-filter]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));renderApprovals();}));
+['approval-search','approval-status','approval-action'].forEach(id=>$(id).addEventListener('input',renderApprovals));
+function renderAttention(){const list=$('attention-list'),p=requests.filter(r=>r.status==='pending').slice(0,4);list.replaceChildren();if(!p.length){list.append(node('div','No pending decisions.','empty'));return;}p.forEach(r=>{const row=node('div',undefined,'list-row'),main=node('div',undefined,'main');main.append(node('strong',r.label||'Entry'),node('span',r.action+' · '+new Date(r.requested_at).toLocaleDateString(),'request-meta'));row.append(main,node('button','Review','btn'));row.lastChild.addEventListener('click',()=>go('approvals'));list.append(row);});}
+function renderRecent(){const list=$('recent-decisions'),items=requests.filter(r=>r.status!=='pending').slice(0,5);list.replaceChildren();if(!items.length){list.append(node('div','No decisions recorded yet.','empty'));return;}items.forEach(r=>list.append(requestCard(r,false)));}
+function renderActivity(){const list=$('activity-list');list.replaceChildren();if(!requests.length){list.append(node('div','No activity to show.','empty'));return;}requests.filter(r=>r.status!=='pending').forEach(r=>list.append(requestCard(r,false)));}
+function renderHealth(ok,detail){const label=ok?'Healthy':'Unavailable';$('metric-health').textContent=label;$('health-detail').textContent=detail;$('health-panel').replaceChildren(node('strong',label),node('p',detail,'muted small'));$('health-detail-panel').replaceChildren(node('div',label,'pill '+(ok?'approved':'rejected')),node('p',detail,'muted'),node('p','Checked: '+new Date().toLocaleString(),'small muted'));}
+async function checkHealth(){try{await api('/healthz');renderHealth(true,'Server and database readiness endpoint responded.');}catch(e){renderHealth(false,e.message);}}
+async function load(){const status=$('approval-status');status.textContent='Refreshing approval data…';try{const result=await api('/api/manager/requests');requests=result.requests||[];renderMetrics();renderPeople();renderCounts();renderApprovals();renderAttention();renderRecent();renderActivity();status.textContent='Updated '+new Date().toLocaleTimeString();}catch(e){status.textContent=e.message;renderMetrics();}}
+async function approveRequest(id){if(!confirm('Approve this request? The requested archive/restore action will be applied.'))return;try{await api('/api/manager/requests/'+encodeURIComponent(id),{decision:'approved',reason:''});await load();}catch(e){$('approval-status').textContent=e.message;}}
+function openReject(id){rejectId=id;$('reject-reason').value='';$('reject-error').textContent='';$('reject-dialog').classList.add('open');$('reject-reason').focus();}
+$('reject-cancel').addEventListener('click',()=>{$('reject-dialog').classList.remove('open');rejectId=null;});
+$('reject-confirm').addEventListener('click',async()=>{const reason=$('reject-reason').value.trim();if(!reason){$('reject-error').textContent='Please provide a rejection reason.';return;}if(reason.length>500){$('reject-error').textContent='Reason must be 500 characters or fewer.';return;}const id=rejectId;const btn=$('reject-confirm');btn.disabled=true;try{await api('/api/manager/requests/'+encodeURIComponent(id),{decision:'rejected',reason});$('reject-dialog').classList.remove('open');rejectId=null;await load();}catch(e){$('reject-error').textContent=e.message;}finally{btn.disabled=false;}});
+$('refresh-overview').addEventListener('click',async()=>{await Promise.all([load(),checkHealth()];});
+$('refresh-approvals').addEventListener('click',load);$('refresh-health').addEventListener('click',checkHealth);
+$('theme-toggle').addEventListener('click',()=>{const current=document.documentElement.classList.contains('dark')?'light':'dark';document.documentElement.classList.remove('dark','light');document.documentElement.classList.add(current);document.body.className=current;try{localStorage.setItem('alishan-theme',current);}catch{}});
+void Promise.all([load(),checkHealth()]);
 </script>
 </body>
 </html>
