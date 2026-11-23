@@ -85,3 +85,6 @@ The design is being integrated into the existing Manager route rather than treat
 - **Recent decisions ordering:** the dashboard now sorts completed requests by descending `decided_at` before taking the latest five. Pending queue order is unchanged.
 - **Reject dialog focus:** focus moves into the reason field when opened; Tab/Shift+Tab are contained inside the modal; Escape and Cancel close it and restore focus to the invoking Reject button (or a stable status control if that button no longer exists). Validation/API errors keep focus in the dialog. After a successful rejection and reload, focus moves to the Approval Center status control.
 - **Validation performed here:** both inline JavaScript scripts were parsed successfully with `new Function` after the change. Full automated suite/build and browser accessibility checks remain pending.
+
+- **Async rejection race guard:** each reject-dialog opening/closing has a session token. A late API response from a cancelled/older dialog cannot close or overwrite a newly opened rejection dialog; only the matching session can close or display its error.
+- **CI setup:** added `.github/workflows/manager-pr-verification.yml` to run `npm ci`, `npm test`, and `npm run build` on Node 24 for PRs into `main` and pushes to this branch. Workflow execution is not yet confirmed.
