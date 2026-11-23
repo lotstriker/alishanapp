@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 const { PGlite } = require('@electric-sql/pglite');
 const { PostgresRepository } = require('../backend/database');
 const { domain } = require('../backend/domain');
@@ -57,4 +58,17 @@ test('only invited managers can decide requests; archive and restore apply once'
   const {requests:history} = await service.list(manager);
   const rejected = history.find(row => row.id === rejection.id);
   assert.equal(rejected.decision_reason,'Duplicate request');
+});
+
+
+test('Manager page inline scripts parse and redesigned sections exist', () => {
+  const html = fs.readFileSync(path.join(__dirname,'../manager-app/index.html'),'utf8');
+  const scripts = [...html.matchAll(/<script(?:[^>]*)>([\\s\\S]*?)<\\/script>/g)].map(match => match[1]).filter(Boolean);
+  assert.ok(scripts.length >= 2, 'inline theme boot and Manager application scripts should be present');
+  scripts.forEach((source,index) => new vm.Script(source,{filename:'manager-inline-'+index+'.js'}));
+  for (const section of ['overview','users','inventory','reports','search','approvals','activity','backup','health','settings'])
+    assert.match(html,new RegExp('id="view-'+section+'"'));
+  assert.match(html,/id="reject-reason"/);
+  assert.match(html,/data-go="approvals"/);
+  assert.match(html,/bottom-nav/);
 });
