@@ -62,7 +62,7 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
    const expected=require('node:crypto').createHmac('sha256',secret).update(req.body).digest();
    if(!/^[a-f0-9]{64}$/.test(signature)||!timingSafeEqual(expected,Buffer.from(signature,'hex')))return res.sendStatus(403);
    let data;try{data=JSON.parse(req.body.toString());}catch{return res.sendStatus(400);}
-   const validDay=value=>typeof value==='string'&&/^\\d{4}-\\d{2}-\\d{2}$/.test(value)&&
+   const validDay=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&
      Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
    const invalid=[];
    if(!Number.isSafeInteger(data?.time)||Math.abs(Date.now()-data.time)>30000)invalid.push('time');
