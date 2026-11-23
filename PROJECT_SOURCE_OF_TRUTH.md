@@ -1214,3 +1214,47 @@ Dashboard totals and the Inventory list render ahead of other sections during st
 ### ALISHAN-CHG-2026-11-21-001 — Google setup
 
 - Allow Google verification with the existing password gate still in place. Setup callbacks issue no Alishan session. Google-only mode still requires a verified legacy owner.
+
+
+### ALISHAN-CHG-2026-11-23-001 — Manager Control Center UI and approval reason fix
+
+- **Status:** IMPLEMENTED — NOT VERIFIED; this is on branch `manager-control-center-redesign`, not yet merged or production-deployed.
+- **Why:** The deployed Manager was only a basic approval queue, missing the approved Control Center design/navigation. The backend decision endpoint stored `decision_reason`, but the initial migration omitted that column and the UI did not collect a rejection reason.
+- **Before:** Small approval list; no dashboard; no responsive mobile navigation; no requester identity in API; rejection sent without a reason; schema mismatch could fail decision writes.
+- **After:** Redesigned Manager route with Alishan header, desktop top navigation, mobile bottom navigation and More sheet, dashboard overview, live approval counts, service health check, horizontal request-participant strip, Needs Attention, recent decisions, approval search/status/action filters, required rejection dialog and Activity section. Users/Inventory/Reports/Search/Backup/Health are clearly marked integration-pending rather than using fake data.
+- **Backend:** Manager request listing now exposes requester ID and decision reason. Rejection reason is required (trimmed, 1–500 chars) and enforced by backend. The API route forwards reason. Fresh setup adds `decision_reason`; existing deployments receive a separate repeatable `deployment/manager-approval-reason-migration.sql` with `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`.
+- **Tests:** Approval regression test extended for requester field, missing reason rejection and stored reason. Tests/build/browser acceptance have not yet been run in a complete checkout; status must remain not verified.
+- **Impact:** No calculation or payment logic changes. Archive/restore remain the only Manager approval actions. No permanent-delete feature, backup payload access, user directory or inventory/report APIs were added. Manager permission check remains server-side.
+- **Files:** `manager-app/index.html`, `backend/manager-approvals.js`, `backend/server.js`, `deployment/manager-approvals.sql`, `deployment/manager-approval-reason-migration.sql`, `backend-tests/manager-approvals.test.js`, `MANAGER_APP_HANDOVER.md`, `README.md`, this source-of-truth entry.
+- **Next verification:** run `npm test`, `npm run build`, authenticated browser acceptance on desktop and 390/360/320px, and apply migration to an existing test database before merge/deployment.
+
+
+### ALISHAN-CHG-2026-11-23-002 — Manager recent decisions ordering and reject-dialog focus
+
+- **Status:** IMPLEMENTED — inline script syntax checked; full tests/build/browser acceptance NOT VERIFIED. Still on `manager-control-center-redesign` branch, not production.
+- **Review findings verified:** recent decisions used request-order API results before `.slice(0,5)`, so a recently decided older request could be omitted. Reject dialog moved focus to the textarea but did not trap keyboard focus or restore focus when closed.
+- **Changes:** Recent decisions now sort completed requests by descending `decided_at` before selecting five; pending queue ordering is unchanged. Reject modal keyboard focus is trapped on Tab/Shift+Tab, Escape closes it, Cancel restores the invoking Reject button when still present, otherwise the stable Approval status control. Validation and request errors refocus the reason field. On successful reject/reload, focus moves to the Approval status control.
+- **Validation:** both inline script blocks parsed successfully using JavaScript `new Function`. No full `npm test`, build or browser accessibility run has yet been confirmed.
+- **Files:** `manager-app/index.html`, `MANAGER_APP_HANDOVER.md`, this source-of-truth entry, and regression checks in `backend-tests/manager-approvals.test.js`.
+
+- **Additional verified defect:** CodeRabbit identified a duplicate DOM ID on the approval status dropdown and status paragraph. The dropdown was renamed to `approval-filter-status`; the message paragraph retains `approval-status`, and all references were updated to their correct element. Regression checks assert both IDs and uniqueness.
+
+
+### ALISHAN-CHG-2026-11-23-003 — Async reject-dialog race guard and CI verification workflow
+
+- **Status:** IMPLEMENTED; GitHub Actions execution pending.
+- **Review finding:** a late completion from a rejected request could close a subsequently opened reject dialog.
+- **Fix:** reject dialog sessions now use an incrementing token. Completion/error handlers update the dialog only if the session and request ID still match. The server operation can finish after a user closes the modal, but stale UI completions cannot disturb a newer modal.
+- **CI:** added a Node 24 GitHub Actions workflow to install the lockfile, run the full test suite, and build the production client on PRs to `main` and pushes to `manager-control-center-redesign`.
+- **Local limitation:** available runtime is Node 22, while `package.json` requires Node >=24; repository dependencies are not installed and network DNS prevents cloning/installing. Therefore local `npm test` and `npm run build` were not run. Awaiting GitHub Actions results.
+
+- **CI workflow ordering correction:** first run failed because `npm test` was executed before generating `dist/`, while existing backend tests load files from `dist/`. Reordered steps to build first, then test. Awaiting the next run; no claim of test pass yet.
+
+
+### ALISHAN-CHG-2026-11-23-004 — CI build and automated test verification
+
+- **Status:** AUTOMATED CI PASS; browser acceptance and production DB migration pending.
+- **Evidence:** GitHub Actions run #13 on `4f018ac0ad3f0e74c3d0bc76035a67a610ca7c62` completed successfully. Node 24 `npm run build` passed; `npm test` passed 125/125 tests (0 failures, 0 skipped).
+- **Migration:** SQL migration was exercised in the automated PGlite tests; it has not been applied to the production database.
+- **Browser preview:** Netlify commit status reports success, but the Netlify bot comment says the deploy preview was canceled. No mobile/desktop browser acceptance is claimed.
+- **Release gate:** PR #2 remains open and unmerged until a working preview/browser check and production migration readiness are confirmed.

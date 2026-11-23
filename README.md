@@ -36,6 +36,8 @@ See the [Version log](PROJECT_SOURCE_OF_TRUTH.md#version-log) for the complete c
 
 ## Project documentation
 
+- **MANAGER_APP_HANDOVER.md** — Manager Control Center redesign, rationale, connected features and verification status.
+
 - **PROJECT_SOURCE_OF_TRUTH.md** — complete layout, calculation flow, feature flows and the permanent, append-only change history. Read it before changing code and update it with every change.
 - `frontend/ARCHITECTURE.md` — how the code files are organised.
 - `frontend/setting.html` + `frontend/user-guide.js` — searchable in-app Visual Learning Center; app and guide versions must match every release.
