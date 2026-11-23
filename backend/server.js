@@ -152,6 +152,37 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
      res.json({ok:true,userId:data.userId,message:'Manual backup created.'});
    }catch(error){console.error('Manager manual backup failed',error.code||error.name);res.status(503).json({error:'Manual backup unavailable.'});}
  });
+ if(auth && manager) app.post('/internal/manager/audit-history',express.raw({type:'application/json',limit:'4kb'}),async(req,res)=>{
+   const secret=process.env.MANAGER_BRIDGE_SECRET;
+   if(!secret||secret.length<32||!Buffer.isBuffer(req.body))return res.sendStatus(403);
+   const signature=req.get('x-manager-signature')||'';
+   const expected=require('node:crypto').createHmac('sha256',secret).update(req.body).digest();
+   if(!/^[a-f0-9]{64}$/.test(signature)||!timingSafeEqual(expected,Buffer.from(signature,'hex')))return res.sendStatus(403);
+   let data;try{data=JSON.parse(req.body.toString());}catch{return res.sendStatus(400);}
+   if(!Number.isSafeInteger(data?.time)||Math.abs(Date.now()-data.time)>30000||
+      !/^[a-f0-9-]{36}$/i.test(data?.actor||'')||!/^[a-f0-9-]{36}$/i.test(data?.userId||''))return res.sendStatus(400);
+   if(!await manager.invited(data.actor))return res.sendStatus(403);
+   try{
+     const workspace=data.userId===legacyOwnerId?repository.workspace:'user:'+data.userId;
+     const source=workspace===repository.workspace?repository:repositoryFor(workspace);
+     const result=await source.read(async state=>{
+       const d=await domain(state,{readOnly:true,actor:data.userId});
+       const qualityHistory=(await d.Store.getQualityHistory()).slice(0,100).map(row=>{
+         const normalized=d.Store.normalizeQualityHistory(row);
+         return {id:String(normalized.id||''),at:normalized.at||null,action:String(normalized.action||'').slice(0,100),
+           qualityCode:String(normalized.qualityCode||'').slice(0,80),qualityName:String(normalized.qualityName||'').slice(0,160),
+           productType:String(normalized.productType||'').slice(0,80),actor:String(normalized.actor||'').slice(0,80),
+           changes:(Array.isArray(normalized.changes)?normalized.changes:[]).slice(0,12).map(change=>({
+             field:String(change.field||'').slice(0,100),oldValue:String(change.oldValue??'').slice(0,250),
+             newValue:String(change.newValue??'').slice(0,250)}))};
+       });
+       const activity=(await d.Store.getRecentActivity(100)).map(row=>({
+         id:String(row.id||''),at:row.at||null,type:String(row.type||'').slice(0,100),text:String(row.text||'').slice(0,300)}));
+       return {qualityHistory,activity};
+     });
+     res.json({ok:true,userId:data.userId,...result});
+   }catch(error){console.error('Manager audit history failed',error.code||error.name);res.status(503).json({error:'Audit history unavailable.'});}
+ });
  if(auth && manager) app.post('/internal/manager/decision',express.raw({type:'application/json',limit:'4kb'}),async(req,res)=>{
    const secret=process.env.MANAGER_BRIDGE_SECRET;
    if (!secret || secret.length<32 || !Buffer.isBuffer(req.body)) return res.sendStatus(403);
