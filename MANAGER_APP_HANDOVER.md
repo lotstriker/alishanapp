@@ -90,3 +90,12 @@ The design is being integrated into the existing Manager route rather than treat
 - **CI setup:** added `.github/workflows/manager-pr-verification.yml` to run `npm ci`, `npm test`, and `npm run build` on Node 24 for PRs into `main` and pushes to this branch. Workflow execution is not yet confirmed.
 
 - **CI workflow correction:** the first workflow attempt exposed that existing backend tests expect generated `dist/` files. The workflow now runs `npm run build` before `npm test`; the failed first attempt was a test-order setup failure, not a Manager feature assertion. The corrected run is pending.
+
+## Verification update — 2026-11-23
+
+- **GitHub Actions:** PASS on head `4f018ac0ad3f0e74c3d0bc76035a67a610ca7c62` (workflow run #13).
+- **Production client build:** PASS (`npm run build`).
+- **Automated suite:** PASS — 125 tests, 0 failures, 0 skipped (`npm test`, Node 24).
+- **SQL migration coverage:** included in the automated backend tests using PGlite; production database migration has NOT been applied.
+- **Browser acceptance:** PENDING. Netlify status is marked success, but Netlify's PR bot says the deploy preview was canceled, so there is no confirmed live preview to inspect. Mobile/desktop visual and interaction checks remain outstanding.
+- **Merge/deploy:** NOT MERGED. Keep PR open until a usable preview or equivalent browser validation is available and the production migration plan is confirmed.
