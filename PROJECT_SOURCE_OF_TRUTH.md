@@ -1214,3 +1214,16 @@ Dashboard totals and the Inventory list render ahead of other sections during st
 ### ALISHAN-CHG-2026-11-21-001 — Google setup
 
 - Allow Google verification with the existing password gate still in place. Setup callbacks issue no Alishan session. Google-only mode still requires a verified legacy owner.
+
+
+### ALISHAN-CHG-2026-11-23-001 — Manager Control Center UI and approval reason fix
+
+- **Status:** IMPLEMENTED — NOT VERIFIED; this is on branch `manager-control-center-redesign`, not yet merged or production-deployed.
+- **Why:** The deployed Manager was only a basic approval queue, missing the approved Control Center design/navigation. The backend decision endpoint stored `decision_reason`, but the initial migration omitted that column and the UI did not collect a rejection reason.
+- **Before:** Small approval list; no dashboard; no responsive mobile navigation; no requester identity in API; rejection sent without a reason; schema mismatch could fail decision writes.
+- **After:** Redesigned Manager route with Alishan header, desktop top navigation, mobile bottom navigation and More sheet, dashboard overview, live approval counts, service health check, horizontal request-participant strip, Needs Attention, recent decisions, approval search/status/action filters, required rejection dialog and Activity section. Users/Inventory/Reports/Search/Backup/Health are clearly marked integration-pending rather than using fake data.
+- **Backend:** Manager request listing now exposes requester ID and decision reason. Rejection reason is required (trimmed, 1–500 chars) and enforced by backend. The API route forwards reason. Migration adds `decision_reason` on fresh create and uses idempotent `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` for existing installations.
+- **Tests:** Approval regression test extended for requester field, missing reason rejection and stored reason. Tests/build/browser acceptance have not yet been run in a complete checkout; status must remain not verified.
+- **Impact:** No calculation or payment logic changes. Archive/restore remain the only Manager approval actions. No permanent-delete feature, backup payload access, user directory or inventory/report APIs were added. Manager permission check remains server-side.
+- **Files:** `manager-app/index.html`, `backend/manager-approvals.js`, `backend/server.js`, `deployment/manager-approvals.sql`, `backend-tests/manager-approvals.test.js`, `MANAGER_APP_HANDOVER.md`, `README.md`, this source-of-truth entry.
+- **Next verification:** run `npm test`, `npm run build`, authenticated browser acceptance on desktop and 390/360/320px, and apply migration to an existing test database before merge/deployment.
