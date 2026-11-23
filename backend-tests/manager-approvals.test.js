@@ -35,6 +35,7 @@ test('only invited managers can decide requests; archive and restore apply once'
   assert.equal((await service.list(user)).status,403);
   const {requests:[archive]} = await service.list(manager);
   assert.equal((await service.decide(user,archive.id,'approved')).status,403);
+  assert.equal(archive.requested_by,user);
   assert.equal((await service.decide(manager,archive.id,'approved')).ok,true);
   assert.equal((await service.decide(manager,archive.id,'approved')).status,409);
   const archiveId = await repository.read(state => {
@@ -49,4 +50,11 @@ test('only invited managers can decide requests; archive and restore apply once'
     assert.equal(state.inventory.length,1);
     assert.equal(state.archive.length,0);
   });
+  assert.equal((await service.request(account,'archive',String(item.id))).ok,true);
+  const {requests:[rejection]} = await service.list(manager);
+  assert.equal((await service.decide(manager,rejection.id,'rejected')).status,400);
+  assert.equal((await service.decide(manager,rejection.id,'rejected','Duplicate request')).ok,true);
+  const {requests:history} = await service.list(manager);
+  const rejected = history.find(row => row.id === rejection.id);
+  assert.equal(rejected.decision_reason,'Duplicate request');
 });
