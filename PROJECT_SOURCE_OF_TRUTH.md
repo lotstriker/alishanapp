@@ -1249,3 +1249,12 @@ Dashboard totals and the Inventory list render ahead of other sections during st
 - **Local limitation:** available runtime is Node 22, while `package.json` requires Node >=24; repository dependencies are not installed and network DNS prevents cloning/installing. Therefore local `npm test` and `npm run build` were not run. Awaiting GitHub Actions results.
 
 - **CI workflow ordering correction:** first run failed because `npm test` was executed before generating `dist/`, while existing backend tests load files from `dist/`. Reordered steps to build first, then test. Awaiting the next run; no claim of test pass yet.
+
+
+### ALISHAN-CHG-2026-11-23-004 — CI build and automated test verification
+
+- **Status:** AUTOMATED CI PASS; browser acceptance and production DB migration pending.
+- **Evidence:** GitHub Actions run #13 on `4f018ac0ad3f0e74c3d0bc76035a67a610ca7c62` completed successfully. Node 24 `npm run build` passed; `npm test` passed 125/125 tests (0 failures, 0 skipped).
+- **Migration:** SQL migration was exercised in the automated PGlite tests; it has not been applied to the production database.
+- **Browser preview:** Netlify commit status reports success, but the Netlify bot comment says the deploy preview was canceled. No mobile/desktop browser acceptance is claimed.
+- **Release gate:** PR #2 remains open and unmerged until a working preview/browser check and production migration readiness are confirmed.
