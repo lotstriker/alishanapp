@@ -71,8 +71,11 @@ test('Manager page inline scripts parse and redesigned sections exist', () => {
   assert.match(html,/id="reject-reason"/);
   assert.match(html,/data-go="approvals"/);
   assert.match(html,/bottom-nav/);
-  assert.match(html,/filter\(r=>r\.status!==\x27pending\x27\)\.sort\(\(a,b\)=>new Date\(b\.decided_at\|\|0\)-new Date\(a\.decided_at\|\|0\)\.slice\(0,5\)/);
-  assert.match(html,/addEventListener\(\x27keydown\x27,e=>\{if\(e\.key===\x27Escape\x27\)/);
+  assert.ok(html.includes("requests.filter(r=>r.status!=='pending').sort((a,b)=>new Date(b.decided_at||0)-new Date(a.decided_at||0)).slice(0,5)"));
+  assert.match(html,/id="approval-filter-status"/);
+  assert.match(html,/id="approval-status" role="status"/);
+  assert.equal([...html.matchAll(/id="approval-status"/g)].length,1,'status paragraph ID must not collide with the filter');
+  assert.match(html,/dialog.addEventListener\('keydown'/);
   assert.match(html,/target\.focus\(\)/);
-  assert.match(html,/approval-status\x27\)\.focus\(\)/);
+  assert.match(html,/\$\('approval-status'\)\.focus\(\)/);
 });
