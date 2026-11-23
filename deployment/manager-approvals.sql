@@ -14,8 +14,11 @@ create table if not exists alishan_private.manager_requests (
   status text not null default 'pending' check (status in ('pending','approved','rejected')),
   requested_at timestamptz not null default now(),
   decided_at timestamptz,
-  decided_by uuid
+  decided_by uuid,
+  decision_reason text
 );
+-- Upgrade existing installations idempotently; CREATE TABLE IF NOT EXISTS does not add columns.
+alter table alishan_private.manager_requests add column if not exists decision_reason text;
 create unique index if not exists manager_requests_pending_record
   on alishan_private.manager_requests(workspace_id, action, record_id) where status='pending';
 alter table alishan_private.manager_invites enable row level security;
