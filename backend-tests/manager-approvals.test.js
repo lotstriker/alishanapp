@@ -63,7 +63,7 @@ test('only invited managers can decide requests; archive and restore apply once'
 
 test('Manager page inline scripts parse and redesigned sections exist', () => {
   const html = fs.readFileSync(path.join(__dirname,'../manager-app/index.html'),'utf8');
-  const scripts = [...html.matchAll(/<script(?:[^>]*)>([\\s\\S]*?)<\\/script>/g)].map(match => match[1]).filter(Boolean);
+  const scripts = [...html.matchAll(new RegExp('<script[^>]*>([\\s\\S]*?)</script>','g'))].map(match => match[1]).filter(Boolean);
   assert.ok(scripts.length >= 2, 'inline theme boot and Manager application scripts should be present');
   scripts.forEach((source,index) => new vm.Script(source,{filename:'manager-inline-'+index+'.js'}));
   for (const section of ['overview','users','inventory','reports','search','approvals','activity','backup','health','settings'])
