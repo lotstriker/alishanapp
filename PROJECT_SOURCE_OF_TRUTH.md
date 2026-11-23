@@ -1227,3 +1227,12 @@ Dashboard totals and the Inventory list render ahead of other sections during st
 - **Impact:** No calculation or payment logic changes. Archive/restore remain the only Manager approval actions. No permanent-delete feature, backup payload access, user directory or inventory/report APIs were added. Manager permission check remains server-side.
 - **Files:** `manager-app/index.html`, `backend/manager-approvals.js`, `backend/server.js`, `deployment/manager-approvals.sql`, `deployment/manager-approval-reason-migration.sql`, `backend-tests/manager-approvals.test.js`, `MANAGER_APP_HANDOVER.md`, `README.md`, this source-of-truth entry.
 - **Next verification:** run `npm test`, `npm run build`, authenticated browser acceptance on desktop and 390/360/320px, and apply migration to an existing test database before merge/deployment.
+
+
+### ALISHAN-CHG-2026-11-23-002 — Manager recent decisions ordering and reject-dialog focus
+
+- **Status:** IMPLEMENTED — inline script syntax checked; full tests/build/browser acceptance NOT VERIFIED. Still on `manager-control-center-redesign` branch, not production.
+- **Review findings verified:** recent decisions used request-order API results before `.slice(0,5)`, so a recently decided older request could be omitted. Reject dialog moved focus to the textarea but did not trap keyboard focus or restore focus when closed.
+- **Changes:** Recent decisions now sort completed requests by descending `decided_at` before selecting five; pending queue ordering is unchanged. Reject modal keyboard focus is trapped on Tab/Shift+Tab, Escape closes it, Cancel restores the invoking Reject button when still present, otherwise the stable Approval status control. Validation and request errors refocus the reason field. On successful reject/reload, focus moves to the Approval status control.
+- **Validation:** both inline script blocks parsed successfully using JavaScript `new Function`. No full `npm test`, build or browser accessibility run has yet been confirmed.
+- **Files:** `manager-app/index.html`, `MANAGER_APP_HANDOVER.md`, this source-of-truth entry, and regression checks in `backend-tests/manager-approvals.test.js`.
