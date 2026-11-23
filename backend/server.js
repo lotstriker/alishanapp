@@ -55,6 +55,43 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
    try{res.json(await repository.backupHealth());}
    catch{res.status(503).json({status:'unavailable'});}
  });
+ if(auth && manager) app.post('/internal/manager/financial-report',express.raw({type:'application/json',limit:'4kb'}),async(req,res)=>{
+   const secret=process.env.MANAGER_BRIDGE_SECRET;
+   if(!secret||secret.length<32||!Buffer.isBuffer(req.body))return res.sendStatus(403);
+   const signature=req.get('x-manager-signature')||'';
+   const expected=require('node:crypto').createHmac('sha256',secret).update(req.body).digest();
+   if(!/^[a-f0-9]{64}$/.test(signature)||!timingSafeEqual(expected,Buffer.from(signature,'hex')))return res.sendStatus(403);
+   let data;try{data=JSON.parse(req.body.toString());}catch{return res.sendStatus(400);}
+   const validDay=value=>typeof value==='string'&&/^\\d{4}-\\d{2}-\\d{2}$/.test(value)&&
+     Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
+   if(!Number.isSafeInteger(data?.time)||Math.abs(Date.now()-data.time)>30000||
+      !/^[a-f0-9-]{36}$/i.test(data?.actor||'')||!/^[a-f0-9-]{36}$/i.test(data?.userId||'')||
+      !validDay(data?.from)||!validDay(data?.to)||data.from>data.to||
+      (Date.parse(data.to)-Date.parse(data.from))/86400000>366)return res.sendStatus(400);
+   if(!await manager.invited(data.actor))return res.sendStatus(403);
+   try{
+     const workspace=data.userId===legacyOwnerId?repository.workspace:'user:'+data.userId;
+     const source=workspace===repository.workspace?repository:repositoryFor(workspace);
+     const report=await source.read(async state=>{
+       const d=await domain(state,{readOnly:true,actor:data.userId});
+       const range=d.Reports.customRange(data.from,data.to);
+       if(!range)return null;
+       const result=d.Reports.weekly(d.Reports.freshFilters(),range);
+       const values=Object.fromEntries(result.summary.map(tile=>[tile.label,tile.value]));
+       return {
+         summary:{qualities:values['Qualities completed']||0,dozens:values['Total quantity']||0,
+           workAmount:values['Work amount']||0,received:values['Amount received']||0,
+           pending:values['Pending amount']||0,cashReceived:values['Cash received this period']||0,
+           incomplete:values['Incomplete qualities']||0,completedWithoutDate:values['Completed without a date']||0},
+         rows:result.rows.map(row=>({quality:row.quality,code:row.code,type:row.type,
+           completedAt:row.completedAt,lot:row.lot,dozens:row.dozens,amount:row.amount,
+           received:row.received,pending:row.pending,status:row.status}))
+       };
+     });
+     if(!report)return res.sendStatus(400);
+     res.json({ok:true,userId:data.userId,report});
+   }catch(error){console.error('Manager financial report failed',error.code||error.name);res.status(503).json({error:'Financial report unavailable.'});}
+ });
  if(auth && manager) app.post('/internal/manager/decision',express.raw({type:'application/json',limit:'4kb'}),async(req,res)=>{
    const secret=process.env.MANAGER_BRIDGE_SECRET;
    if (!secret || secret.length<32 || !Buffer.isBuffer(req.body)) return res.sendStatus(403);
