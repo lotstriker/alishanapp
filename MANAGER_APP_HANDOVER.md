@@ -59,7 +59,8 @@ The horizontal strip represents **request participants from real approval rows**
 - `manager-app/index.html` — Control Center UI and responsive navigation.
 - `backend/manager-approvals.js` — requester/reason fields, required rejection reason validation.
 - `backend/server.js` — pass reason through decision API.
-- `deployment/manager-approvals.sql` — schema for fresh Manager approval setup.\n- `deployment/manager-approval-reason-migration.sql` — standalone idempotent upgrade for an existing Manager table.
+- `deployment/manager-approvals.sql` — schema for fresh Manager approval setup.
+- `deployment/manager-approval-reason-migration.sql` — standalone idempotent upgrade for an existing Manager table.
 - `backend-tests/manager-approvals.test.js` — requester/reason regression coverage.
 - `PROJECT_SOURCE_OF_TRUTH.md` — append-only change record.
 - `README.md` — link to this handover.
