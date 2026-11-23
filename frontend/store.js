@@ -666,19 +666,22 @@ var AlishanStore = (() => {
     // ================= backups (calc.js builds / checks / merges, db.js keeps) =================
 
     const MAX_AUTO_BACKUPS = 7;
-    const MAX_PRE_IMPORT_BACKUPS = 5;   // safety copies taken before an import / undo / restore: kept apart from the 7
+    const MAX_MANUAL_BACKUPS = 10;
+    const MAX_PRE_IMPORT_BACKUPS = 5;
     const isPreImport = (b) => !!(b && b.metadata && b.metadata.type === 'PRE_IMPORT_BACKUP');
+    const isManualBackup = (b) => !!(b && b.metadata && b.metadata.type === 'MANUAL_BACKUP');
     const allPayments = () => [...payments, ...orphanPayments];
     const backupFile = (type) => C.makeBackup(items, allPayments(), type);
 
     async function saveBackupToHistory(type) {
         const history = await AlishanDB.getSetting('autoBackups', []);
         history.push(backupFile(type));
-        // the automatic copies (7) and the pre-import copies (5) are counted separately, so a few days of
-        // automatic backups can never push out the copy taken before an import. The order stays the same.
+        // Automatic, manual and pre-import safety copies have separate retention limits.
+        // A run of automatic backups can never evict an administrator-created manual snapshot.
         const keep = new Set([
             ...history.filter(isPreImport).slice(-MAX_PRE_IMPORT_BACKUPS),
-            ...history.filter(b => !isPreImport(b)).slice(-MAX_AUTO_BACKUPS)
+            ...history.filter(isManualBackup).slice(-MAX_MANUAL_BACKUPS),
+            ...history.filter(b => !isPreImport(b) && !isManualBackup(b)).slice(-MAX_AUTO_BACKUPS)
         ]);
         await AlishanDB.setSetting('autoBackups', history.filter(b => keep.has(b)));
         await AlishanDB.setSetting('lastBackupDate', new Date().toISOString());
@@ -692,6 +695,17 @@ var AlishanStore = (() => {
         } catch (e) {
             console.error(e);
             return fail('Could not create the backup');
+        }
+    }
+
+    async function createManualBackup() {
+        if (items.length === 0) return fail('No data to backup!');
+        try {
+            await saveBackupToHistory('MANUAL_BACKUP');
+            return { ok: true, message: 'Manual backup created successfully' };
+        } catch (e) {
+            console.error(e);
+            return fail('Could not create the manual backup');
         }
     }
 
@@ -784,7 +798,7 @@ var AlishanStore = (() => {
         // bulk import (AI JSON) with review
         parseBulk, getProductTypes, rememberAlias, typeOfQuality, closeQualities, closeColors, colorChoices, checkImportDraft, batchDuplicateIds, importTotals, aiPrompt, importEntries, undoImport, listImportBatches,
         // backups
-        backupFile, createBackup, listBackups, getBackupSettings, saveBackupSettings,
+        backupFile, createBackup, createManualBackup, listBackups, getBackupSettings, saveBackupSettings,
         inspectBackup, importBackup, restoreBackup
     };
 })();

@@ -95,6 +95,63 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
      res.json({ok:true,userId:data.userId,report});
    }catch(error){console.error('Manager financial report failed',error.code||error.name);res.status(503).json({error:'Financial report unavailable.'});}
  });
+ if(auth && manager) app.post('/internal/manager/backup-status',express.raw({type:'application/json',limit:'4kb'}),async(req,res)=>{
+   const secret=process.env.MANAGER_BRIDGE_SECRET;
+   if(!secret||secret.length<32||!Buffer.isBuffer(req.body))return res.sendStatus(403);
+   const signature=req.get('x-manager-signature')||'';
+   const expected=require('node:crypto').createHmac('sha256',secret).update(req.body).digest();
+   if(!/^[a-f0-9]{64}$/.test(signature)||!timingSafeEqual(expected,Buffer.from(signature,'hex')))return res.sendStatus(403);
+   let data;try{data=JSON.parse(req.body.toString());}catch{return res.sendStatus(400);}
+   if(!Number.isSafeInteger(data?.time)||Math.abs(Date.now()-data.time)>30000||
+      !/^[a-f0-9-]{36}$/i.test(data?.actor||'')||!/^[a-f0-9-]{36}$/i.test(data?.userId||''))return res.sendStatus(400);
+   if(!await manager.invited(data.actor))return res.sendStatus(403);
+   try{
+     const workspace=data.userId===legacyOwnerId?repository.workspace:'user:'+data.userId;
+     const source=workspace===repository.workspace?repository:repositoryFor(workspace);
+     const status=await source.read(async state=>{
+       const d=await domain(state,{readOnly:true,actor:data.userId});
+       const settings=await d.Store.getBackupSettings();
+       const lastScheduleAt=await d.DB.getSetting('lastBackupDate',null);
+       const all=await d.Store.listBackups();
+       const history=(Array.isArray(all)?all:[]).slice(-22).reverse().map(file=>{
+         const check=d.Store.inspectBackup(file);
+         return {created:file?.metadata?.created||null,type:file?.metadata?.type||'UNKNOWN',
+           totalItems:file?.metadata?.totalItems??file?.inventory?.length??0,
+           totalPayments:file?.metadata?.totalPayments??file?.payments?.length??0,
+           restorable:!!check.ok};
+       });
+       const validDates=history.filter(row=>row.restorable&&Number.isFinite(Date.parse(row.created))).map(row=>row.created);
+       const lastBackupAt=validDates.sort((a,b)=>Date.parse(b)-Date.parse(a))[0]||null;
+       const nextDueAt=settings.enabled&&lastScheduleAt&&Number.isFinite(Date.parse(lastScheduleAt))
+         ?new Date(Date.parse(lastScheduleAt)+settings.frequency*3600000).toISOString():null;
+       return {enabled:settings.enabled,frequencyHours:settings.frequency,lastBackupAt,nextDueAt,
+         due:settings.enabled&&(!nextDueAt||Date.now()>=Date.parse(nextDueAt)),
+         inventoryCount:d.Store.itemCount(),paymentCount:d.Store.getPayments().length,history};
+     });
+     res.json({ok:true,userId:data.userId,status});
+   }catch(error){console.error('Manager backup status failed',error.code||error.name);res.status(503).json({error:'Backup status unavailable.'});}
+ });
+ if(auth && manager) app.post('/internal/manager/backup-create',express.raw({type:'application/json',limit:'4kb'}),async(req,res)=>{
+   const secret=process.env.MANAGER_BRIDGE_SECRET;
+   if(!secret||secret.length<32||!Buffer.isBuffer(req.body))return res.sendStatus(403);
+   const signature=req.get('x-manager-signature')||'';
+   const expected=require('node:crypto').createHmac('sha256',secret).update(req.body).digest();
+   if(!/^[a-f0-9]{64}$/.test(signature)||!timingSafeEqual(expected,Buffer.from(signature,'hex')))return res.sendStatus(403);
+   let data;try{data=JSON.parse(req.body.toString());}catch{return res.sendStatus(400);}
+   if(!Number.isSafeInteger(data?.time)||Math.abs(Date.now()-data.time)>30000||
+      !/^[a-f0-9-]{36}$/i.test(data?.actor||'')||!/^[a-f0-9-]{36}$/i.test(data?.userId||''))return res.sendStatus(400);
+   if(!await manager.invited(data.actor))return res.sendStatus(403);
+   try{
+     const workspace=data.userId===legacyOwnerId?repository.workspace:'user:'+data.userId;
+     const source=workspace===repository.workspace?repository:repositoryFor(workspace);
+     const result=await source.transaction(async state=>{
+       const d=await domain(state,{actor:data.userId,runAutoBackup:false});
+       return d.Store.createManualBackup();
+     },{omitBackupSnapshots:true});
+     if(!result?.ok)return res.status(409).json({error:result?.error||'Manual backup could not be created.'});
+     res.json({ok:true,userId:data.userId,message:'Manual backup created.'});
+   }catch(error){console.error('Manager manual backup failed',error.code||error.name);res.status(503).json({error:'Manual backup unavailable.'});}
+ });
  if(auth && manager) app.post('/internal/manager/decision',express.raw({type:'application/json',limit:'4kb'}),async(req,res)=>{
    const secret=process.env.MANAGER_BRIDGE_SECRET;
    if (!secret || secret.length<32 || !Buffer.isBuffer(req.body)) return res.sendStatus(403);
