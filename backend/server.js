@@ -55,6 +55,21 @@ function createApp({repository,username,password,auth,googleSetup,repositoryFor,
    try{res.json(await repository.backupHealth());}
    catch{res.status(503).json({status:'unavailable'});}
  });
+ if(auth && manager) app.post('/internal/manager/decision',express.raw({type:'application/json',limit:'4kb'}),async(req,res)=>{
+   const secret=process.env.MANAGER_BRIDGE_SECRET;
+   if (!secret || secret.length<32 || !Buffer.isBuffer(req.body)) return res.sendStatus(403);
+   const crypto=require('node:crypto');
+   const signature=req.get('x-manager-signature') || '';
+   const expected=crypto.createHmac('sha256',secret).update(req.body).digest();
+   if (!/^[a-f0-9]{64}$/.test(signature) || !crypto.timingSafeEqual(expected,Buffer.from(signature,'hex'))) return res.sendStatus(403);
+   let data;
+   try { data=JSON.parse(req.body.toString()); } catch { return res.sendStatus(400); }
+   if (!Number.isSafeInteger(data?.time) || Math.abs(Date.now()-data.time)>30000 ||
+       typeof data.reason!=='string' || data.reason.length>500 || (data.decision==='rejected'&&!data.reason.trim()))
+     return res.sendStatus(400);
+   const result=await manager.decide(data.actor,data.id,data.decision,data.reason.trim());
+   res.status(result.ok?200:result.status || 400).json(result);
+ });
  app.get('/healthz',async(req,res)=>{try{const probe=await repository.ready();if(probe)res.set('Server-Timing',`dbpool;dur=${probe.pool.toFixed(1)}, dbping;dur=${probe.query.toFixed(1)}`);res.json({status:'ok'});}catch{res.status(503).json({status:'unavailable'});}});
  // Chrome may fetch installation metadata without the browser tab's credentials.
  const installAssets=new Set(['/manifest.webmanifest','/icons/icon-192.png','/icons/icon-512.png','/icons/icon-maskable-512.png']);
